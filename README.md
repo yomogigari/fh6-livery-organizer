@@ -57,6 +57,18 @@ EXEを自分でビルドするためのファイルや詳細なビルド手順�
 [FH6 Livery Organizer動作デモ](https://yomogigari.github.io/fh6-livery-organizer/fh6-livery-organizer-demo.html)
 
 
+## 動作環境
+
+本プログラムは、PC版 Forza Horizon 6 を対象としています。
+
+PC版にはMicrosoft Store版とSteam版がありますが、
+本プログラムの開発・動作検証はMicrosoft Store版の環境で行っています。
+Steam版では動作確認を行っていません。
+
+Steam版ではFH6本体やセーブデータの保存先・ファイル構成などが
+Microsoft Store版と異なる可能性があるため、
+本プログラムが正常に動作しない場合があります。
+
 ## 使い方
 
 ### EXE版
