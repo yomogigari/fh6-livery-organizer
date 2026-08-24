@@ -1,7 +1,5 @@
 # FH6 Livery Organizer
 
-**Preview Release — v0.4.53**
-
 FH6 Livery Organizer は、Windows / Xbox App版 **Forza Horizon 6** でダウンロードしたペイント（Livery）を、ローカル環境で一覧化・検索・整理するためのツールです。
 
 GameSaveから取得した情報をもとに、サムネイル付きのHTMLレポートとExcelを生成します。生成されたHTMLでは、検索・絞り込み・並び替え・判定・タグ・メモ・バックアップなどを行えます。
