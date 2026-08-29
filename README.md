@@ -122,7 +122,7 @@ OrganizerはEXE版とPython版のどちらか一方を選んで利用できま�
 
 Navigator BridgeもEXE版とPython版のどちらか一方を利用します。Navigator Bridgeを使用しない場合は、Bridgeのファイルを起動する必要はありません。
 
-Windows EXEを再現するためのBuild Kitは、通常の配布ZIPには含めず、別ファイルとして提供します。
+Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手順は、通常の配布物には含めていません。
 
 ## 動作デモ
 
