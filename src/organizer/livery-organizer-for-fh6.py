@@ -74,12 +74,13 @@ try:
     from .i18n import (
         DEFAULT_LANGUAGE,
         get_language,
+        available_languages,
         normalize_language,
         set_language,
         tr,
     )
 except ImportError:
-    from i18n import DEFAULT_LANGUAGE, get_language, normalize_language, set_language, tr
+    from i18n import DEFAULT_LANGUAGE, available_languages, get_language, normalize_language, set_language, tr
 
 try:
     import tkinter as tk
@@ -91,7 +92,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r02"
+VERSION = "0.4.58-r03"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -2130,10 +2131,7 @@ def _scan_vehicle_assets_uncached(
 
             zip_count += 1
             if progress and zip_count % 100 == 0:
-                progress(
-                    f"車両アセット探索: {zip_count:,} ZIP確認 / "
-                    f"{len(result):,} Car IDs"
-                )
+                progress(tr("progress.vehicle.scan", zip_count=zip_count, car_ids=len(result)))
 
             zip_path = Path(dirpath) / filename
 
@@ -2207,10 +2205,7 @@ def _scan_vehicle_assets_uncached(
     }
 
     if progress:
-        completion = (
-            f"車両アセット探索完了: {zip_count:,} ZIP / "
-            f"{len(result):,} Car IDs"
-        )
+        completion = tr("progress.vehicle.complete", zip_count=zip_count, car_ids=len(result))
         # 通常利用では空プレースホルダーを異常として表示しません。
         # 0バイト以外で実際に開けなかったZIPがある場合だけ注意情報を追加します。
         if bad_zip_count:
@@ -2218,9 +2213,11 @@ def _scan_vehicle_assets_uncached(
                 f"{name} {count:,}"
                 for name, count in sorted(bad_zip_reasons.items())
             )
-            unreadable_text = f"読み取り不可ZIP {bad_zip_count:,}"
-            if reason_text:
-                unreadable_text += f" ({reason_text})"
+            unreadable_text = tr(
+                "progress.vehicle.unreadable",
+                count=bad_zip_count,
+                reasons=f" ({reason_text})" if reason_text else "",
+            )
             completion += f" / {unreadable_text}"
         progress(completion)
 
@@ -2262,13 +2259,15 @@ def scan_vehicle_assets(
     if cached_db is not None:
         official_count = apply_official_vehicle_metadata(cached_db)
         if progress:
-            progress(
-                f"車両DBキャッシュ利用: {len(cached_db):,} Car IDs / "
-                f"公式表記 {official_count:,}件 / FH6本体走査を省略 / {cache_path}"
-            )
+            progress(tr(
+                "progress.cache.used",
+                car_ids=len(cached_db),
+                official=official_count,
+                path=display_path_text(cache_path),
+            ))
         return cached_db
     if progress:
-        progress(f"車両DBキャッシュ再構築: {cache_reason}")
+        progress(tr("progress.cache.rebuild", reason=cache_reason))
 
     result, scan_stats = _scan_vehicle_assets_uncached(
         game_root,
@@ -2284,9 +2283,9 @@ def scan_vehicle_assets(
 
     if progress:
         if cache_saved:
-            progress(f"車両DBキャッシュ保存: {cache_path}")
+            progress(tr("progress.cache.saved", path=display_path_text(cache_path)))
         else:
-            progress("車両DBキャッシュ保存失敗: 次回は再度FH6本体を走査します。")
+            progress(tr("progress.cache.save_failed"))
     return result
 
 
@@ -2557,7 +2556,7 @@ def save_settings(settings: dict) -> None:
 
 
 def initialize_ui_language(settings: Optional[dict] = None) -> str:
-    """Initialize the UI language from env/settings with Japanese fallback."""
+    """環境変数または設定からUI言語を初期化し、日本語へフォールバックします。"""
     saved = settings if isinstance(settings, dict) else load_settings()
     requested = (
         os.environ.get("FH6_ORGANIZER_LANG")
@@ -2575,12 +2574,12 @@ def normpath(p: Path) -> str:
 
 
 def display_path_text(value: object) -> str:
-    """Format Windows path separators for the active UI language."""
+    """現在のUI言語に合わせてWindowsパス区切りを表示用に整形します。"""
     separator = "¥" if get_language() == "ja" else "\\"
     text = str(value).replace("\\", separator)
 
-    # Only convert slashes inside drive paths so labels such as JSON / CSV
-    # keep their original slash characters.
+    # ドライブパス内のスラッシュだけを変換し、JSON / CSVのような
+    # ラベル内のスラッシュはそのまま保持します。
     def _drive_path(match: re.Match[str]) -> str:
         return match.group(0).replace("/", separator)
 
@@ -2629,11 +2628,7 @@ def output_location_error(scan_root: Path, outdir: Path) -> str:
     """レポート出力がGameSaveへ触れる場合の説明付きエラーを返します。"""
     protected = protected_gamesave_root(scan_root)
     if path_is_within(outdir, protected):
-        return (
-            "出力先をGameSave配下に置くことはできません。\n"
-            f"保護対象: {protected}\n"
-            "DocumentsなどGameSave外の場所を選んでください。"
-        )
+        return tr("output.location_forbidden", path=display_path_text(protected))
     return ""
 
 
@@ -2649,7 +2644,7 @@ def output_bundle_label(
     export_analysis_data: bool = False,
 ) -> str:
     """1回の実行で作成されるファイル・フォルダ構成を表示用に説明します。"""
-    parts = ["HTML（画像込み）" if embed_images else "HTML", "Excel"]
+    parts = [tr("output.embedded_html") if embed_images else "HTML", "Excel"]
     if not embed_images:
         parts.insert(1, "thumbnails/")
     if export_analysis_data:
@@ -2668,10 +2663,10 @@ def output_bundle_entries(
         ("HTML", outdir / "livery-organizer-for-fh6.html"),
     ]
     if not embed_images:
-        entries.append(("サムネイル", outdir / "thumbnails"))
+        entries.append((tr("output.thumbnails"), outdir / "thumbnails"))
     entries.append(("Excel", outdir / "livery-organizer-for-fh6.xlsx"))
     if export_analysis_data:
-        entries.append(("解析データ", outdir / "data"))
+        entries.append((tr("output.analysis_data"), outdir / "data"))
     return entries
 
 
@@ -2687,36 +2682,36 @@ def generator_preflight(
     items: list[dict[str, str]] = []
 
     if scan_root is None:
-        items.append({"key": "save", "state": "error", "label": "保存領域", "detail": "未指定"})
+        items.append({"key": "save", "state": "error", "label": tr("path.save_root"), "detail": tr("preflight.save.not_set")})
     elif not scan_root.exists() or not scan_root.is_dir():
-        items.append({"key": "save", "state": "error", "label": "保存領域", "detail": "見つかりません"})
+        items.append({"key": "save", "state": "error", "label": tr("path.save_root"), "detail": tr("preflight.save.not_found")})
     else:
-        items.append({"key": "save", "state": "ok", "label": "保存領域", "detail": "読取対象を確認"})
+        items.append({"key": "save", "state": "ok", "label": tr("path.save_root"), "detail": tr("preflight.save.ready")})
 
     if game_root is None:
-        items.append({"key": "game", "state": "warning", "label": "FH6本体", "detail": "未指定（Car ID表示で続行可）"})
+        items.append({"key": "game", "state": "warning", "label": tr("path.game_root"), "detail": tr("preflight.game.not_set")})
     elif not game_root.exists() or not game_root.is_dir():
-        items.append({"key": "game", "state": "warning", "label": "FH6本体", "detail": "未検出（Car ID表示で続行可）"})
+        items.append({"key": "game", "state": "warning", "label": tr("path.game_root"), "detail": tr("preflight.game.not_found")})
     else:
-        items.append({"key": "game", "state": "ok", "label": "FH6本体", "detail": "車両DB解析可能"})
+        items.append({"key": "game", "state": "ok", "label": tr("path.game_root"), "detail": tr("preflight.game.ready")})
 
     if outdir is None:
-        items.append({"key": "output", "state": "error", "label": "出力先", "detail": "未指定"})
+        items.append({"key": "output", "state": "error", "label": tr("path.output_root"), "detail": tr("preflight.output.not_set")})
     elif scan_root is not None and output_location_error(scan_root, outdir):
-        items.append({"key": "output", "state": "error", "label": "出力先", "detail": "GameSave配下は使用不可"})
+        items.append({"key": "output", "state": "error", "label": tr("path.output_root"), "detail": tr("preflight.output.forbidden")})
     else:
-        items.append({"key": "output", "state": "ok", "label": "出力先", "detail": "GameSave外"})
+        items.append({"key": "output", "state": "ok", "label": tr("path.output_root"), "detail": tr("preflight.output.ready")})
 
     delivery = output_bundle_label(
         embed_images=embed_images,
         export_analysis_data=export_analysis_data,
     )
-    items.append({"key": "delivery", "state": "ok", "label": "出力構成", "detail": delivery})
+    items.append({"key": "delivery", "state": "ok", "label": tr("path.output_bundle"), "detail": delivery})
 
     has_error = any(item["state"] == "error" for item in items)
     has_warning = any(item["state"] == "warning" for item in items)
     state = "error" if has_error else "warning" if has_warning else "ready"
-    summary = "設定を修正してください" if has_error else "実行可能（要確認あり）" if has_warning else "実行可能"
+    summary = tr("preflight.summary.fix") if has_error else tr("preflight.summary.warning") if has_warning else tr("preflight.summary.ready")
     return {"state": state, "summary": summary, "items": items}
 
 
@@ -2736,17 +2731,18 @@ def support_environment_info(
         embed_images=embed_images,
         export_analysis_data=export_analysis_data,
     )
+    not_set = tr("support.not_set")
     return {
         "app": APP_NAME,
         "version": VERSION,
         "os": platform.platform(),
         "python": platform.python_version(),
         "python_executable": sys.executable or "",
-        "tkinter": "available" if tk is not None else "unavailable",
+        "tkinter": tr("support.tk_available") if tk is not None else tr("support.tk_unavailable"),
         "settings_path": str(settings_path()),
-        "scan_root": str(scan_root) if scan_root is not None else "(not set)",
-        "game_root": str(game_root) if game_root is not None else "(not set)",
-        "output_root": str(outdir) if outdir is not None else "(not set)",
+        "scan_root": str(scan_root) if scan_root is not None else not_set,
+        "game_root": str(game_root) if game_root is not None else not_set,
+        "output_root": str(outdir) if outdir is not None else not_set,
         "output_bundle": output_bundle_label(
             embed_images=embed_images,
             export_analysis_data=export_analysis_data,
@@ -2758,29 +2754,31 @@ def support_environment_info(
 def format_support_environment_text(info: dict) -> str:
     """環境情報をクリップボードやターミナルでのサポート利用向けに整形します。"""
     preflight = info.get("preflight") or {}
+    state_labels = {
+        "ready": tr("marker.ready"),
+        "ok": tr("marker.ready"),
+        "warning": tr("marker.warning"),
+        "error": tr("marker.error"),
+    }
     lines = [
         f"{info.get('app', APP_NAME)} v{info.get('version', VERSION)}",
         f"OS: {info.get('os', '')}",
         f"Python: {info.get('python', '')}",
-        f"Python executable: {info.get('python_executable', '')}",
-        f"Tkinter: {info.get('tkinter', '')}",
-        f"Settings: {info.get('settings_path', '')}",
-        f"Save root: {info.get('scan_root', '')}",
-        f"FH6 root: {info.get('game_root', '')}",
-        f"Output root: {info.get('output_root', '')}",
-        f"Output bundle: {info.get('output_bundle', '')}",
-        f"Preflight: {preflight.get('state', '')} / {preflight.get('summary', '')}",
+        f"{tr('support.field.python_executable')}: {info.get('python_executable', '')}",
+        f"{tr('support.field.tkinter')}: {info.get('tkinter', '')}",
+        f"{tr('support.field.settings')}: {info.get('settings_path', '')}",
+        f"{tr('support.field.save_root')}: {info.get('scan_root', '')}",
+        f"{tr('support.field.fh6_root')}: {info.get('game_root', '')}",
+        f"{tr('support.field.output_root')}: {info.get('output_root', '')}",
+        f"{tr('support.field.output_bundle')}: {info.get('output_bundle', '')}",
+        f"{tr('support.field.preflight')}: {state_labels.get(preflight.get('state', ''), preflight.get('state', ''))} / {preflight.get('summary', '')}",
     ]
     for item in preflight.get("items", []):
         lines.append(
             f"- {item.get('label', item.get('key', ''))}: "
-            f"{item.get('state', '')} / {item.get('detail', '')}"
+            f"{state_labels.get(item.get('state', ''), item.get('state', ''))} / {item.get('detail', '')}"
         )
-    lines.extend([
-        "",
-        "Safety: FH6 GameSave is read-only; report output is rejected under GameSave.",
-        "Note: This text can include your Windows user name and local paths. Review it before sharing.",
-    ])
+    lines.extend(["", tr("support.safety"), tr("support.note")])
     return "\n".join(lines)
 
 
@@ -3050,10 +3048,7 @@ def skip_applied_livery_reference_scan(
         "files_scanned": 0,
     }
     if progress:
-        progress(
-            "適用Livery参照探索: 一時停止中 "
-            "（セーブデータ復号・構造解析の進展後に再検討）"
-        )
+        progress(tr("progress.applied.paused"))
     return stats
 
 
@@ -3130,9 +3125,7 @@ def detect_applied_livery_references(
             path = Path(dirpath) / filename
             stats["files_scanned"] += 1
             if progress and stats["files_scanned"] % 250 == 0:
-                progress(
-                    f"適用Livery参照探索: {stats['files_scanned']:,}ファイル"
-                )
+                progress(tr("progress.applied.files", files=stats["files_scanned"]))
 
             try:
                 # セーブデータは大きい場合があります。mmapも候補ですが、可搬性を優先して
@@ -3172,12 +3165,12 @@ def detect_applied_livery_references(
             stats["not_found"] += 1
 
     if progress:
-        progress(
-            "適用Livery参照探索完了: "
-            f"適用 {stats['applied']} / "
-            f"未検出 {stats['not_found']} / "
-            f"不明 {stats['unknown']}"
-        )
+        progress(tr(
+            "progress.applied.complete",
+            applied=stats["applied"],
+            not_found=stats["not_found"],
+            unknown=stats["unknown"],
+        ))
 
     return stats
 
@@ -3573,7 +3566,7 @@ def scan_liveries(
     if worker_count == 1:
         for idx, livery_dir in enumerate(livery_dirs, 1):
             if progress and idx % 25 == 0:
-                progress(f"ペイントフォルダー解析: {idx:,}/{len(livery_dirs):,}件")
+                progress(tr("progress.livery.parse", current=idx, total=len(livery_dirs)))
             record = _parse_livery_dir(root, livery_dir)
             if record is not None:
                 raw_records.append(record)
@@ -3591,9 +3584,7 @@ def scan_liveries(
                 if record is not None:
                     raw_records.append(record)
                 if progress and idx % 25 == 0:
-                    progress(
-                        f"ペイントフォルダー解析: {idx:,}/{len(livery_dirs):,}件"
-                    )
+                    progress(tr("progress.livery.parse", current=idx, total=len(livery_dirs)))
 
     # FH6本体の「マイデザイン」は、同じペイントを複数回ダウンロードした場合でも
     # Livery_* フォルダー単位の別スロットとして表示します。Organizerでも整理対象として
@@ -3700,12 +3691,13 @@ def scan_liveries(
     }
 
     if progress:
-        progress(
-            f"ペイント探索完了: {stats['raw_livery_folders']:,} folders → "
-            f"{stats['unique_liveries']:,}件のペイント / "
-            f"{stats['unique_car_ids']:,}車種 / "
-            f"完全一致再DL {stats['fh6_exact_duplicate_instances']:,}件を別表示"
-        )
+        progress(tr(
+            "progress.livery.complete",
+            folders=stats["raw_livery_folders"],
+            paints=stats["unique_liveries"],
+            vehicles=stats["unique_car_ids"],
+            duplicates=stats["fh6_exact_duplicate_instances"],
+        ))
     return records, fh6_instances, stats
 
 
@@ -17057,7 +17049,7 @@ def scan_and_report(
 
     vehicle_db: dict[int, VehicleInfo] = {}
     if actual_game_root and actual_game_root.exists():
-        progress(f"FH6インストール先: {actual_game_root}")
+        progress(tr("log.fh6_install", path=display_path_text(actual_game_root)))
         vehicle_db = scan_vehicle_assets(
             actual_game_root,
             progress=progress,
@@ -17068,10 +17060,7 @@ def scan_and_report(
         if export_analysis_data:
             write_vehicle_database(vehicle_db, outdir / "data")
     else:
-        progress(
-            "FH6インストール先を検出できませんでした。"
-            "Car ID表示のみで続行します。"
-        )
+        progress(tr("log.fh6_install_missing"))
 
     report = write_report(
         root,
@@ -17086,17 +17075,16 @@ def scan_and_report(
     )
 
     if verbose:
-        print(f"\nペイント数: {stats['unique_liveries']}")
-        print(f"車種数:       {stats['unique_car_ids']}")
-        print(f"車両DB:       {len(vehicle_db)} IDs")
-        print(f"出力構成: {output_bundle_label(embed_images=embed_images, export_analysis_data=export_analysis_data)}")
+        print()
+        print(tr("log.complete", folders=stats["raw_livery_folders"], paints=stats["unique_liveries"], vehicles=stats["unique_car_ids"], vehicle_db=len(vehicle_db)))
+        print(tr("log.output_bundle", bundle=output_bundle_label(embed_images=embed_images, export_analysis_data=export_analysis_data)))
         for label, path in output_bundle_entries(
             report.parent,
             embed_images=embed_images,
             export_analysis_data=export_analysis_data,
         ):
             print(f"{label}: {path}")
-        print("FH6のGameSaveおよび本体ファイルは変更していません。")
+        print(tr("complete.source_unchanged"))
 
     return report
 
@@ -17141,6 +17129,13 @@ class App:
         self.out_var = tk.StringVar(value=display_path_text(default_out))
         self.copy_var = tk.BooleanVar(value=default_copy)
         self.analysis_var = tk.BooleanVar(value=default_analysis)
+        self._language_labels = {code: label for code, label in available_languages()}
+        self._language_codes = {label: code for code, label in available_languages()}
+        self._language_env_override = bool(os.environ.get("FH6_ORGANIZER_LANG"))
+        displayed_language = get_language() if self._language_env_override else self._settings_language
+        self.language_var = tk.StringVar(
+            value=self._language_labels.get(displayed_language, self._language_labels[DEFAULT_LANGUAGE])
+        )
 
         self._settings_save_job = None
         self._preflight_update_job = None
@@ -17164,6 +17159,26 @@ class App:
             text=tr("settings.auto_saved", path=display_path_text(settings_path())),
             foreground="#666666",
         ).pack(anchor="w", pady=(2, 2))
+
+        language_row = ttk.Frame(frm)
+        language_row.pack(fill="x", pady=(8, 2))
+        ttk.Label(language_row, text=tr("language.label")).pack(side="left")
+        language_combo = ttk.Combobox(
+            language_row,
+            textvariable=self.language_var,
+            values=[label for _, label in available_languages()],
+            state="disabled" if self._language_env_override else "readonly",
+            width=14,
+        )
+        language_combo.pack(side="left", padx=(8, 8))
+        language_combo.bind("<<ComboboxSelected>>", self._on_language_selected)
+        ttk.Label(
+            language_row,
+            text=tr("language.env_override") if self._language_env_override else tr("language.note"),
+            foreground="#666666",
+            wraplength=650,
+            justify="left",
+        ).pack(side="left", fill="x", expand=True)
 
         ttk.Checkbutton(
             frm,
@@ -17194,10 +17209,10 @@ class App:
         ttk.Label(preflight, textvariable=self.preflight_summary_var, font=(GUI_FONT_FAMILY, GUI_FONT_SIZE, "bold")).pack(anchor="w")
         preflight_grid = ttk.Frame(preflight)
         preflight_grid.pack(fill="x", pady=(4, 0))
-        ttk.Label(preflight_grid, textvariable=self.preflight_save_var).grid(row=0, column=0, sticky="w", padx=(0, 18), pady=1)
-        ttk.Label(preflight_grid, textvariable=self.preflight_game_var).grid(row=0, column=1, sticky="w", pady=1)
-        ttk.Label(preflight_grid, textvariable=self.preflight_output_var).grid(row=1, column=0, sticky="w", padx=(0, 18), pady=1)
-        ttk.Label(preflight_grid, textvariable=self.preflight_delivery_var).grid(row=1, column=1, sticky="w", pady=1)
+        ttk.Label(preflight_grid, textvariable=self.preflight_save_var, wraplength=455, justify="left").grid(row=0, column=0, sticky="w", padx=(0, 18), pady=1)
+        ttk.Label(preflight_grid, textvariable=self.preflight_game_var, wraplength=455, justify="left").grid(row=0, column=1, sticky="w", pady=1)
+        ttk.Label(preflight_grid, textvariable=self.preflight_output_var, wraplength=455, justify="left").grid(row=1, column=0, sticky="w", padx=(0, 18), pady=1)
+        ttk.Label(preflight_grid, textvariable=self.preflight_delivery_var, wraplength=455, justify="left").grid(row=1, column=1, sticky="w", pady=1)
         preflight_grid.columnconfigure(0, weight=1)
         preflight_grid.columnconfigure(1, weight=1)
 
@@ -17231,10 +17246,22 @@ class App:
         if self._first_run:
             self.master.after(300, self.show_quick_start_guide)
 
+    def _on_language_selected(self, *_):
+        selected = self.language_var.get()
+        code = self._language_codes.get(selected, DEFAULT_LANGUAGE)
+        if code == self._settings_language:
+            return
+        self._settings_language = code
+        self._save_settings_now()
+        message = tr("language.saved")
+        if os.environ.get("FH6_ORGANIZER_LANG"):
+            message += "\n\n" + tr("language.env_override")
+        messagebox.showinfo(tr("language.saved_title"), message)
+
     def current_settings(self) -> dict:
         return {
-            # Keep the persisted preference separate from FH6_ORGANIZER_LANG,
-            # which is a temporary development/testing override.
+            # 保存する言語設定と、開発・テスト用の一時上書き
+            # FH6_ORGANIZER_LANG は分離して扱います。
             "language": self._settings_language,
             "save_root": native_path_text(self.root_var.get().strip()),
             "game_root": native_path_text(self.game_root_var.get().strip()),
@@ -17294,7 +17321,7 @@ class App:
         win = tk.Toplevel(self.master)
         win.withdraw()
         self._quick_start_window = win
-        win.title(f"{APP_NAME} — 初回利用ガイド")
+        win.title(f"{APP_NAME} — {tr('quick.title')}")
         win.minsize(680, 560)
         try:
             win.transient(self.master)
@@ -17305,19 +17332,21 @@ class App:
         outer.pack(fill="both", expand=True)
         ttk.Label(
             outer,
-            text="レポートを作るまで",
+            text=tr("quick.heading"),
             font=(GUI_FONT_FAMILY, 16, "bold"),
         ).pack(anchor="w")
         ttk.Label(
             outer,
-            text="初回はこの4手順だけ確認すれば利用できます。GameSaveは読み取り対象として扱います。",
+            text=tr("quick.intro"),
+            wraplength=650,
+            justify="left",
         ).pack(anchor="w", pady=(3, 12))
 
         steps = [
-            ("1  FH6を完全終了", "FH6が起動中の場合は終了してから実行します。OrganizerからGameSaveへ書き込みは行いません。"),
-            ("2  3つの場所を確認", "保存領域はGameSave/pgs、FH6本体はゲームのインストール先、出力先はDocumentsなどGameSave外を指定します。"),
-            ("3  出力方式を選択", "サムネイル埋め込みONは画像入りHTML、OFFはHTML + thumbnails/です。Excelは常に生成し、解析データON時だけdata/を追加します。"),
-            ("4  実行してHTMLを確認", "実行前チェックを確認して『ペイントデータチェック』を実行します。生成後はHTMLの『レポート情報 → 利用準備』を確認し、初回や移動後は『動作診断』を実行します。"),
+            (tr("quick.step1.title"), tr("quick.step1.body")),
+            (tr("quick.step2.title"), tr("quick.step2.body")),
+            (tr("quick.step3.title"), tr("quick.step3.body")),
+            (tr("quick.step4.title"), tr("quick.step4.body")),
         ]
         for title, detail in steps:
             card = ttk.LabelFrame(outer, text=title, padding=9)
@@ -17326,33 +17355,37 @@ class App:
 
         current_var = tk.StringVar()
         bundle_var = tk.StringVar()
-        status = ttk.LabelFrame(outer, text="現在の設定", padding=9)
+        status = ttk.LabelFrame(outer, text=tr("quick.current_settings"), padding=9)
         status.pack(fill="x", pady=(10, 4))
         ttk.Label(status, textvariable=current_var, font=(GUI_FONT_FAMILY, GUI_FONT_SIZE, "bold")).pack(anchor="w")
         ttk.Label(status, textvariable=bundle_var, wraplength=650).pack(anchor="w", pady=(3, 0))
 
         def refresh_status():
             result = self.update_preflight()
-            marker = {"ready": "OK", "warning": "要確認", "error": "エラー"}.get(result["state"], "確認")
-            current_var.set(f"実行前チェック: {marker} — {result['summary']}")
-            bundle_var.set(
-                "出力構成: "
-                + output_bundle_label(
+            marker = {
+                "ready": tr("marker.ready"),
+                "warning": tr("marker.warning"),
+                "error": tr("marker.error"),
+            }.get(result["state"], tr("marker.check"))
+            current_var.set(tr("quick.preflight_status", marker=marker, summary=result["summary"]))
+            bundle_var.set(tr(
+                "quick.output_bundle",
+                bundle=output_bundle_label(
                     embed_images=bool(self.copy_var.get()),
                     export_analysis_data=bool(self.analysis_var.get()),
-                )
-            )
+                ),
+            ))
 
         buttons = ttk.Frame(outer)
         buttons.pack(fill="x", pady=(10, 0))
-        ttk.Button(buttons, text="設定を再確認", command=refresh_status).pack(side="left")
-        ttk.Button(buttons, text="環境・サポート情報", command=self.show_support_info).pack(side="left", padx=(8, 0))
+        ttk.Button(buttons, text=tr("button.recheck"), command=refresh_status).pack(side="left")
+        ttk.Button(buttons, text=tr("button.support_info"), command=self.show_support_info).pack(side="left", padx=(8, 0))
 
         def close_guide():
             self._quick_start_window = None
             win.destroy()
 
-        ttk.Button(buttons, text="閉じる", command=close_guide).pack(side="right")
+        ttk.Button(buttons, text=tr("button.close"), command=close_guide).pack(side="right")
         win.protocol("WM_DELETE_WINDOW", close_guide)
         refresh_status()
         position_child_window(win, self.master, 800, 650)
@@ -17373,7 +17406,7 @@ class App:
     def show_support_info(self):
         win = tk.Toplevel(self.master)
         win.withdraw()
-        win.title(f"{APP_NAME} — 環境・サポート情報")
+        win.title(f"{APP_NAME} — {tr('support.title')}")
         win.minsize(720, 560)
         try:
             win.transient(self.master)
@@ -17384,15 +17417,12 @@ class App:
         outer.pack(fill="both", expand=True)
         ttk.Label(
             outer,
-            text="環境・サポート情報",
+            text=tr("support.title"),
             font=(GUI_FONT_FAMILY, 15, "bold"),
         ).pack(anchor="w")
         ttk.Label(
             outer,
-            text=(
-                "不具合を報告するときに、この情報を添えると環境差を確認しやすくなります。"
-                "Windowsユーザー名やローカルパスを含む場合があるため、共有前に内容を確認してください。"
-            ),
+            text=tr("support.intro"),
             wraplength=710,
             justify="left",
         ).pack(anchor="w", pady=(3, 9))
@@ -17420,13 +17450,13 @@ class App:
                 self.master.clipboard_clear()
                 self.master.clipboard_append(content)
                 self.master.update_idletasks()
-                messagebox.showinfo(APP_NAME, "環境・サポート情報をクリップボードへコピーしました。")
+                messagebox.showinfo(APP_NAME, tr("support.copy_success"))
             except Exception as e:
-                messagebox.showerror(APP_NAME, f"クリップボードへコピーできませんでした。\n\n{e}")
+                messagebox.showerror(APP_NAME, tr("support.copy_failed", error=e))
 
-        ttk.Button(buttons, text="再取得", command=refresh).pack(side="left")
-        ttk.Button(buttons, text="クリップボードへコピー", command=copy_info).pack(side="left", padx=(8, 0))
-        ttk.Button(buttons, text="閉じる", command=win.destroy).pack(side="right")
+        ttk.Button(buttons, text=tr("button.refresh"), command=refresh).pack(side="left")
+        ttk.Button(buttons, text=tr("button.copy_clipboard"), command=copy_info).pack(side="left", padx=(8, 0))
+        ttk.Button(buttons, text=tr("button.close"), command=win.destroy).pack(side="right")
         position_child_window(win, self.master, 920, 700)
         win.deiconify()
         win.lift()
@@ -17441,7 +17471,11 @@ class App:
             embed_images=bool(self.copy_var.get()),
             export_analysis_data=bool(self.analysis_var.get()),
         )
-        marker = {"ready": "OK", "warning": "要確認", "error": "エラー"}.get(result["state"], "確認")
+        marker = {
+            "ready": tr("marker.ready"),
+            "warning": tr("marker.warning"),
+            "error": tr("marker.error"),
+        }.get(result["state"], tr("marker.check"))
         self.preflight_summary_var.set(f"{marker}: {result['summary']}")
         variables = {
             "save": self.preflight_save_var,
@@ -17449,11 +17483,15 @@ class App:
             "output": self.preflight_output_var,
             "delivery": self.preflight_delivery_var,
         }
-        item_marker = {"ok": "OK", "warning": "要確認", "error": "エラー"}
+        item_marker = {
+            "ok": tr("marker.ready"),
+            "warning": tr("marker.warning"),
+            "error": tr("marker.error"),
+        }
         for item in result["items"]:
             var = variables.get(item["key"])
             if var is not None:
-                var.set(f"{item_marker.get(item['state'], '確認')} {item['label']}: {item['detail']}")
+                var.set(f"{item_marker.get(item['state'], tr('marker.check'))} {item['label']}: {item['detail']}")
         if hasattr(self, "scan_btn"):
             disabled = self._scan_running or result["state"] == "error"
             self.scan_btn.configure(state="disabled" if disabled else "normal")
@@ -17528,17 +17566,17 @@ class App:
         preflight = self.update_preflight()
         if preflight["state"] == "error":
             problems = [
-                f"・{item['label']}: {item['detail']}"
+                f"• {item['label']}: {item['detail']}"
                 for item in preflight["items"]
                 if item["state"] == "error"
             ]
             messagebox.showerror(
                 APP_NAME,
-                "実行前チェックで問題が見つかりました。\n\n" + "\n".join(problems),
+                tr("preflight.problem_dialog", problems="\n".join(problems)),
             )
             return
         if root is None or out is None:
-            messagebox.showerror(APP_NAME, "保存領域と出力先を指定してください。")
+            messagebox.showerror(APP_NAME, tr("preflight.paths_required"))
             return
         try:
             ensure_safe_output_directory(root, out)
@@ -17549,32 +17587,32 @@ class App:
         if preflight["state"] == "warning":
             warnings = [item["detail"] for item in preflight["items"] if item["state"] == "warning"]
             for warning in warnings:
-                self.log(f"実行前チェック 要確認: {warning}")
+                self.log(tr("preflight.warning_log", detail=warning))
 
         embed_images = bool(self.copy_var.get())
         export_analysis_data = bool(self.analysis_var.get())
         self._scan_running = True
         self.scan_btn.configure(state="disabled")
         self.progress.start(10)
-        self.log(f"走査開始: {root}")
-        self.log(f"実行バージョン: {VERSION}")
-        self.log(
-            "出力構成: "
-            + output_bundle_label(
+        self.log(tr("log.scan_start", path=display_path_text(root)))
+        self.log(tr("log.running_version", version=VERSION))
+        self.log(tr(
+            "log.output_bundle",
+            bundle=output_bundle_label(
                 embed_images=embed_images,
                 export_analysis_data=export_analysis_data,
-            )
-        )
+            ),
+        ))
 
         def worker():
             try:
                 records, fh6_records, stats = scan_liveries(
                     root,
-                    progress=lambda s: self.master.after(0, self.log, s),
+                    progress=lambda text: self.master.after(0, self.log, text),
                 )
                 applied_stats = skip_applied_livery_reference_scan(
                     records,
-                    progress=lambda s: self.master.after(0, self.log, s),
+                    progress=lambda text: self.master.after(0, self.log, text),
                 )
                 stats = dict(stats)
                 stats["applied_detection"] = applied_stats
@@ -17588,11 +17626,11 @@ class App:
                     self.master.after(
                         0,
                         self.log,
-                        f"FH6インストール先: {actual_game_root}",
+                        tr("log.fh6_install", path=display_path_text(actual_game_root)),
                     )
                     vehicle_db = scan_vehicle_assets(
                         actual_game_root,
-                        progress=lambda s: self.master.after(0, self.log, s),
+                        progress=lambda text: self.master.after(0, self.log, text),
                         required_car_ids={int(record.car_id) for record in [*records, *fh6_records]},
                     )
                     enrich_records_with_vehicle_info(records, vehicle_db)
@@ -17600,11 +17638,7 @@ class App:
                     if export_analysis_data:
                         write_vehicle_database(vehicle_db, out / "data")
                 else:
-                    self.master.after(
-                        0,
-                        self.log,
-                        "FH6インストール先未検出: Car ID表示のみで続行",
-                    )
+                    self.master.after(0, self.log, tr("log.fh6_install_missing"))
 
                 report = write_report(
                     root,
@@ -17636,7 +17670,7 @@ class App:
         """メイン画面と同じ読みやすいGUIフォントでレポート生成完了を表示します。"""
         win = tk.Toplevel(self.master)
         win.withdraw()
-        win.title(f"{APP_NAME} — レポート生成完了")
+        win.title(f"{APP_NAME} — {tr('complete.title')}")
         win.minsize(650, 390)
         try:
             win.transient(self.master)
@@ -17647,7 +17681,7 @@ class App:
         outer.pack(fill="both", expand=True)
         ttk.Label(
             outer,
-            text=f"v{VERSION} レポートを作成しました。",
+            text=tr("complete.heading", version=VERSION),
             font=(GUI_FONT_FAMILY, 14, "bold"),
         ).pack(anchor="w", pady=(0, 8))
 
@@ -17696,31 +17730,29 @@ class App:
         self.progress.stop()
         self._scan_running = False
         self.update_preflight()
-        self.log(
-            f"完了: {stats['raw_livery_folders']} folders → "
-            f"{stats['unique_liveries']}件のペイント / "
-            f"{stats['unique_car_ids']}車種 / "
-            f"Vehicle DB {stats.get('vehicle_db_count', 0)} IDs"
-        )
-        self.log(f"HTML: {report}")
+        self.log(tr(
+            "log.complete",
+            folders=stats["raw_livery_folders"],
+            paints=stats["unique_liveries"],
+            vehicles=stats["unique_car_ids"],
+            vehicle_db=stats.get("vehicle_db_count", 0),
+        ))
+        self.log(f"HTML: {display_path_text(report)}")
         excel_path = report.parent / "livery-organizer-for-fh6.xlsx"
         if excel_path.exists():
-            self.log(f"Excel: {excel_path}")
+            self.log(f"Excel: {display_path_text(excel_path)}")
         if stats.get("analysis_data_exported"):
-            self.log(f"解析データ: {report.parent / 'data'}")
+            self.log(tr("log.analysis_path", path=display_path_text(report.parent / "data")))
         else:
-            self.log("解析データ: 未出力（通常モード: HTML + Excel）")
-        self.log(
-            "生成物: "
-            + output_bundle_label(
+            self.log(tr("log.analysis_not_exported"))
+        self.log(tr(
+            "log.generated",
+            bundle=output_bundle_label(
                 embed_images=embed_images,
                 export_analysis_data=export_analysis_data,
-            )
-        )
-        if embed_images:
-            self.log("持ち運び: HTMLはサムネイル込みで単体利用可。Excelは必要に応じて同梱してください")
-        else:
-            self.log("持ち運び: HTMLと thumbnails フォルダを同じ出力構成のまま保管してください。Excelは別ファイルです")
+            ),
+        ))
+        self.log(tr("log.portable_embedded") if embed_images else tr("log.portable_external"))
         try:
             cache_marker = datetime.now().strftime("%Y%m%d%H%M%S%f")
             webbrowser.open_new_tab(
@@ -17732,7 +17764,7 @@ class App:
             except Exception:
                 pass
         bundle_lines = [
-            f"・{label}: {path}"
+            f"• {label}: {display_path_text(path)}"
             for label, path in output_bundle_entries(
                 report.parent,
                 embed_images=embed_images,
@@ -17740,22 +17772,22 @@ class App:
             )
         ]
         self.show_report_complete_dialog(
-            "今回の生成物:\n"
-            + "\n".join(bundle_lines)
-            + "\n\n次はブラウザの『レポート情報 → 利用準備』を確認し、"
-            "初回利用時やHTMLを移動した後は『動作診断』を実行してください。\n\n"
-            "元のFH6保存ファイルは変更していません。"
+            tr("complete.items", items="\n".join(bundle_lines))
+            + "\n\n"
+            + tr("complete.next_steps")
+            + "\n\n"
+            + tr("complete.source_unchanged")
         )
 
     def failed(self, e: Exception):
         self.progress.stop()
         self._scan_running = False
         self.update_preflight()
-        self.log(f"エラー種別: {type(e).__name__}")
-        self.log(f"エラー: {e!r}")
-        self.log("トレースバック:")
+        self.log(tr("log.error_type", name=type(e).__name__))
+        self.log(tr("log.error", error=repr(e)))
+        self.log(tr("log.traceback"))
         self.log("".join(traceback.format_exception(type(e), e, e.__traceback__)))
-        messagebox.showerror(APP_NAME, f"走査に失敗しました。\n\n{type(e).__name__}: {e}")
+        messagebox.showerror(APP_NAME, tr("dialog.scan_failed", name=type(e).__name__, error=e))
 
 
 class LocalizedArgumentParser(argparse.ArgumentParser):
@@ -17833,7 +17865,7 @@ def main() -> int:
         roots = default_game_roots()
         if not roots:
             print(
-                "FH6本体のインストール先を自動検出できませんでした。",
+                tr("cli.no_game_roots"),
                 file=sys.stderr,
             )
             return 1
@@ -17844,7 +17876,7 @@ def main() -> int:
     if args.print_default_roots:
         roots = default_roots()
         if not roots:
-            print("FH6保存領域を自動検出できませんでした。", file=sys.stderr)
+            print(tr("cli.no_save_roots"), file=sys.stderr)
             return 1
         for p in roots:
             print(p)
@@ -17857,12 +17889,11 @@ def main() -> int:
         game_root = args.game_root or (Path(saved_game_root) if saved_game_root else (game_roots[0] if game_roots else None))
         if game_root is None or not game_root.exists() or not game_root.is_dir():
             print(
-                "FH6本体のインストール先を検出できませんでした。"
-                "--game-root で指定してください。",
+                tr("cli.inspect_game_root_required"),
                 file=sys.stderr,
             )
             return 2
-        print("FH6本体のZIPを読み取り専用で検査します。ZIPの展開・変更は行いません。")
+        print(tr("cli.inspect_intro"))
         vehicle_db, empty_archives, problems = inspect_vehicle_asset_archives(
             game_root,
             progress=lambda msg: print(msg, flush=True),
@@ -17899,12 +17930,7 @@ def main() -> int:
 
     if not args.cli and args.root is None:
         if tk is None:
-            print(
-                "GUIを開始できません: Tkinterを読み込めませんでした。\n"
-                "PythonのTkinter対応環境を使用するか、--environment-check で環境を確認し、"
-                "必要な場合だけ --cli を明示して実行してください。",
-                file=sys.stderr,
-            )
+            print(tr("cli.gui_unavailable"), file=sys.stderr)
             return 2
         root = tk.Tk()
         apply_app_icon(root)
@@ -17916,14 +17942,14 @@ def main() -> int:
     if scan_root is None:
         roots = default_roots()
         if not roots:
-            print("--root で保存領域を指定してください。例: C:¥XboxGames¥GameSave¥pgs", file=sys.stderr)
+            print(tr("cli.root_required"), file=sys.stderr)
             return 2
         scan_root = roots[0]
 
     out = args.out or (Path.home() / "Documents" / DEFAULT_REPORT_DIR_NAME)
 
     if not scan_root.exists():
-        print(f"指定した保存領域が存在しません: {display_path_text(scan_root)}", file=sys.stderr)
+        print(tr("cli.root_not_found", path=display_path_text(scan_root)), file=sys.stderr)
         return 2
 
     try:
