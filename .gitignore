@@ -11,6 +11,9 @@
 **/.tmh/**
 **/*.log
 
+# Internal build resources (not for public distribution)
+/internal/
+
 ### Node template
 # Logs
 logs
