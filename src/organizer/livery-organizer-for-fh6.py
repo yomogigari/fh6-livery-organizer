@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.58
-================================
+Livery Organizer for FH6 v0.4.58-r02
+====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
 Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承認・後援を
@@ -71,6 +71,17 @@ from xml.sax.saxutils import escape as xml_escape
 from typing import Callable, Iterable, Optional
 
 try:
+    from .i18n import (
+        DEFAULT_LANGUAGE,
+        get_language,
+        normalize_language,
+        set_language,
+        tr,
+    )
+except ImportError:
+    from i18n import DEFAULT_LANGUAGE, get_language, normalize_language, set_language, tr
+
+try:
     import tkinter as tk
     from tkinter import filedialog, messagebox, ttk
     from tkinter import font as tkfont
@@ -80,7 +91,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58"
+VERSION = "0.4.58-r02"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -2545,6 +2556,17 @@ def save_settings(settings: dict) -> None:
     os.replace(tmp, path)
 
 
+def initialize_ui_language(settings: Optional[dict] = None) -> str:
+    """Initialize the UI language from env/settings with Japanese fallback."""
+    saved = settings if isinstance(settings, dict) else load_settings()
+    requested = (
+        os.environ.get("FH6_ORGANIZER_LANG")
+        or saved.get("language")
+        or DEFAULT_LANGUAGE
+    )
+    return set_language(requested)
+
+
 def normpath(p: Path) -> str:
     try:
         return str(p.resolve())
@@ -2553,14 +2575,14 @@ def normpath(p: Path) -> str:
 
 
 def display_path_text(value: object) -> str:
-    """UI表示に限り、Windowsパスの区切りを日本語環境向けの円サインで表示します。"""
-    text = str(value).replace("\\", "¥")
+    """Format Windows path separators for the active UI language."""
+    separator = "¥" if get_language() == "ja" else "\\"
+    text = str(value).replace("\\", separator)
 
-    # 設定値や自動検出結果では、ドライブパスがC:/...形式で保持される場合があります。
-    # 通常のUI上の区切りは変えず、Windowsのドライブパス内だけスラッシュを変換します。
-    # そのため「JSON / CSV」のような表示はそのまま維持されます。
+    # Only convert slashes inside drive paths so labels such as JSON / CSV
+    # keep their original slash characters.
     def _drive_path(match: re.Match[str]) -> str:
-        return match.group(0).replace("/", "¥")
+        return match.group(0).replace("/", separator)
 
     return re.sub(r"(?i)(?<![A-Za-z0-9])[A-Z]:/[^\r\n]*", _drive_path, text)
 
@@ -17089,6 +17111,8 @@ class App:
         self._first_run = not settings_path().exists()
         self._quick_start_window = None
         saved = load_settings()
+        self._settings_language = normalize_language(saved.get("language") or DEFAULT_LANGUAGE)
+        initialize_ui_language(saved)
 
         roots = default_roots()
         detected_root = str(roots[0]) if roots else r"C:\XboxGames\GameSave\pgs"
@@ -17109,10 +17133,7 @@ class App:
         ttk.Label(frm, text=f"{APP_NAME} v{VERSION}", font=(GUI_FONT_FAMILY, 18, "bold")).pack(anchor="w")
         ttk.Label(
             frm,
-            text=(
-                "Livery_*を解析し、Windows版FH6本体の車両アセットZIPから"
-                "Car ID・車両内部名・推定車名を自動取得して整理します。"
-            ),
+            text=tr("app.subtitle"),
         ).pack(anchor="w", pady=(2, 14))
 
         self.root_var = tk.StringVar(value=display_path_text(default_root))
@@ -17135,33 +17156,41 @@ class App:
             var.trace_add("write", self._schedule_preflight_update)
         self.master.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        self._path_row(frm, "保存領域", self.root_var, self.choose_root)
-        self._path_row(frm, "FH6本体", self.game_root_var, self.choose_game_root)
-        self._path_row(frm, "出力先", self.out_var, self.choose_out)
+        self._path_row(frm, tr("path.save_root"), self.root_var, self.choose_root)
+        self._path_row(frm, tr("path.game_root"), self.game_root_var, self.choose_game_root)
+        self._path_row(frm, tr("path.output_root"), self.out_var, self.choose_out)
         ttk.Label(
             frm,
-            text=f"設定は自動保存されます: {display_path_text(settings_path())}",
+            text=tr("settings.auto_saved", path=display_path_text(settings_path())),
             foreground="#666666",
         ).pack(anchor="w", pady=(2, 2))
 
         ttk.Checkbutton(
             frm,
-            text="サムネイルをHTMLへ埋め込む（OFF時は thumbnails フォルダへコピー）",
+            text=tr("option.embed_thumbnails"),
             variable=self.copy_var,
         ).pack(anchor="w", pady=(10, 3))
         ttk.Checkbutton(
             frm,
-            text="解析用データを data フォルダへ出力（JSON / CSV / 車両DB）",
+            text=tr("option.export_analysis"),
             variable=self.analysis_var,
         ).pack(anchor="w", pady=(0, 6))
 
-        preflight = ttk.LabelFrame(frm, text="実行前チェック", padding=9)
+        preflight = ttk.LabelFrame(frm, text=tr("preflight.title"), padding=9)
         preflight.pack(fill="x", pady=(6, 8))
-        self.preflight_summary_var = tk.StringVar(value="確認中")
-        self.preflight_save_var = tk.StringVar(value="保存領域: 確認中")
-        self.preflight_game_var = tk.StringVar(value="FH6本体: 確認中")
-        self.preflight_output_var = tk.StringVar(value="出力先: 確認中")
-        self.preflight_delivery_var = tk.StringVar(value="出力構成: 確認中")
+        self.preflight_summary_var = tk.StringVar(value=tr("preflight.checking"))
+        self.preflight_save_var = tk.StringVar(
+            value=tr("preflight.item_checking", label=tr("path.save_root"))
+        )
+        self.preflight_game_var = tk.StringVar(
+            value=tr("preflight.item_checking", label=tr("path.game_root"))
+        )
+        self.preflight_output_var = tk.StringVar(
+            value=tr("preflight.item_checking", label=tr("path.output_root"))
+        )
+        self.preflight_delivery_var = tk.StringVar(
+            value=tr("preflight.item_checking", label=tr("path.output_bundle"))
+        )
         ttk.Label(preflight, textvariable=self.preflight_summary_var, font=(GUI_FONT_FAMILY, GUI_FONT_SIZE, "bold")).pack(anchor="w")
         preflight_grid = ttk.Frame(preflight)
         preflight_grid.pack(fill="x", pady=(4, 0))
@@ -17172,28 +17201,23 @@ class App:
         preflight_grid.columnconfigure(0, weight=1)
         preflight_grid.columnconfigure(1, weight=1)
 
-        safety = ttk.LabelFrame(frm, text="安全設計", padding=10)
+        safety = ttk.LabelFrame(frm, text=tr("safety.title"), padding=10)
         safety.pack(fill="x", pady=(8, 12))
         ttk.Label(
             safety,
-            text=(
-                "・GameSave配下への書込み、削除、移動、リネーム機能はありません。\n"
-                "・過去スナップショットの同一コピーは重複除外し、現在の再ダウンロード重複は別ペイントとして表示します。\n"
-                "・「残す / 削除候補」はHTMLのブラウザlocalStorageだけに保存されます。\n"
-                "・Car IDはフォルダ名とC_livery展開後0x10の一致を検証します。\n"
-                "・出力先はGameSaveディレクトリ全体の配下を拒否します。\n"
-                "・設定ファイルはユーザー領域へ保存し、GameSave配下には作成しません。"
-            ),
+            text=tr("safety.body"),
+            wraplength=930,
+            justify="left",
         ).pack(anchor="w")
 
         btns = ttk.Frame(frm)
         btns.pack(fill="x")
-        self.scan_btn = ttk.Button(btns, text="ペイントデータチェック", command=self.start_scan)
+        self.scan_btn = ttk.Button(btns, text=tr("button.scan"), command=self.start_scan)
         self.scan_btn.pack(side="left")
-        ttk.Button(btns, text="出力先を開く", command=self.open_output).pack(side="left", padx=8)
-        ttk.Button(btns, text="設定を再確認", command=self.update_preflight).pack(side="left")
-        ttk.Button(btns, text="初回利用ガイド", command=self.show_quick_start_guide).pack(side="left", padx=(8, 0))
-        ttk.Button(btns, text="環境・サポート情報", command=self.show_support_info).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text=tr("button.open_output"), command=self.open_output).pack(side="left", padx=8)
+        ttk.Button(btns, text=tr("button.recheck"), command=self.update_preflight).pack(side="left")
+        ttk.Button(btns, text=tr("button.quick_start"), command=self.show_quick_start_guide).pack(side="left", padx=(8, 0))
+        ttk.Button(btns, text=tr("button.support_info"), command=self.show_support_info).pack(side="left", padx=(8, 0))
 
         self.update_preflight()
 
@@ -17202,13 +17226,16 @@ class App:
 
         self.status = tk.Text(frm, height=14, wrap="word")
         self.status.pack(fill="both", expand=True)
-        self.log(f"準備完了。{APP_NAME} v{VERSION} / FH6を完全終了してから実行してください。")
-        self.log(f"設定ファイル: {settings_path()}")
+        self.log(tr("log.ready", app=APP_NAME, version=VERSION))
+        self.log(tr("log.settings_file", path=settings_path()))
         if self._first_run:
             self.master.after(300, self.show_quick_start_guide)
 
     def current_settings(self) -> dict:
         return {
+            # Keep the persisted preference separate from FH6_ORGANIZER_LANG,
+            # which is a temporary development/testing override.
+            "language": self._settings_language,
             "save_root": native_path_text(self.root_var.get().strip()),
             "game_root": native_path_text(self.game_root_var.get().strip()),
             "output_root": native_path_text(self.out_var.get().strip()),
@@ -17230,7 +17257,7 @@ class App:
             save_settings(self.current_settings())
         except Exception as e:
             try:
-                self.log(f"設定保存警告: {e}")
+                self.log(tr("settings.save_warning", error=e))
             except Exception:
                 pass
 
@@ -17448,9 +17475,9 @@ class App:
     def _path_row(self, parent, label, var, command):
         row = ttk.Frame(parent)
         row.pack(fill="x", pady=4)
-        ttk.Label(row, text=label, width=10).pack(side="left")
+        ttk.Label(row, text=label, width=12).pack(side="left")
         ttk.Entry(row, textvariable=var).pack(side="left", fill="x", expand=True)
-        ttk.Button(row, text="参照…", command=command).pack(side="left", padx=(8, 0))
+        ttk.Button(row, text=tr("button.browse"), command=command).pack(side="left", padx=(8, 0))
 
     def choose_root(self):
         p = filedialog.askdirectory(initialdir=native_path_text(self.root_var.get()) or None)
@@ -17476,10 +17503,10 @@ class App:
     def open_output(self):
         scan_root, _, outdir = self._current_preflight_paths()
         if outdir is None:
-            messagebox.showerror(APP_NAME, "出力先を指定してください。")
+            messagebox.showerror(APP_NAME, tr("dialog.output_required"))
             return
         if scan_root is None:
-            messagebox.showerror(APP_NAME, "保存領域を先に指定してください。")
+            messagebox.showerror(APP_NAME, tr("dialog.save_root_required"))
             return
         error = output_location_error(scan_root, outdir)
         if error:
@@ -17488,7 +17515,7 @@ class App:
         try:
             outdir.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            messagebox.showerror(APP_NAME, f"出力先を作成できません。\n\n{e}")
+            messagebox.showerror(APP_NAME, tr("dialog.create_output_failed", error=e))
             return
         if os.name == "nt":
             os.startfile(str(outdir))
@@ -17731,74 +17758,75 @@ class App:
         messagebox.showerror(APP_NAME, f"走査に失敗しました。\n\n{type(e).__name__}: {e}")
 
 
-class JapaneseArgumentParser(argparse.ArgumentParser):
-    """argparseの標準見出しと組み込みヘルプを日本語表示にする。"""
+class LocalizedArgumentParser(argparse.ArgumentParser):
+    """Localize argparse's built-in headings without external dependencies."""
 
     def format_help(self) -> str:
         text = super().format_help()
         return (
-            text.replace("usage:", "使い方:", 1)
-            .replace("options:", "オプション:", 1)
-            .replace("show this help message and exit", "このヘルプを表示して終了")
+            text.replace("usage:", tr("cli.usage_prefix"), 1)
+            .replace("options:", tr("cli.options_prefix"), 1)
+            .replace("show this help message and exit", tr("cli.help_builtin"))
         )
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = JapaneseArgumentParser(
-        description=f"Livery Organizer for FH6 v{VERSION}（FH6保存データ読み取り専用）"
+    p = LocalizedArgumentParser(
+        description=tr("cli.description", version=VERSION)
     )
     p.add_argument(
         "--root",
         type=Path,
-        help="走査する保存領域。例: C:¥XboxGames¥GameSave¥pgs",
+        help=tr("cli.root_help"),
     )
-    p.add_argument("--out", type=Path, help="レポートの出力先フォルダー")
+    p.add_argument("--out", type=Path, help=tr("cli.out_help"))
     p.add_argument(
         "--game-root",
         type=Path,
-        help="車両アセットを解析するFH6本体のインストール先",
+        help=tr("cli.game_root_help"),
     )
     p.add_argument(
         "--print-default-game-roots",
         action="store_true",
-        help="自動検出したFH6本体の候補を表示して終了",
+        help=tr("cli.print_game_roots_help"),
     )
     p.add_argument(
         "--no-embed-images",
         "--no-copy-images",
         dest="no_embed_images",
         action="store_true",
-        help="サムネイルをHTMLへ埋め込まず、thumbnails/へコピーして出力",
+        help=tr("cli.no_embed_help"),
     )
     p.add_argument(
         "--export-analysis-data",
         action="store_true",
-        help="ペイント情報と車両DBのJSON/CSVをdata/へ出力",
+        help=tr("cli.export_analysis_help"),
     )
     p.add_argument(
         "--environment-check",
         action="store_true",
-        help="走査せずに環境・設定・実行前チェック情報を表示して終了",
+        help=tr("cli.environment_check_help"),
     )
     p.add_argument(
         "--inspect-vehicle-assets",
         action="store_true",
-        help="FH6本体のZIPを読み取り専用で検査し、空ZIPと読み取り不可ZIPの詳細を表示して終了",
+        help=tr("cli.inspect_assets_help"),
     )
     p.add_argument(
         "--cli",
         action="store_true",
-        help="GUIを使わずコマンドラインモードで実行",
+        help=tr("cli.cli_help"),
     )
     p.add_argument(
         "--print-default-roots",
         action="store_true",
-        help="自動検出したFH6保存領域の候補を表示して終了",
+        help=tr("cli.print_roots_help"),
     )
     return p
 
 
 def main() -> int:
+    initialize_ui_language()
     args = build_parser().parse_args()
 
     if args.print_default_game_roots:
