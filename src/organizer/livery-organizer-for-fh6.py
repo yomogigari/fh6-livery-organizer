@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.58-r02
+Livery Organizer for FH6 v0.4.58-r04
 ====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -83,6 +83,11 @@ except ImportError:
     from i18n import DEFAULT_LANGUAGE, available_languages, get_language, normalize_language, set_language, tr
 
 try:
+    from .report_i18n import build_report_i18n_script
+except ImportError:
+    from report_i18n import build_report_i18n_script
+
+try:
     import tkinter as tk
     from tkinter import filedialog, messagebox, ttk
     from tkinter import font as tkfont
@@ -92,7 +97,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r03"
+VERSION = "0.4.58-r04"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4138,6 +4143,32 @@ def write_report(
     # 直接関数呼び出しでGUI/CLIのチェックを迂回できないようにします。
     ensure_safe_output_directory(root, outdir)
     outdir.mkdir(parents=True, exist_ok=True)
+
+    # 生成レポートの表示言語はHTML構築の最初に確定します。
+    # 英語レポートでは利用者データそのものは変更せず、Organizerが生成する
+    # 欠損時のフォールバック文言とJavaScriptのロケール依存表示だけを英語化します。
+    report_language = get_language()
+    report_locale = "en-US" if report_language == "en" else "ja-JP"
+    report_fallback_manufacturer = "Manufacturer unavailable" if report_language == "en" else "メーカー未取得"
+    report_fallback_asset = "Vehicle asset unavailable" if report_language == "en" else "車両アセット未取得"
+    report_fallback_title = "(Title unavailable)" if report_language == "en" else "(タイトル未取得)"
+    report_fallback_creator = "No creator information" if report_language == "en" else "作成者情報なし"
+    report_fallback_no_liveries = "No livery folders were found." if report_language == "en" else "リバリーフォルダが見つかりませんでした。"
+    report_fallback_unknown_error = "Unknown error" if report_language == "en" else "不明なエラー"
+    report_fallback_promise_error = "Promise error" if report_language == "en" else "Promiseエラー"
+    report_fallback_unknown_date = "Unknown date" if report_language == "en" else "日時不明"
+    report_fallback_unknown_vehicle = "Unknown vehicle" if report_language == "en" else "車種不明"
+    report_fallback_no_title = "No title" if report_language == "en" else "タイトルなし"
+    report_label_newest = "Newest" if report_language == "en" else "最新"
+    report_label_oldest = "Oldest" if report_language == "en" else "最古"
+    report_baseline_not_set = (
+        "New-item baseline: not set (current cards are not treated as new)"
+        if report_language == "en"
+        else "新規判定基準: 未設定（現在のカードは新規扱いしません）"
+    )
+    report_baseline_prefix = "New-item baseline:" if report_language == "en" else "新規判定基準:"
+    report_item_suffix = " items" if report_language == "en" else "件"
+
     # Navigator Bridgeとの共通移動設定をHTML生成時の初期値へ反映します。
     # 静的HTML側の変更はlocalStorageに保持し、「FH6で選択デザインへ移動」実行時にBridgeへ同期されます。
     navigator_settings = load_shared_navigator_settings()
@@ -4630,13 +4661,13 @@ def write_report(
         data-filter-type="car" data-filter-value="{r.car_id}"
         title="クリックしてこの車種だけ表示">{html.escape(r.vehicle_display_name or f"Car ID {r.car_id:04d}")}</h3>
     <div class="vehicle-meta">{
-      (f'<button class="link-filter" type="button" data-filter-type="make" data-filter-value="{html.escape((r.vehicle_make or "").lower())}">{html.escape(r.vehicle_make)}</button>' if r.vehicle_make else "メーカー未取得")
+      (f'<button class="link-filter" type="button" data-filter-type="make" data-filter-value="{html.escape((r.vehicle_make or "").lower())}">{html.escape(r.vehicle_make)}</button>' if r.vehicle_make else html.escape(report_fallback_manufacturer))
       + (" / " + str(r.vehicle_year) if r.vehicle_year else "")
     }</div>
-    <div class="asset">{html.escape(r.vehicle_asset or "車両アセット未取得")}</div>
+    <div class="asset">{html.escape(r.vehicle_asset or report_fallback_asset)}</div>
     <h4>{
       f'<button class="link-filter title-filter" type="button" data-filter-type="title" data-filter-value="{html.escape(r.title)}" title="クリックしてこのタイトルで検索">{html.escape(r.title)}</button>'
-      if r.title else "(タイトル未取得)"
+      if r.title else html.escape(report_fallback_title)
     }</h4>
     <p class="desc">{html.escape(r.description or "—")}</p>
 
@@ -9646,7 +9677,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
               <input id="creatorQuickSearch" type="search" placeholder="作成者を検索…" aria-label="作成者を検索">
               <span id="creatorSearchCount" class="small"></span>
             </div>
-            {creator_summary_html if creator_summary_html else '<span class="small">作成者情報なし</span>'}
+            {creator_summary_html if creator_summary_html else f'<span class="small">{html.escape(report_fallback_creator)}</span>'}
           </div>
         </section>
 
@@ -10090,7 +10121,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
   <div id="creatorGroupedSections" class="creator-grouped-sections"></div>
 
   <div id="groupedSections">
-    {''.join(groups_html) if groups_html else '<p>リバリーフォルダが見つかりませんでした。</p>'}
+    {''.join(groups_html) if groups_html else f'<p>{html.escape(report_fallback_no_liveries)}</p>'}
   </div>
 </main>
 
@@ -10685,6 +10716,18 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
 </div>
 <script>
 const FH6_BUILD = "v{VERSION}";
+const REPORT_LOCALE = {json.dumps(report_locale, ensure_ascii=False)};
+const REPORT_FALLBACK_UNKNOWN_ERROR = {json.dumps(report_fallback_unknown_error, ensure_ascii=False)};
+const REPORT_FALLBACK_PROMISE_ERROR = {json.dumps(report_fallback_promise_error, ensure_ascii=False)};
+const REPORT_FALLBACK_UNKNOWN_DATE = {json.dumps(report_fallback_unknown_date, ensure_ascii=False)};
+const REPORT_FALLBACK_UNKNOWN_VEHICLE = {json.dumps(report_fallback_unknown_vehicle, ensure_ascii=False)};
+const REPORT_FALLBACK_NO_TITLE = {json.dumps(report_fallback_no_title, ensure_ascii=False)};
+const REPORT_FALLBACK_TITLE = {json.dumps(report_fallback_title, ensure_ascii=False)};
+const REPORT_LABEL_NEWEST = {json.dumps(report_label_newest, ensure_ascii=False)};
+const REPORT_LABEL_OLDEST = {json.dumps(report_label_oldest, ensure_ascii=False)};
+const REPORT_BASELINE_NOT_SET = {json.dumps(report_baseline_not_set, ensure_ascii=False)};
+const REPORT_BASELINE_PREFIX = {json.dumps(report_baseline_prefix, ensure_ascii=False)};
+const REPORT_ITEM_SUFFIX = {json.dumps(report_item_suffix, ensure_ascii=False)};
 
 function reportRuntimeError(message) {{
   const status = document.getElementById("uiStatus");
@@ -10694,7 +10737,7 @@ function reportRuntimeError(message) {{
     status.textContent = "エラー";
     status.dataset.state = "error";
   }}
-  if (messageEl) messageEl.textContent = "JavaScriptエラー: " + String(message || "不明なエラー");
+  if (messageEl) messageEl.textContent = "JavaScriptエラー: " + String(message || REPORT_FALLBACK_UNKNOWN_ERROR);
   if (banner) banner.classList.remove("hidden");
   if (document.readyState !== "loading") {{
     try {{ updateStartupReadiness(); }} catch (_) {{}}
@@ -10702,10 +10745,10 @@ function reportRuntimeError(message) {{
 }}
 
 window.addEventListener("error", event => {{
-  reportRuntimeError(event.message || event.error || "不明なエラー");
+  reportRuntimeError(event.message || event.error || REPORT_FALLBACK_UNKNOWN_ERROR);
 }});
 window.addEventListener("unhandledrejection", event => {{
-  reportRuntimeError(event.reason || "Promiseエラー");
+  reportRuntimeError(event.reason || REPORT_FALLBACK_PROMISE_ERROR);
 }});
 
 const memoryStorage = new Map();
@@ -11371,7 +11414,7 @@ if (vinylValues.length) {{
     const option = document.createElement("option");
     option.value = String(threshold);
     option.textContent =
-      `バイナル数: ${{threshold.toLocaleString("ja-JP")}}以上 (${{count}}件)`;
+      `バイナル数: ${{threshold.toLocaleString(REPORT_LOCALE)}}以上 (${{count}}件)`;
     vinylCountFilter.appendChild(option);
   }});
   if (vinylMinInput) vinylMinInput.max = String(maxVinyl);
@@ -11541,7 +11584,7 @@ function rebuildTagFilter() {{
       .forEach(tag => tags.set(tag,(tags.get(tag)||0)+1));
   }});
   tagFilter.innerHTML = `<option value="all" data-base-label="タグ: すべて">タグ: すべて (${{cards.length}}件)</option>`;
-  [...tags.entries()].sort((a,b)=>a[0].localeCompare(b[0],"ja")).forEach(([tag,count]) => {{
+  [...tags.entries()].sort((a,b)=>a[0].localeCompare(b[0],REPORT_LOCALE)).forEach(([tag,count]) => {{
     const option = document.createElement("option");
     option.value = tag;
     option.dataset.baseLabel = `タグ: ${{tag}}`;
@@ -11929,7 +11972,7 @@ function normalizeFh6MyDesignJumpText(value) {{
 function normalizeFh6VehicleSearchText(value) {{
   return String(value || "")
     .normalize("NFKC")
-    .toLocaleLowerCase("ja")
+    .toLocaleLowerCase(REPORT_LOCALE)
     .trim()
     .replace(/\\s+/g, " ");
 }}
@@ -13371,7 +13414,7 @@ function applySort() {{
 }}
 
 function normFilterValue(value) {{
-  return String(value || "").trim().toLocaleLowerCase("ja");
+  return String(value || "").trim().toLocaleLowerCase(REPORT_LOCALE);
 }}
 
 
@@ -13400,16 +13443,16 @@ function updateScanBaselineStatus(state) {{
   const status = document.getElementById("scanBaselineStatus");
   if (!status) return;
   if (!state) {{
-    status.textContent = "新規判定基準: 未設定（現在のカードは新規扱いしません）";
+    status.textContent = REPORT_BASELINE_NOT_SET;
     return;
   }}
   const count = Object.keys(state.entries || {{}}).length;
-  let saved = "日時不明";
+  let saved = REPORT_FALLBACK_UNKNOWN_DATE;
   if (state.savedAt) {{
     const date = new Date(state.savedAt);
-    if (!Number.isNaN(date.getTime())) saved = date.toLocaleString("ja-JP");
+    if (!Number.isNaN(date.getTime())) saved = date.toLocaleString(REPORT_LOCALE);
   }}
-  status.textContent = `新規判定基準: ${{count}}件 / ${{saved}}`;
+  status.textContent = `${{REPORT_BASELINE_PREFIX}} ${{count}}${{REPORT_ITEM_SUFFIX}} / ${{saved}}`;
 }}
 function applyScanDiff() {{
   const current = collectCurrentScan();
@@ -15425,7 +15468,7 @@ function compareCreatorLabel(card) {{
   return String(card.dataset.creatorDisplay || card.dataset.creator || "").trim() || "—";
 }}
 function compareTitleLabel(card) {{
-  return String(card.dataset.titleDisplay || "").trim() || "(タイトル未取得)";
+  return String(card.dataset.titleDisplay || "").trim() || REPORT_FALLBACK_TITLE;
 }}
 function updateCompareSelectionUi() {{
   const count = activeCompareMembers.filter(card => selectedKeys.has(card.dataset.key)).length;
@@ -15471,20 +15514,20 @@ function renderCompareMembers(members, options = {{}}) {{
     const vinyl = Number(member.dataset.vinylCount);
     const badgeLabel = String(options.badgeLabel || "").trim();
     const reasonBadge = badgeLabel ? `<span class="compare-badge reason">${{escapeCompareHtml(badgeLabel)}}</span>` : "";
-    const relativeBadges = `${{newest?'<span class="compare-badge newest">最新</span>':""}}${{oldest?'<span class="compare-badge">最古</span>':""}}`;
+    const relativeBadges = `${{newest?`<span class="compare-badge newest">${{REPORT_LABEL_NEWEST}}</span>`:""}}${{oldest?`<span class="compare-badge">${{REPORT_LABEL_OLDEST}}</span>`:""}}`;
     const badges = `${{reasonBadge}}${{relativeBadges}}`;
     const locationHtml = fh6LocationButtonsHtml(member);
     item.innerHTML=`
       ${{img?`<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src")||"")}}" alt="">`:""}}
       ${{badges ? `<div class="compare-badges">${{badges}}</div>` : ""}}
       ${{locationHtml}}
-      <b>${{escapeCompareHtml(member.querySelector(".vehicle")?.textContent || "")}}</b>
-      <div>${{escapeCompareHtml(compareTitleLabel(member))}}</div>
-      <p class="compare-description">${{escapeCompareHtml(description)}}</p>
+      <b class="compare-vehicle-user-data">${{escapeCompareHtml(member.querySelector(".vehicle")?.textContent || "")}}</b>
+      <div class="compare-title-user-data">${{escapeCompareHtml(compareTitleLabel(member))}}</div>
+      <p class="compare-description compare-user-data">${{escapeCompareHtml(description)}}</p>
       <dl class="compare-meta">
-        <dt>作成者</dt><dd>${{escapeCompareHtml(compareCreatorLabel(member))}}</dd>
+        <dt>作成者</dt><dd class="compare-user-data">${{escapeCompareHtml(compareCreatorLabel(member))}}</dd>
         <dt>取得日時</dt><dd>${{escapeCompareHtml(member.dataset.timestampDisplay || member.dataset.timestamp || "—")}}</dd>
-        <dt>バイナル数</dt><dd>${{vinyl>=0?vinyl.toLocaleString("ja-JP"):"—"}}</dd>
+        <dt>バイナル数</dt><dd>${{vinyl>=0?vinyl.toLocaleString(REPORT_LOCALE):"—"}}</dd>
         <dt>整理状態</dt><dd>${{escapeCompareHtml(compareDecisionLabel(member))}}</dd>
         <dt>Fingerprint</dt><dd><code title="${{escapeCompareHtml(fingerprint)}}">${{escapeCompareHtml(fingerprint.slice(0,16))}}</code></dd>
       </dl>
@@ -15585,13 +15628,13 @@ function renderExactDuplicateModal(groupId) {{
       ${{img ? `<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src") || "")}}" alt="">` : ""}}
       <div class="compare-badges"><span class="compare-badge">${{escapeCompareHtml(compareDecisionLabel(member))}}</span></div>
       ${{locationHtml}}
-      <b>${{escapeCompareHtml(member.querySelector(".vehicle")?.textContent || member.dataset.vehicle || "")}}</b>
-      <div>${{escapeCompareHtml(compareTitleLabel(member))}}</div>
+      <b class="compare-vehicle-user-data">${{escapeCompareHtml(member.querySelector(".vehicle")?.textContent || member.dataset.vehicle || "")}}</b>
+      <div class="compare-title-user-data">${{escapeCompareHtml(compareTitleLabel(member))}}</div>
       <dl class="compare-meta">
-        <dt>作成者</dt><dd>${{escapeCompareHtml(compareCreatorLabel(member))}}</dd>
+        <dt>作成者</dt><dd class="compare-user-data">${{escapeCompareHtml(compareCreatorLabel(member))}}</dd>
         <dt>FH6表示日付</dt><dd>${{escapeCompareHtml(member.dataset.fh6DateDisplay || "—")}}</dd>
         <dt>取得日時</dt><dd>${{escapeCompareHtml(member.dataset.timestampDisplay || member.dataset.timestamp || "—")}}</dd>
-        <dt>バイナル数</dt><dd>${{vinyl >= 0 ? vinyl.toLocaleString("ja-JP") : "—"}}</dd>
+        <dt>バイナル数</dt><dd>${{vinyl >= 0 ? vinyl.toLocaleString(REPORT_LOCALE) : "—"}}</dd>
         <dt>Livery ID</dt><dd><code>${{escapeCompareHtml(member.dataset.liveryId || "—")}}</code></dd>
       </dl>
       <div class="compare-item-actions">
@@ -15695,7 +15738,7 @@ function openDetail(kind,value) {{
   document.getElementById("detailTitle").textContent=kind==="creator"?`作成者: ${{value}}`:`Car ID ${{value}}`;
   const vals=matches.map(c=>Number(c.dataset.vinylCount)).filter(v=>v>=0);
   const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
-  document.getElementById("detailBody").innerHTML=`<p>ペイント数: <b>${{matches.length}}</b>${{avg!==null?` / 平均バイナル数: <b>${{avg.toLocaleString("ja-JP")}}</b>`:""}}</p><div class="detail-list">${{matches.map(c=>`<div class="detail-item"><b>${{c.querySelector(".vehicle")?.textContent||""}}</b><br>${{c.querySelector("h4")?.textContent||""}}<br>バイナル数: ${{Number(c.dataset.vinylCount)>=0?Number(c.dataset.vinylCount).toLocaleString("ja-JP"):"—"}}</div>`).join("")}}</div>`;
+  document.getElementById("detailBody").innerHTML=`<p>ペイント数: <b>${{matches.length}}</b>${{avg!==null?` / 平均バイナル数: <b>${{avg.toLocaleString(REPORT_LOCALE)}}</b>`:""}}</p><div class="detail-list">${{matches.map(c=>`<div class="detail-item"><b>${{c.querySelector(".vehicle")?.textContent||""}}</b><br>${{c.querySelector("h4")?.textContent||""}}<br>バイナル数: ${{Number(c.dataset.vinylCount)>=0?Number(c.dataset.vinylCount).toLocaleString(REPORT_LOCALE):"—"}}</div>`).join("")}}</div>`;
   openModal("detailModal");
 }}
 document.querySelectorAll("[data-filter-type='creator']").forEach(el=>el.addEventListener("dblclick",e=>{{e.preventDefault();e.stopPropagation();openDetail("creator",el.dataset.filterValue||"");}}));
@@ -15706,7 +15749,7 @@ function scanDiffCardHtml(card) {{
   const title = escapeDiagnosticHtml(card.dataset.titleDisplay || card.dataset.title || "");
   const creator = escapeDiagnosticHtml(card.dataset.creatorDisplay || card.dataset.creator || "—");
   const acquired = escapeDiagnosticHtml(card.dataset.timestampDisplay || "");
-  return `<div class="detail-item"><b>${{vehicle || "車種不明"}}</b><br>${{title || "タイトルなし"}}<br><span class="small">${{creator}}${{acquired ? ` / ${{acquired}}` : ""}}</span></div>`;
+  return `<div class="detail-item"><b>${{vehicle || REPORT_FALLBACK_UNKNOWN_VEHICLE}}</b><br>${{title || REPORT_FALLBACK_NO_TITLE}}<br><span class="small">${{creator}}${{acquired ? ` / ${{acquired}}` : ""}}</span></div>`;
 }}
 
 function scanDiffRemovedHtml(entry) {{
@@ -15714,7 +15757,7 @@ function scanDiffRemovedHtml(entry) {{
   const title = escapeDiagnosticHtml(entry?.title || "");
   const creator = escapeDiagnosticHtml(entry?.creator || "—");
   const acquired = escapeDiagnosticHtml(entry?.timestampDisplay || "");
-  return `<div class="detail-item"><b>${{vehicle || "車種不明"}}</b><br>${{title || "タイトルなし"}}<br><span class="small">${{creator}}${{acquired ? ` / ${{acquired}}` : ""}}</span></div>`;
+  return `<div class="detail-item"><b>${{vehicle || REPORT_FALLBACK_UNKNOWN_VEHICLE}}</b><br>${{title || REPORT_FALLBACK_NO_TITLE}}<br><span class="small">${{creator}}${{acquired ? ` / ${{acquired}}` : ""}}</span></div>`;
 }}
 
 function renderScanDiffModal() {{
@@ -16283,8 +16326,8 @@ function saveBackupStatusState(state) {{
 function formatBackupTimestamp(value) {{
   if (!value) return "—";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "日時不明";
-  return date.toLocaleString("ja-JP");
+  if (Number.isNaN(date.getTime())) return REPORT_FALLBACK_UNKNOWN_DATE;
+  return date.toLocaleString(REPORT_LOCALE);
 }}
 
 function updateBackupBadge(statusEl, timeEl, entry, currentSignature) {{
@@ -16811,7 +16854,7 @@ function renderFilterPresets() {{
   if (!select) return;
   const current = select.value;
   select.innerHTML = '<option value="">プリセットを選択…</option>';
-  loadFilterPresets().sort((a,b)=>a.name.localeCompare(b.name,"ja")).forEach(item => {{
+  loadFilterPresets().sort((a,b)=>a.name.localeCompare(b.name,REPORT_LOCALE)).forEach(item => {{
     const option = document.createElement("option");
     option.value = item.name;
     option.textContent = item.name;
@@ -17008,6 +17051,11 @@ updateStartupReadiness();
 </body>
 </html>
 """
+    if report_language != "ja":
+        doc = doc.replace('<html lang="ja">', f'<html lang="{report_language}">', 1)
+        report_i18n_script = build_report_i18n_script(report_language)
+        if report_i18n_script:
+            doc = doc.replace("</body>", report_i18n_script + "\n</body>", 1)
     html_path.write_text(doc, encoding="utf-8")
 
     # HTMLを先に利用可能にしてからExcelを生成します。
@@ -17094,7 +17142,7 @@ class App:
         self.master = master
         configure_gui_fonts(self.master)
         self.master.title(f"{APP_NAME} v{VERSION}")
-        self.master.geometry("1000x780")
+        self.master.geometry("1000x840")
 
         self._first_run = not settings_path().exists()
         self._quick_start_window = None
@@ -17239,7 +17287,7 @@ class App:
         self.progress = ttk.Progressbar(frm, mode="indeterminate")
         self.progress.pack(fill="x", pady=(14, 8))
 
-        self.status = tk.Text(frm, height=14, wrap="word")
+        self.status = tk.Text(frm, height=3, wrap="word")
         self.status.pack(fill="both", expand=True)
         self.log(tr("log.ready", app=APP_NAME, version=VERSION))
         self.log(tr("log.settings_file", path=settings_path()))
