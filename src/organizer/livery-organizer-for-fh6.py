@@ -75,12 +75,17 @@ try:
         DEFAULT_LANGUAGE,
         get_language,
         available_languages,
+        language_display_name,
         normalize_language,
+        pseudo_localize,
         set_language,
         tr,
     )
 except ImportError:
-    from i18n import DEFAULT_LANGUAGE, available_languages, get_language, normalize_language, set_language, tr
+    from i18n import (
+        DEFAULT_LANGUAGE, available_languages, get_language, language_display_name,
+        normalize_language, pseudo_localize, set_language, tr,
+    )
 
 try:
     from .report_i18n import build_report_i18n_script
@@ -97,7 +102,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r04"
+VERSION = "0.4.58-r05"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -2561,13 +2566,18 @@ def save_settings(settings: dict) -> None:
 
 
 def initialize_ui_language(settings: Optional[dict] = None) -> str:
-    """環境変数または設定からUI言語を初期化し、日本語へフォールバックします。"""
+    """環境変数または設定からUI言語を初期化し、日本語へフォールバックします。
+
+    開発専用の ``qps`` は環境変数からだけ有効化し、settings.jsonへ手動で
+    書かれていても通常利用では選択されないようにします。
+    """
     saved = settings if isinstance(settings, dict) else load_settings()
-    requested = (
-        os.environ.get("FH6_ORGANIZER_LANG")
-        or saved.get("language")
-        or DEFAULT_LANGUAGE
-    )
+    env_language = os.environ.get("FH6_ORGANIZER_LANG")
+    if env_language:
+        return set_language(env_language)
+    requested = normalize_language(saved.get("language") or DEFAULT_LANGUAGE)
+    if requested == "qps":
+        requested = DEFAULT_LANGUAGE
     return set_language(requested)
 
 
@@ -4148,26 +4158,32 @@ def write_report(
     # 英語レポートでは利用者データそのものは変更せず、Organizerが生成する
     # 欠損時のフォールバック文言とJavaScriptのロケール依存表示だけを英語化します。
     report_language = get_language()
-    report_locale = "en-US" if report_language == "en" else "ja-JP"
-    report_fallback_manufacturer = "Manufacturer unavailable" if report_language == "en" else "メーカー未取得"
-    report_fallback_asset = "Vehicle asset unavailable" if report_language == "en" else "車両アセット未取得"
-    report_fallback_title = "(Title unavailable)" if report_language == "en" else "(タイトル未取得)"
-    report_fallback_creator = "No creator information" if report_language == "en" else "作成者情報なし"
-    report_fallback_no_liveries = "No livery folders were found." if report_language == "en" else "リバリーフォルダが見つかりませんでした。"
-    report_fallback_unknown_error = "Unknown error" if report_language == "en" else "不明なエラー"
-    report_fallback_promise_error = "Promise error" if report_language == "en" else "Promiseエラー"
-    report_fallback_unknown_date = "Unknown date" if report_language == "en" else "日時不明"
-    report_fallback_unknown_vehicle = "Unknown vehicle" if report_language == "en" else "車種不明"
-    report_fallback_no_title = "No title" if report_language == "en" else "タイトルなし"
-    report_label_newest = "Newest" if report_language == "en" else "最新"
-    report_label_oldest = "Oldest" if report_language == "en" else "最古"
-    report_baseline_not_set = (
-        "New-item baseline: not set (current cards are not treated as new)"
-        if report_language == "en"
-        else "新規判定基準: 未設定（現在のカードは新規扱いしません）"
+    report_english_like = report_language in {"en", "qps"}
+    report_locale = "en-US" if report_english_like else "ja-JP"
+
+    def report_text(ja: str, en: str) -> str:
+        if report_language == "qps":
+            return pseudo_localize(en)
+        return en if report_language == "en" else ja
+
+    report_fallback_manufacturer = report_text("メーカー未取得", "Manufacturer unavailable")
+    report_fallback_asset = report_text("車両アセット未取得", "Vehicle asset unavailable")
+    report_fallback_title = report_text("(タイトル未取得)", "(Title unavailable)")
+    report_fallback_creator = report_text("作成者情報なし", "No creator information")
+    report_fallback_no_liveries = report_text("リバリーフォルダが見つかりませんでした。", "No livery folders were found.")
+    report_fallback_unknown_error = report_text("不明なエラー", "Unknown error")
+    report_fallback_promise_error = report_text("Promiseエラー", "Promise error")
+    report_fallback_unknown_date = report_text("日時不明", "Unknown date")
+    report_fallback_unknown_vehicle = report_text("車種不明", "Unknown vehicle")
+    report_fallback_no_title = report_text("タイトルなし", "No title")
+    report_label_newest = report_text("最新", "Newest")
+    report_label_oldest = report_text("最古", "Oldest")
+    report_baseline_not_set = report_text(
+        "新規判定基準: 未設定（現在のカードは新規扱いしません）",
+        "New-item baseline: not set (current cards are not treated as new)",
     )
-    report_baseline_prefix = "New-item baseline:" if report_language == "en" else "新規判定基準:"
-    report_item_suffix = " items" if report_language == "en" else "件"
+    report_baseline_prefix = report_text("新規判定基準:", "New-item baseline:")
+    report_item_suffix = report_text("件", " items")
 
     # Navigator Bridgeとの共通移動設定をHTML生成時の初期値へ反映します。
     # 静的HTML側の変更はlocalStorageに保持し、「FH6で選択デザインへ移動」実行時にBridgeへ同期されます。
@@ -7326,6 +7342,11 @@ body.dark-theme .report-info-head {{
     min-width:0;
   }}
 
+  .card-first-toolbar > button {{
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }}
+
   .filter-panel,
   .secondary-actions {{
     top:calc(100% + 6px);
@@ -8480,6 +8501,19 @@ button.group-progress-badge:focus-visible {{
 body.dark-theme .vehicle-workflow-bar {{
   background:color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
   border-color:var(--line);
+}}
+
+/* 長い翻訳でも中幅画面で横にはみ出さないよう、操作群を自然に折り返します。 */
+@media (max-width:1100px) and (min-width:541px) {{
+  .vehicle-workflow-bar {{
+    flex-wrap:wrap;
+  }}
+  #vehicleWorkflowHint {{
+    flex:1 1 100%;
+    width:100%;
+    margin-left:0;
+    text-align:right;
+  }}
 }}
 
 /* =======================================================================
@@ -17148,6 +17182,8 @@ class App:
         self._quick_start_window = None
         saved = load_settings()
         self._settings_language = normalize_language(saved.get("language") or DEFAULT_LANGUAGE)
+        if self._settings_language == "qps":
+            self._settings_language = DEFAULT_LANGUAGE
         initialize_ui_language(saved)
 
         roots = default_roots()
@@ -17170,6 +17206,8 @@ class App:
         ttk.Label(
             frm,
             text=tr("app.subtitle"),
+            wraplength=930,
+            justify="left",
         ).pack(anchor="w", pady=(2, 14))
 
         self.root_var = tk.StringVar(value=display_path_text(default_root))
@@ -17182,7 +17220,11 @@ class App:
         self._language_env_override = bool(os.environ.get("FH6_ORGANIZER_LANG"))
         displayed_language = get_language() if self._language_env_override else self._settings_language
         self.language_var = tk.StringVar(
-            value=self._language_labels.get(displayed_language, self._language_labels[DEFAULT_LANGUAGE])
+            value=(
+                language_display_name(displayed_language)
+                if self._language_env_override
+                else self._language_labels.get(displayed_language, self._language_labels[DEFAULT_LANGUAGE])
+            )
         )
 
         self._settings_save_job = None
@@ -17206,6 +17248,8 @@ class App:
             frm,
             text=tr("settings.auto_saved", path=display_path_text(settings_path())),
             foreground="#666666",
+            wraplength=930,
+            justify="left",
         ).pack(anchor="w", pady=(2, 2))
 
         language_row = ttk.Frame(frm)
@@ -17276,11 +17320,33 @@ class App:
         btns = ttk.Frame(frm)
         btns.pack(fill="x")
         self.scan_btn = ttk.Button(btns, text=tr("button.scan"), command=self.start_scan)
-        self.scan_btn.pack(side="left")
-        ttk.Button(btns, text=tr("button.open_output"), command=self.open_output).pack(side="left", padx=8)
-        ttk.Button(btns, text=tr("button.recheck"), command=self.update_preflight).pack(side="left")
-        ttk.Button(btns, text=tr("button.quick_start"), command=self.show_quick_start_guide).pack(side="left", padx=(8, 0))
-        ttk.Button(btns, text=tr("button.support_info"), command=self.show_support_info).pack(side="left", padx=(8, 0))
+        action_buttons = [
+            self.scan_btn,
+            ttk.Button(btns, text=tr("button.open_output"), command=self.open_output),
+            ttk.Button(btns, text=tr("button.recheck"), command=self.update_preflight),
+            ttk.Button(btns, text=tr("button.quick_start"), command=self.show_quick_start_guide),
+            ttk.Button(btns, text=tr("button.support_info"), command=self.show_support_info),
+        ]
+        for index, button in enumerate(action_buttons):
+            button.pack(side="left", padx=(0 if index == 0 else 8, 0))
+
+        # 長い翻訳では操作ボタンを2行へ自動退避し、文字切れを防ぎます。
+        # 日本語 / 英語の現在レイアウトは1行のまま維持します。
+        self.master.update_idletasks()
+        required_button_width = sum(button.winfo_reqwidth() for button in action_buttons) + 8 * (len(action_buttons) - 1)
+        if required_button_width > 940:
+            for button in action_buttons:
+                button.pack_forget()
+            for column in range(3):
+                btns.columnconfigure(column, weight=0)
+            for index, button in enumerate(action_buttons):
+                button.grid(
+                    row=index // 3,
+                    column=index % 3,
+                    sticky="w",
+                    padx=(0 if index % 3 == 0 else 8, 0),
+                    pady=(0 if index < 3 else 6, 0),
+                )
 
         self.update_preflight()
 
@@ -17291,6 +17357,15 @@ class App:
         self.status.pack(fill="both", expand=True)
         self.log(tr("log.ready", app=APP_NAME, version=VERSION))
         self.log(tr("log.settings_file", path=settings_path()))
+
+        # 翻訳が長い場合だけ必要高さへ広げます。通常の日本語 / 英語では1000×840を維持し、
+        # 疑似ローカライズや将来の長い言語でもログ欄3行を潰さないようにします。
+        self.master.update_idletasks()
+        requested_height = self.master.winfo_reqheight()
+        if requested_height > 840:
+            screen_limit = max(840, self.master.winfo_screenheight() - 80)
+            self.master.geometry(f"1000x{min(requested_height, screen_limit)}")
+
         if self._first_run:
             self.master.after(300, self.show_quick_start_guide)
 
@@ -17436,7 +17511,9 @@ class App:
         ttk.Button(buttons, text=tr("button.close"), command=close_guide).pack(side="right")
         win.protocol("WM_DELETE_WINDOW", close_guide)
         refresh_status()
-        position_child_window(win, self.master, 800, 650)
+        win.update_idletasks()
+        guide_height = max(650, min(win.winfo_reqheight(), win.winfo_screenheight() - 80))
+        position_child_window(win, self.master, 800, guide_height)
         win.deiconify()
         win.lift()
 

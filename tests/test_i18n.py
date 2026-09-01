@@ -46,7 +46,30 @@ class LocalizationTests(unittest.TestCase):
     def test_language_normalization(self) -> None:
         self.assertEqual(i18n.normalize_language("ja-JP"), "ja")
         self.assertEqual(i18n.normalize_language("en_US"), "en")
+        self.assertEqual(i18n.normalize_language("qps-ploc"), "qps")
         self.assertEqual(i18n.normalize_language("de-DE"), "ja")
+
+    def test_pseudo_locale_is_development_only(self) -> None:
+        self.assertNotIn("qps", dict(i18n.available_languages()))
+        self.assertTrue(i18n.language_display_name("qps").startswith("⟦"))
+
+    def test_pseudo_locale_expands_english_and_preserves_placeholders(self) -> None:
+        source = "Open {path} and review the selected design"
+        pseudo = i18n.pseudo_localize(source)
+        self.assertTrue(pseudo.startswith("⟦"))
+        self.assertTrue(pseudo.endswith("⟧"))
+        self.assertIn("{path}", pseudo)
+        self.assertGreaterEqual(len(pseudo), int(len(source) * 1.30))
+        rendered = pseudo.format(path=r"C:\UserData\Paint")
+        self.assertIn(r"C:\UserData\Paint", rendered)
+
+    def test_pseudo_translation_uses_english_base_without_translating_values(self) -> None:
+        i18n.set_language("qps")
+        path = r"C:\Example\settings.json"
+        text = i18n.tr("log.settings_file", path=path)
+        self.assertIn(path, text)
+        self.assertIn("⟦", text)
+        self.assertFalse(japanese_text(text))
 
     def test_translation_and_japanese_fallback(self) -> None:
         i18n.set_language("en")
@@ -62,7 +85,7 @@ class LocalizationTests(unittest.TestCase):
 class OrganizerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_r04", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_r05", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -71,8 +94,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r04(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r04")
+    def test_version_is_r05(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r05")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -83,6 +106,17 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def test_environment_override_is_not_a_persisted_preference(self) -> None:
         self.assertEqual(self.organizer.normalize_language("en-US"), "en")
         self.assertEqual(self.organizer.normalize_language("ja-JP"), "ja")
+        self.assertEqual(self.organizer.normalize_language("qps"), "qps")
+
+    def test_pseudo_locale_cannot_be_enabled_by_saved_settings(self) -> None:
+        import os
+        previous = os.environ.pop("FH6_ORGANIZER_LANG", None)
+        try:
+            self.assertEqual(self.organizer.initialize_ui_language({"language": "qps"}), "ja")
+        finally:
+            if previous is not None:
+                os.environ["FH6_ORGANIZER_LANG"] = previous
+
 
     def test_preflight_is_localized(self) -> None:
         self.organizer.set_language("en")
@@ -118,7 +152,7 @@ class OrganizerIntegrationTests(unittest.TestCase):
 class ReportLocalizationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_report_r04", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_report_r05", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -172,6 +206,25 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn('id="reportI18nEnglishOverrides"', text)
         self.assertIn('const REPORT_LANGUAGE = "en"', text)
 
+    def test_pseudo_report_embeds_development_translation_layer(self) -> None:
+        self.organizer.set_language("qps")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('<html lang="qps">', text)
+        self.assertIn('const REPORT_LANGUAGE = "qps"', text)
+        self.assertIn('data-pseudo-locale', text)
+        self.assertIn('const REPORT_LOCALE = "en-US";', text)
+        self.assertIn("⟦", text)
+        self.assertIn("Sample Title", text)
+        self.assertIn("Sample Creator", text)
+
     def test_japanese_report_does_not_embed_english_translation_layer(self) -> None:
         self.organizer.set_language("ja")
         with tempfile.TemporaryDirectory() as tmp:
@@ -194,6 +247,7 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn("compare-title-user-data", script)
         self.assertIn("compare-user-data", script)
         self.assertEqual(report_i18n.build_report_i18n_script("ja"), "")
+        self.assertIn('const REPORT_LANGUAGE = "qps"', report_i18n.build_report_i18n_script("qps"))
 
     def test_report_translation_script_covers_dynamic_attributes(self) -> None:
         script = report_i18n.build_report_i18n_script("en")
@@ -310,6 +364,15 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
         self.assertIn('self.master.geometry("1000x840")', source)
         self.assertIn('self.status = tk.Text(frm, height=3, wrap="word")', source)
+        self.assertIn('requested_height = self.master.winfo_reqheight()', source)
+
+    def test_long_translation_layout_has_wrapping_and_adaptive_buttons(self) -> None:
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('text=tr("app.subtitle"),\n            wraplength=930', source)
+        self.assertIn('required_button_width = sum(button.winfo_reqwidth()', source)
+        self.assertIn('guide_height = max(650, min(win.winfo_reqheight()', source)
+        self.assertIn('@media (max-width:1100px) and (min-width:541px)', source)
+        self.assertIn('white-space:normal;', source)
 
     def test_compare_user_data_regions_are_marked(self) -> None:
         source = ORGANIZER_SOURCE.read_text(encoding="utf-8")

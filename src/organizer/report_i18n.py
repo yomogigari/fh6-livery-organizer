@@ -8,6 +8,11 @@ from __future__ import annotations
 
 import json
 
+try:
+    from .i18n import pseudo_localize
+except ImportError:  # src/organizer から直接実行する場合。
+    from i18n import pseudo_localize
+
 
 _EN_TEXT = {
     # ヘッダー / 統計 / 基本操作
@@ -849,23 +854,54 @@ _EN_ATTR = {
 }
 
 
+def _target_map(source: dict[str, str], language: str) -> dict[str, str]:
+    """英訳辞書を通常英語または開発用疑似ロケールへ変換します。"""
+    if language == "qps":
+        return {key: pseudo_localize(value) for key, value in source.items()}
+    return source
+
+
 def build_report_i18n_script(language: str) -> str:
-    """生成HTML末尾へ埋め込むレポートUI翻訳スクリプトを返します。"""
-    if language != "en":
+    """生成HTML末尾へ埋め込むレポートUI翻訳スクリプトを返します。
+
+    ``qps`` は実際の翻訳言語ではなく、英語UIを約1.4〜1.6倍へ長文化して
+    ドイツ語などの長い翻訳を想定したレイアウト検証に使う開発専用モードです。
+    """
+    if language not in {"en", "qps"}:
         return ""
-    text_json = json.dumps(_EN_TEXT, ensure_ascii=False, separators=(",", ":"))
-    attr_json = json.dumps(_EN_ATTR, ensure_ascii=False, separators=(",", ":"))
+    text_json = json.dumps(_target_map(_EN_TEXT, language), ensure_ascii=False, separators=(",", ":"))
+    attr_json = json.dumps(_target_map(_EN_ATTR, language), ensure_ascii=False, separators=(",", ":"))
+    open_settings = pseudo_localize("Open settings") if language == "qps" else "Open settings"
+    close_settings = pseudo_localize("Close settings") if language == "qps" else "Close settings"
+    move_target = pseudo_localize("Move target") if language == "qps" else "Move target"
+    pseudo_css = ""
+    if language == "qps":
+        pseudo_css = r"""
+html[data-pseudo-locale="qps"] button,
+html[data-pseudo-locale="qps"] select,
+html[data-pseudo-locale="qps"] input,
+html[data-pseudo-locale="qps"] .small,
+html[data-pseudo-locale="qps"] .stat-label,
+html[data-pseudo-locale="qps"] .fh6-foot-label { letter-spacing:.035em; }
+html[data-pseudo-locale="qps"] .card-first-toolbar { flex-wrap:wrap; }
+html[data-pseudo-locale="qps"] .card-first-toolbar > #q { min-width:min(360px,100%); }
+html[data-pseudo-locale="qps"] .card-first-toolbar > #sortOrder { flex:1 1 260px; width:auto; }
+html[data-pseudo-locale="qps"] .fh6-my-design-head h2 { white-space:normal; }
+html[data-pseudo-locale="qps"] .fh6-navigator-settings-title { white-space:normal; }
+"""
     return rf"""
 <style id="reportI18nEnglishOverrides">
-.fh6-navigator-settings > summary::after {{ content:"Open settings" !important; }}
-.fh6-navigator-settings[open] > summary::after {{ content:"Close settings" !important; }}
+.fh6-navigator-settings > summary::after {{ content:{json.dumps(open_settings, ensure_ascii=False)} !important; }}
+.fh6-navigator-settings[open] > summary::after {{ content:{json.dumps(close_settings, ensure_ascii=False)} !important; }}
 .fh6-move-target-trigger[aria-pressed="true"]::after,
-.fh6-location-button[aria-pressed="true"]::after {{ content:"Move target" !important; }}
+.fh6-location-button[aria-pressed="true"]::after {{ content:{json.dumps(move_target, ensure_ascii=False)} !important; }}
+{pseudo_css}
 </style>
 <script>
 (() => {{
   "use strict";
-  const REPORT_LANGUAGE = "en";
+  const REPORT_LANGUAGE = {json.dumps(language)};
+  if (REPORT_LANGUAGE === "qps") document.documentElement.dataset.pseudoLocale = "qps";
   const TEXT = {text_json};
   const ATTR = {attr_json};
   const jp = /[\u3040-\u30ff\u3400-\u9fff]/;
