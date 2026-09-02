@@ -198,7 +198,7 @@ _EN_TEXT = {
     "バックアップ 未保存": "Backup not saved",
 
     # FH6 My Designs / Bridge
-    "FH6移動対象:": "FH6 move target:",
+    "FH6移動:": "FH6 move:",
     "未選択": "Not selected",
     "FH6で選択デザインへ移動": "Move to Selected Design in FH6",
     "並び替え": "Sort",
@@ -472,9 +472,7 @@ _EN_TEXT.update({
     "から1件ずつ、または全件を復元できます。仮削除はこの生成HTML専用のlocalStorageへ保存され、新しくHTMLを生成すると引き継ぎません。再DL完全一致は 0組 / 0件（余分 0件）で、「再DL重複のみ」から直接絞り込めます。": "control at the top to restore individual items or all items. Temporary deletions are stored in localStorage for this generated HTML only and are not carried into a newly generated HTML. Exact re-downloads can be filtered directly with Re-download duplicates only.",
     "カード上の実スロット番号": "the actual slot number on a card",
     "またはFH6位置": "or its FH6 position",
-    "をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中の番号には": "to set that design as the FH6 move target for the Organizer. The selected number shows",
-    "「移動対象」": "Move target",
-    "を表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは": ". You can choose the same move target from other sort orders such as Manufacturer, Vehicle name, or Creator, and from Similar Paint comparison or Re-download Duplicate organization. After selecting a target, use the button or",
+    "をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中はFH6移動グループ全体をアクセント表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは": "to set that design as the FH6 move target for the Organizer. The selected FH6 move group is highlighted as a whole. You can choose the same move target from other sort orders such as Manufacturer, Vehicle name, or Creator, and from Similar Paint comparison or Re-download Duplicate organization. After selecting a target, use the button or",
     "キーで移動できます。FH6標準の「マイデザイン」ではサムネイル・タイトル・作成者・作成者がUPした日付の4項目だけで目的のペイントを探す必要がありますが、Organizerでは車種・メーカー・年式・作成者・タイトルなどから先に使いたいデザインを特定できます。Bridgeで該当位置まで移動したあと、FH6上で利用者が": "to navigate. Standard FH6 My Designs exposes only the thumbnail, title, creator, and upload date, but Organizer lets you identify a design first using vehicle, manufacturer, year, creator, title, and other information. After Bridge moves to the target position, you can use FH6's",
     "「デザインを読み込み」": "Load Design",
     "を実行すれば、現在運転しているマシンへそのペイントを適用できます。また、不要なペイントをFH6で削除した場合は「FH6で削除済み（仮）」へ反映することで、残りの実スロット番号とFH6位置を再計算し、次の整理へ続けられます。Bridgeは読み込み・選択・削除・確定操作を行わず、対象位置までのカーソル移動だけを補助します。移動時は現在の最終実スロット番号と「FH6移動設定」を Navigator Bridge for FH6 v0.0.26 へ渡します。": "to apply that paint to the car you are currently driving. If you delete an unwanted paint in FH6, reflect it as Deleted in FH6 (temporary) so the remaining actual slot numbers and FH6 positions are recalculated for continued organization. Bridge does not load, select, delete, or confirm designs; it only assists cursor movement to the target position. Navigation passes the current final actual slot and FH6 Navigation Settings to Navigator Bridge for FH6 v0.0.26.",

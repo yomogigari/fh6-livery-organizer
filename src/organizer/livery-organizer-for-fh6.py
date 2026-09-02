@@ -104,7 +104,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r08"
+VERSION = "0.4.58-r09"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4736,8 +4736,11 @@ def write_report(
   <div class="body">
     <div class="topline">
       <label class="select-box" title="一括操作の対象"><input class="card-select" type="checkbox"></label>
-      <button class="pill my-design-index fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{my_design_index_label}</button>
-      <button class="pill fh6-my-design-position fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{fh6_my_design_position_label}</button>
+      <span class="fh6-move-target-group" role="group" aria-label="FH6移動位置">
+        <span class="fh6-move-target-caption">FH6移動:</span>
+        <button class="pill my-design-index fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{my_design_index_label}</button>
+        <button class="pill fh6-my-design-position fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{fh6_my_design_position_label}</button>
+      </span>
       <span class="pill new-badge hidden">新規</span>
       <button class="pill flag-toggle favorite-toggle" type="button">☆ お気に入り</button>
       <button class="pill flag-toggle review-toggle" type="button">後で確認</button>
@@ -9371,6 +9374,121 @@ body.dark-theme .fh6-my-design-section {{
 }}
 
 /* =======================================================================
+   v0.4.58-r09 — FH6移動対象番号の操作領域を明確化
+   ======================================================================= */
+/* 実スロット番号と列+U/D位置を「FH6移動対象」という一つの操作グループとして
+   見せ、番号がクリック可能な選択ボタンであることを初見でも判断しやすくします。 */
+.fh6-move-target-group {{
+  display:inline-flex;
+  align-items:stretch;
+  flex-wrap:nowrap;
+  gap:0;
+  width:max-content;
+  max-width:100%;
+  overflow:hidden;
+  min-height:28px;
+  border:1px solid color-mix(in srgb, var(--accent) 48%, var(--line));
+  border-radius:10px;
+  background:color-mix(in srgb, var(--accent) 5%, var(--surface));
+  box-shadow:var(--shadow-xs);
+}}
+.fh6-move-target-caption,
+.fh6-location-caption {{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 7px;
+  background:color-mix(in srgb, var(--accent) 11%, var(--surface));
+  color:var(--accent);
+  font-size:9.5px;
+  font-weight:850;
+  line-height:1.2;
+  white-space:nowrap;
+}}
+.fh6-move-target-caption {{
+  border-right:1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger {{
+  min-height:28px;
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  text-decoration:none;
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger + .pill.fh6-move-target-trigger {{
+  border-left:1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger:hover:not(:disabled) {{
+  background:var(--accent-soft);
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger:focus-visible,
+.fh6-location-button:focus-visible {{
+  position:relative;
+  z-index:1;
+  outline:2px solid var(--accent);
+  outline-offset:-2px;
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]),
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) {{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-caption,
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-caption {{
+  background:var(--accent);
+  color:white;
+}}
+/* r09 rev2: 選択状態はグループ全体で一度だけ示します。
+   各番号の後ろへ「移動対象」を重複表示しません。 */
+.fh6-move-target-group .fh6-move-target-trigger[aria-pressed="true"],
+.fh6-location-buttons .fh6-location-button[aria-pressed="true"] {{
+  background:transparent;
+  box-shadow:none;
+  color:var(--accent);
+  font-weight:850;
+}}
+.fh6-move-target-trigger[aria-pressed="true"]::after,
+.fh6-location-button[aria-pressed="true"]::after {{
+  content:none !important;
+  display:none !important;
+}}
+.fh6-location-buttons {{
+  gap:0 !important;
+  overflow:hidden;
+  width:max-content;
+  max-width:100%;
+  border:1px solid color-mix(in srgb, var(--accent) 48%, var(--line));
+  border-radius:10px;
+  background:color-mix(in srgb, var(--accent) 5%, var(--surface));
+  box-shadow:var(--shadow-xs);
+}}
+.fh6-location-caption {{
+  border-right:1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+}}
+.fh6-location-buttons .fh6-location-button {{
+  min-height:28px;
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  text-decoration:none;
+}}
+.fh6-location-buttons .fh6-location-button + .fh6-location-button {{
+  border-left:1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+}}
+.fh6-location-buttons .fh6-location-button:hover:not(:disabled) {{
+  background:var(--accent-soft);
+}}
+@media (max-width:540px) {{
+  .fh6-move-target-caption, .fh6-location-caption {{
+    padding-inline:6px;
+    font-size:9px;
+  }}
+}}
+
+/* =======================================================================
    v0.4.57-r23 — リリース前微調整
    ======================================================================= */
 /* 左循環後の追加待ち既定値を400msへ更新し、ヘルプのFH6マイデザイン順を
@@ -9467,21 +9585,8 @@ body.dark-theme .fh6-my-design-section {{
 /* =======================================================================
    v0.4.57-r21 — FH6移動ショートカット / 移動対象表示
    ======================================================================= */
-.fh6-move-target-trigger[aria-pressed="true"]::after,
-.fh6-location-button[aria-pressed="true"]::after {{
-  content:"移動対象";
-  display:inline-flex;
-  align-items:center;
-  margin-left:5px;
-  padding:1px 4px;
-  border-radius:999px;
-  background:color-mix(in srgb, var(--accent) 16%, transparent);
-  color:var(--accent);
-  font-size:8.5px;
-  font-weight:850;
-  line-height:1.2;
-  white-space:nowrap;
-}}
+/* r21で導入した番号ごとの「移動対象」バッジは、r09 rev2で操作グループ全体の
+   アクセント表示へ置き換えました。 */
 
 /* =======================================================================
    v0.4.57-r20 — Organizer全体のFH6移動対象
@@ -10219,7 +10324,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
       <p><b class="fh6-foot-label">表示・基本移動</b>1列に上・下の2件を配置します。横スクロール、通常のマウスホイール（縦回転）、← / →キー、または「前へ / 次へ」で移動できます。端では反対側へ循環します。各カード下部にはFH6「マイデザイン」画面と同じ日付を DD/MM/YYYY 形式で表示します。</p>
       <p><b class="fh6-foot-label">位置・車種ジャンプ</b><b>537 / #537</b> のような実スロット通し番号、<b>#269U / #269D</b> のようなFH6画面の列＋U/D位置（U=上段、D=下段）、または <b>RX-7</b> のような車種名を指定できます。車種名は部分一致で候補を表示し、↑ / ↓で選択できます。候補を選ばずにEnterまたは「移動」を押すと一致車種を1車種1位置で巡回し、候補を選択して確定するとその車種の実スロットを「前の一致 / 次の一致」で巡回できます。検索確定後は <b>Shift+← / Shift+→</b> で前後の一致へ移動し、<b>J</b> でジャンプ入力欄へ戻れます。</p>
       <p><b class="fh6-foot-label">重複・仮削除</b>完全一致の再ダウンロードも別ペイントとして表示し、FH6本体の実スロット位置を維持します。FH6で削除したデザインはカードの <b>FH6で削除済み</b> で一時的に非表示にでき、残りの実スロット番号とFH6位置を即時に詰め直します。上部の <b>FH6削除済み（仮）</b> から1件ずつ、または全件を復元できます。仮削除はこの生成HTML専用のlocalStorageへ保存され、新しくHTMLを生成すると引き継ぎません。再DL完全一致は {stats.get("fh6_exact_duplicate_groups", 0)}組 / {stats.get("fh6_exact_duplicate_cards", 0)}件（余分 {stats.get("fh6_exact_duplicate_instances", 0)}件）で、「再DL重複のみ」から直接絞り込めます。</p>
-      <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カード上の実スロット番号 <b>#603</b> またはFH6位置 <b>#302U</b> をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中の番号には<b>「移動対象」</b>を表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは <b>F</b> キーで移動できます。FH6標準の「マイデザイン」ではサムネイル・タイトル・作成者・作成者がUPした日付の4項目だけで目的のペイントを探す必要がありますが、Organizerでは車種・メーカー・年式・作成者・タイトルなどから先に使いたいデザインを特定できます。Bridgeで該当位置まで移動したあと、FH6上で利用者が<b>「デザインを読み込み」</b>を実行すれば、現在運転しているマシンへそのペイントを適用できます。また、不要なペイントをFH6で削除した場合は「FH6で削除済み（仮）」へ反映することで、残りの実スロット番号とFH6位置を再計算し、次の整理へ続けられます。Bridgeは読み込み・選択・削除・確定操作を行わず、対象位置までのカーソル移動だけを補助します。移動時は現在の最終実スロット番号と「FH6移動設定」を Navigator Bridge for FH6 v0.0.26 へ渡します。</p>
+      <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カード上の実スロット番号 <b>#603</b> またはFH6位置 <b>#302U</b> をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中はFH6移動グループ全体をアクセント表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは <b>F</b> キーで移動できます。FH6標準の「マイデザイン」ではサムネイル・タイトル・作成者・作成者がUPした日付の4項目だけで目的のペイントを探す必要がありますが、Organizerでは車種・メーカー・年式・作成者・タイトルなどから先に使いたいデザインを特定できます。Bridgeで該当位置まで移動したあと、FH6上で利用者が<b>「デザインを読み込み」</b>を実行すれば、現在運転しているマシンへそのペイントを適用できます。また、不要なペイントをFH6で削除した場合は「FH6で削除済み（仮）」へ反映することで、残りの実スロット番号とFH6位置を再計算し、次の整理へ続けられます。Bridgeは読み込み・選択・削除・確定操作を行わず、対象位置までのカーソル移動だけを補助します。移動時は現在の最終実スロット番号と「FH6移動設定」を Navigator Bridge for FH6 v0.0.26 へ渡します。</p>
       <p><b class="fh6-foot-label">#001Uへ戻す</b>このオプションをONにした場合だけ、移動前に <b>ESC → RET</b> を各1回固定順序で送ってマイデザインを開き直します。標準待ち時間は <b>ESC後 500ms / RET後 800ms</b> です。任意のキーコード・キー名・キー順序は指定できず、上・文字キー・ファンクションキーその他は送信しません。</p>
       <p><b class="fh6-foot-label">Bridge連携</b>Navigator Bridge v0.0.26はシングルインスタンスで動作し、OrganizerからのBridgeモード起動ではGUIを表示しません。起動済みなら新しいウィンドウを増やさず既存Bridgeへ指示を渡します。初回だけNavigator Bridge側の「連携を登録」を実行し、ブラウザから外部アプリを開く確認が表示された場合は許可してください。Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から「連携を登録」を再実行してください。BridgeはFH6の画面内容やゲーム内部のペイント位置・カーソル位置を読み取らず、設定された間隔で固定キー入力を送信する方式です。そのためPCやFH6の処理負荷などで入力が取りこぼされると、指定位置からずれる場合があります。ずれる場合はキー間隔や各待ち時間を長めに調整してください。</p>
     </div>
@@ -12670,6 +12775,7 @@ function fh6LocationButtonsHtml(card) {{
   if (!location) return `<span class="compare-badge">FH6位置なし</span>`;
   const pressed = location.instanceId === fh6NavigatorTargetInstanceId ? "true" : "false";
   return `<div class="fh6-location-buttons" aria-label="FH6移動位置">
+    <span class="fh6-location-caption">FH6移動:</span>
     <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="FH6移動対象に設定">${{escapeCompareHtml(location.slotLabel)}}</button>
     <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="FH6移動対象に設定">${{escapeCompareHtml(location.position)}}</button>
   </div>`;

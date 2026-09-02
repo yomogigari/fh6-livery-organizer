@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r08(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r08")
+    def test_version_is_r09(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r09")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -369,6 +369,41 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn("fh6NavigatorTargetInstanceId = loadFh6NavigatorTargetInstanceId();", text)
         self.assertIn("fh6NavigatorTargetInstanceId = location.instanceId;\n  saveFh6NavigatorTargetInstanceId();", text)
         self.assertIn('fh6NavigatorTargetInstanceId = "";\n  saveFh6NavigatorTargetInstanceId();', text)
+
+    def test_report_groups_fh6_move_target_controls(self) -> None:
+        self.organizer.set_language("ja")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('class="fh6-move-target-group" role="group" aria-label="FH6移動位置"', text)
+        self.assertIn('<span class="fh6-move-target-caption">FH6移動:</span>', text)
+        self.assertIn('<span class="fh6-location-caption">FH6移動:</span>', text)
+        self.assertIn('.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"])', text)
+        self.assertIn('.fh6-location-button:focus-visible', text)
+        self.assertIn('content:none !important;', text)
+        self.assertIn('flex-wrap:nowrap;', text)
+        self.assertNotIn('content:"移動対象";\n  display:inline-flex;', text)
+
+    def test_english_report_localizes_fh6_move_target_caption(self) -> None:
+        self.organizer.set_language("en")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('<span class="fh6-move-target-caption">FH6移動:</span>', text)
+        self.assertIn('"FH6移動:":"FH6 move:"', text)
+        self.assertIn('reportI18nEnglishOverrides', text)
 
     def test_report_translation_script_has_user_data_protection(self) -> None:
         script = report_i18n.build_report_i18n_script("en")
