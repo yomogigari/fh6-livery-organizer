@@ -102,7 +102,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r12"
+VERSION = "0.4.58-r13"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -10369,7 +10369,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
 
 <div id="emptyState" class="empty-state">条件に一致するペイントがありません。検索条件や絞り込みを変更してください。</div>
 <div class="keyboard-guide">
-  <a class="keyboard-copyright" href="https://x.com/Yomogigari" target="_blank" rel="noopener noreferrer" aria-label="YomogigariのXアカウントを開く">©Yomogigari</a><span>F FH6移動</span><span>K 残す</span><span>D 削除候補</span><span>U 未決定</span><span>Space 選択</span><span>Ctrl+Z 元に戻す</span><span>Ctrl+Y やり直す</span>
+  <a class="keyboard-copyright" href="https://x.com/Yomogigari" target="_blank" rel="noopener noreferrer" aria-label="YomogigariのXアカウントを開く">©Yomogigari</a><span>/ 検索</span><span>F FH6移動</span><span>K 残す</span><span>D 削除候補</span><span>U 未決定</span><span>Space 選択</span><span>Ctrl+Z 元に戻す</span><span>Ctrl+Y やり直す</span>
 </div>
 <nav class="mobile-bottom-nav" aria-label="スマホ用ナビゲーション">
   <button type="button" data-mobile-action="all">一覧</button>
@@ -10783,6 +10783,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
         <h4>キーボード操作</h4>
         <div class="help-shortcuts">
           <span><kbd>← ↑ → ↓</kbd> カード移動</span>
+          <span><kbd>/</kbd> 検索欄へ移動</span>
           <span><kbd>F</kbd> FH6で選択デザインへ移動</span>
           <span><kbd>K</kbd> 残す</span>
           <span><kbd>D</kbd> 削除候補</span>
@@ -16251,8 +16252,16 @@ document.getElementById("sequentialModeToggle")?.addEventListener("click", () =>
   saveUiState();
 }});
 
+// v0.4.58-r13 — 検索欄へすぐ移動するキーボードショートカット
 document.addEventListener("keydown",event=>{{
   if (getTopOpenModal() || document.getElementById("lightbox")?.classList.contains("open")) return;
+  if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key === "/"
+      && !["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)) {{
+    q.focus();
+    q.select();
+    event.preventDefault();
+    return;
+  }}
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && event.shiftKey) {{
     event.preventDefault(); redoLast(); return;
   }}
@@ -16416,6 +16425,16 @@ fh6MyDesignSection?.addEventListener("wheel", event => {{
 }}, {{passive:false, capture:true}});
 
 q.addEventListener("input", applyAndPersist);
+q.addEventListener("keydown", event => {{
+  if (event.key !== "Escape") return;
+  if (q.value) {{
+    q.value = "";
+    applyAndPersist();
+  }}
+  q.blur();
+  event.preventDefault();
+  event.stopPropagation();
+}});
 multiFilterSelects.forEach(select => select.addEventListener("change", () => {{
   normalizeNativeMultiSelection(select);
   applyAndPersist();

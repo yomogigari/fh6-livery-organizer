@@ -115,8 +115,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r12(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r12")
+    def test_version_is_r13(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r13")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -840,7 +840,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 691)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 693)
         self.assertEqual(len(en_locale.REPORT_ATTR), 99)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
@@ -936,6 +936,30 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         script = i18n.build_report_i18n_script("en")
         self.assertIn("Click to clear the FH6 move target selection", script)
         self.assertIn("Clear FH6 move target $1", script)
+
+    def test_r13_search_shortcut_focuses_query_and_escape_clears_it(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('v0.4.58-r13 — 検索欄へすぐ移動するキーボードショートカット', source)
+        self.assertIn('event.key === "/"', source)
+        self.assertIn('q.focus();', source)
+        self.assertIn('q.select();', source)
+        self.assertIn('q.addEventListener("keydown", event => {', source)
+        self.assertIn('if (event.key !== "Escape") return;', source)
+        self.assertIn('q.value = "";', source)
+        self.assertIn('q.blur();', source)
+
+    def test_r13_search_shortcut_is_documented_in_generated_report(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('<span>/ 検索</span>', source)
+        self.assertIn('<span><kbd>/</kbd> 検索欄へ移動</span>', source)
+
+    def test_r13_search_shortcut_labels_are_localized(self):
+        import locales.en as en_locale
+        self.assertEqual(en_locale.REPORT_TEXT.get('/ 検索'), '/ Search')
+        self.assertEqual(en_locale.REPORT_TEXT.get('検索欄へ移動'), 'Focus search')
+        script = i18n.build_report_i18n_script('en')
+        self.assertIn('/ Search', script)
+        self.assertIn('Focus search', script)
 
 if __name__ == "__main__":
     unittest.main()
