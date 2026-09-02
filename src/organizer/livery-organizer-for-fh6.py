@@ -102,7 +102,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r11"
+VERSION = "0.4.58-r12"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9629,17 +9629,6 @@ body.dark-theme .fh6-my-design-section {{
 }}
 .fh6-global-move-target {{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
 #fh6GlobalMoveButton {{ min-height:32px; padding:5px 9px; font-size:11px; }}
-#fh6GlobalMoveClear,
-#fh6NavigatorClear {{
-  min-height:32px;
-  padding:5px 8px;
-  font-size:10.5px;
-  color:var(--muted);
-}}
-#fh6GlobalMoveClear:hover:not(:disabled),
-#fh6NavigatorClear:hover:not(:disabled) {{
-  color:CanvasText;
-}}
 body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
 .fh6-location-buttons {{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; }}
 .fh6-location-button {{
@@ -9660,8 +9649,39 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
 @media (max-width:620px) {{
   .fh6-global-move-bar {{ align-items:stretch; flex-direction:column; }}
   .fh6-global-move-target {{ white-space:normal; }}
-  #fh6GlobalMoveButton,
-  #fh6GlobalMoveClear {{ width:100%; }}
+  #fh6GlobalMoveButton {{ width:100%; }}
+}}
+
+/* =======================================================================
+   v0.4.58-r12 rev2 — FH6移動対象の選択表示をグループ全体へ統一
+   ======================================================================= */
+/* 通常カードと比較画面のどちらでも、選択中は見出しだけでなく
+   FH6移動グループ全体を同じアクセント色で塗り、一体の操作として見せます。 */
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]),
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) {{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:white;
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-caption,
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-caption,
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-trigger,
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-button {{
+  background:transparent;
+  color:white;
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-caption,
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-caption {{
+  border-right-color:color-mix(in srgb, white 32%, transparent);
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-trigger + .fh6-move-target-trigger,
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-button + .fh6-location-button {{
+  border-left-color:color-mix(in srgb, white 32%, transparent);
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-trigger:hover:not(:disabled),
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-button:hover:not(:disabled) {{
+  background:color-mix(in srgb, white 14%, transparent);
+  color:white;
 }}
 
 /* =======================================================================
@@ -10231,7 +10251,6 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
   <div id="fh6GlobalMoveBar" class="fh6-global-move-bar hidden" aria-live="polite">
     <span class="fh6-global-move-target">FH6移動対象: <b id="fh6GlobalMoveTarget">未選択</b></span>
     <button id="fh6GlobalMoveButton" type="button" disabled aria-keyshortcuts="F" title="Fキーでも実行できます">FH6で選択デザインへ移動</button>
-    <button id="fh6GlobalMoveClear" type="button" title="FH6移動対象の選択を解除します">選択解除</button>
   </div>
 </header>
 
@@ -10270,7 +10289,6 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
         <button id="fh6MyDesignJump" type="button" title="指定した位置または車種へ移動します">移動</button>
         <button id="fh6NavigatorMove" type="button" disabled aria-keyshortcuts="F"
           title="Navigator Bridge for FH6 v0.0.26へ選択デザインの現在位置と移動設定を渡します。Fキーでも実行できます。Navigator Bridge側で連携を一度登録してください。">FH6で選択デザインへ移動</button>
-        <button id="fh6NavigatorClear" type="button" class="hidden" title="FH6移動対象の選択を解除します">選択解除</button>
         <span id="fh6VehicleMatchNav" class="fh6-vehicle-match-nav hidden" aria-label="位置・車種ジャンプの状態と一致位置の移動">
           <button id="fh6VehicleMatchPrev" type="button" aria-keyshortcuts="Shift+ArrowLeft" title="検索一致の前へ移動します（Shift+←）" hidden>← 前の一致</button>
           <span id="fh6VehicleMatchState" class="small" aria-live="polite"></span>
@@ -12732,20 +12750,24 @@ function syncFh6CardPositionLabels(card) {{
   card.dataset.fh6CurrentInstanceId = location.instanceId;
   card.dataset.fh6CurrentSlot = String(location.slotNumber);
   card.dataset.fh6CurrentPosition = location.position;
+  const selected = location.instanceId === fh6NavigatorTargetInstanceId;
   [slotButton, positionButton].forEach(button => {{
     if (!button) return;
     button.disabled = false;
     button.dataset.fh6MoveTargetInstance = location.instanceId;
-    button.setAttribute("aria-pressed", location.instanceId === fh6NavigatorTargetInstanceId ? "true" : "false");
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
   }});
+  const targetTitle = selected
+    ? `${{location.slotLabel}} / ${{location.position}} のFH6移動対象を解除`
+    : `${{location.slotLabel}} / ${{location.position}} をFH6移動対象に設定`;
   if (slotButton) {{
     slotButton.textContent = location.slotLabel;
-    slotButton.title = `${{location.slotLabel}} / ${{location.position}} をFH6移動対象に設定`;
+    slotButton.title = targetTitle;
   }}
   if (positionButton) {{
     positionButton.classList.remove("hidden");
     positionButton.textContent = location.position;
-    positionButton.title = `${{location.slotLabel}} / ${{location.position}} をFH6移動対象に設定`;
+    positionButton.title = targetTitle;
   }}
 }}
 
@@ -12797,11 +12819,13 @@ function clearFh6NavigatorTarget() {{
 function fh6LocationButtonsHtml(card) {{
   const location = fh6LocationForCard(card);
   if (!location) return `<span class="compare-badge">FH6位置なし</span>`;
-  const pressed = location.instanceId === fh6NavigatorTargetInstanceId ? "true" : "false";
+  const selected = location.instanceId === fh6NavigatorTargetInstanceId;
+  const pressed = selected ? "true" : "false";
+  const title = selected ? "クリックしてFH6移動対象の選択を解除" : "クリックしてFH6移動対象に設定";
   return `<div class="fh6-location-buttons" aria-label="FH6移動位置">
     <span class="fh6-location-caption">FH6移動:</span>
-    <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="FH6移動対象に設定">${{escapeCompareHtml(location.slotLabel)}}</button>
-    <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="FH6移動対象に設定">${{escapeCompareHtml(location.position)}}</button>
+    <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="${{title}}">${{escapeCompareHtml(location.slotLabel)}}</button>
+    <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="${{title}}">${{escapeCompareHtml(location.position)}}</button>
   </div>`;
 }}
 
@@ -12994,6 +13018,9 @@ function updateFh6NavigatorUi(allowAutoSelect = true) {{
   document.querySelectorAll(".fh6-move-target-trigger, .fh6-location-button").forEach(button => {{
     const active = Boolean(location && String(button.dataset.fh6MoveTargetInstance || "") === location.instanceId);
     button.setAttribute("aria-pressed", active ? "true" : "false");
+    if (!button.disabled) {{
+      button.title = active ? "クリックしてFH6移動対象の選択を解除" : "クリックしてFH6移動対象に設定";
+    }}
     button.closest(".compare-item")?.classList.toggle("fh6-move-target-selected", active);
   }});
   if (location) {{
@@ -13006,9 +13033,7 @@ function updateFh6NavigatorUi(allowAutoSelect = true) {{
   }}
 
   const sectionButton = document.getElementById("fh6NavigatorMove");
-  const sectionClear = document.getElementById("fh6NavigatorClear");
   const globalButton = document.getElementById("fh6GlobalMoveButton");
-  const globalClear = document.getElementById("fh6GlobalMoveClear");
   const globalBar = document.getElementById("fh6GlobalMoveBar");
   const globalTarget = document.getElementById("fh6GlobalMoveTarget");
   const moveButtons = [sectionButton, globalButton].filter(Boolean);
@@ -13020,8 +13045,6 @@ function updateFh6NavigatorUi(allowAutoSelect = true) {{
       button.title = "カード上の #実スロット または #列U/D をクリックしてFH6移動対象を選択してください。選択後はFキーでも実行できます。";
     }});
     globalBar?.classList.add("hidden");
-    sectionClear?.classList.add("hidden");
-    if (globalClear) globalClear.disabled = true;
     if (globalTarget) globalTarget.textContent = "未選択";
     const compareMove = document.getElementById("compareFh6Move");
     const exactMove = document.getElementById("exactDuplicateFh6Move");
@@ -13040,8 +13063,6 @@ function updateFh6NavigatorUi(allowAutoSelect = true) {{
     button.title = `Navigator Bridgeへ ${{targetText}}、最終実スロット #${{total}} と移動設定を渡します。Fキーでも実行できます。`;
   }});
   globalBar?.classList.remove("hidden");
-  sectionClear?.classList.remove("hidden");
-  if (globalClear) globalClear.disabled = false;
   if (globalTarget) globalTarget.textContent = targetText;
 
   const compareMove = document.getElementById("compareFh6Move");
@@ -15959,6 +15980,11 @@ function moveExactDuplicateGroup(direction = 1) {{
   renderExactDuplicateModal(entries[next][0]);
 }}
 
+// =======================================================================
+// v0.4.58-r12 — FH6移動対象番号をトグル操作に統一
+// =======================================================================
+// 選択中の #実スロット / #列U/D をもう一度クリックすると解除します。
+// r12 rev2では専用の「選択解除」ボタンを廃止し、レイアウトを動かさないトグル操作へ一本化します。
 document.addEventListener("click", event => {{
   const trigger = event.target?.closest?.(".fh6-move-target-trigger, .fh6-location-button");
   if (!trigger) return;
@@ -15969,11 +15995,14 @@ document.addEventListener("click", event => {{
     ? FH6_CURRENT_MY_DESIGN_INSTANCES.find(item => String(item.instance_id || "") === explicitId)
     : currentFh6InstanceForCard(trigger.closest(".card"));
   if (!instance) return;
+  if (String(instance.instance_id || "") === fh6NavigatorTargetInstanceId) {{
+    clearFh6NavigatorTarget();
+    return;
+  }}
   setFh6NavigatorTargetInstance(instance);
 }});
 
 document.getElementById("fh6GlobalMoveButton")?.addEventListener("click", () => launchFh6NavigatorForCurrent());
-document.getElementById("fh6GlobalMoveClear")?.addEventListener("click", () => clearFh6NavigatorTarget());
 document.getElementById("compareFh6Move")?.addEventListener("click", () => {{
   if (compareModalContainsFh6Target()) launchFh6NavigatorForCurrent();
 }});
@@ -16286,7 +16315,6 @@ document.addEventListener("keydown",event=>{{
 
 document.getElementById("fh6MyDesignJump")?.addEventListener("click", () => jumpToFh6MyDesignTarget());
 document.getElementById("fh6NavigatorMove")?.addEventListener("click", () => launchFh6NavigatorForCurrent());
-document.getElementById("fh6NavigatorClear")?.addEventListener("click", () => clearFh6NavigatorTarget());
 ["fh6NavigatorInterval","fh6NavigatorSwitchDelay","fh6NavigatorTurnDelay","fh6NavigatorWrapDelay","fh6NavigatorResetEscDelay","fh6NavigatorResetRetDelay"].forEach(id => {{
   const control = document.getElementById(id);
   control?.addEventListener("change", () => saveFh6NavigatorSettings());

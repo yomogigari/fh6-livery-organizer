@@ -115,8 +115,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r11(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r11")
+    def test_version_is_r12(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r12")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -523,7 +523,7 @@ class ReportLocalizationTests(unittest.TestCase):
                 self.assertIn(expected, script)
 
 
-    def test_r11_generated_report_includes_move_target_clear_controls(self) -> None:
+    def test_r12_rev2_generated_report_uses_toggle_without_dedicated_move_clear_buttons(self) -> None:
         self.organizer.set_language("ja")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "root"
@@ -534,13 +534,13 @@ class ReportLocalizationTests(unittest.TestCase):
                 root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
             )
             text = html_path.read_text(encoding="utf-8")
-        self.assertIn('id="fh6GlobalMoveClear"', text)
-        self.assertIn('id="fh6NavigatorClear"', text)
+        self.assertNotIn('id="fh6GlobalMoveClear"', text)
+        self.assertNotIn('id="fh6NavigatorClear"', text)
         self.assertIn('function clearFh6NavigatorTarget()', text)
         self.assertIn('updateFh6NavigatorUi(false);', text)
-        self.assertIn('>選択解除</button>', text)
+        self.assertIn('r12 rev2では専用の「選択解除」ボタンを廃止', text)
 
-    def test_r11_english_report_embeds_move_target_clear_translation(self) -> None:
+    def test_r12_rev2_english_report_drops_dedicated_move_clear_button_translation(self) -> None:
         self.organizer.set_language("en")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "root"
@@ -551,8 +551,37 @@ class ReportLocalizationTests(unittest.TestCase):
                 root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
             )
             text = html_path.read_text(encoding="utf-8")
-        self.assertIn('"選択解除":"Clear selection"', text)
-        self.assertIn('"FH6移動対象の選択を解除します":"Clear the FH6 move target selection"', text)
+        self.assertNotIn('"FH6移動対象の選択を解除します":"Clear the FH6 move target selection"', text)
+        self.assertIn('"クリックしてFH6移動対象の選択を解除":"Click to clear the FH6 move target selection"', text)
+
+    def test_r12_generated_report_toggles_selected_fh6_move_number(self) -> None:
+        self.organizer.set_language("ja")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('v0.4.58-r12 — FH6移動対象番号をトグル操作に統一', text)
+        self.assertIn('if (String(instance.instance_id || "") === fh6NavigatorTargetInstanceId)', text)
+        self.assertIn('button.title = active ? "クリックしてFH6移動対象の選択を解除" : "クリックしてFH6移動対象に設定";', text)
+
+    def test_r12_english_report_embeds_move_target_toggle_titles(self) -> None:
+        self.organizer.set_language("en")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('"クリックしてFH6移動対象に設定":"Click to set as the FH6 move target"', text)
+        self.assertIn('"クリックしてFH6移動対象の選択を解除":"Click to clear the FH6 move target selection"', text)
 
 class ExcelLocalizationTests(unittest.TestCase):
     @classmethod
@@ -811,12 +840,20 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 692)
-        self.assertEqual(len(en_locale.REPORT_ATTR), 97)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 691)
+        self.assertEqual(len(en_locale.REPORT_ATTR), 99)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
         self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())
         self.assertIn("const rules", i18n.build_report_i18n_script("en"))
+
+    def test_r12_dynamic_report_translation_data_is_not_duplicated_in_i18n(self):
+        i18n_source = (ORGANIZER_DIR / "i18n.py").read_text(encoding="utf-8")
+        en_source = (ORGANIZER_DIR / "locales" / "en.py").read_text(encoding="utf-8")
+        self.assertIn("{EN_REPORT_DYNAMIC_RULES_JS}", i18n_source)
+        self.assertIn("{EN_REPORT_FRAGMENTS_JS}", i18n_source)
+        self.assertNotIn('[/^残り (\\d+)人を表示$/', i18n_source)
+        self.assertIn('[/^残り (\\d+)人を表示$/', en_source)
 
     def test_r10_report_locale_helper(self):
         self.assertEqual(i18n.locale_for_language("ja"), "ja-JP")
@@ -852,27 +889,53 @@ class GuiLocalizationAuditTests(unittest.TestCase):
             msg=f"locales/en.py の翻訳エントリが複数行に分割されています: {offenders[:10]}",
         )
 
-    def test_r11_fh6_move_target_can_be_cleared(self):
+    def test_r12_rev2_fh6_move_target_clear_helper_is_toggle_only(self):
         source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
-        self.assertIn('id="fh6GlobalMoveClear"', source)
-        self.assertIn('id="fh6NavigatorClear"', source)
+        self.assertNotIn('id="fh6GlobalMoveClear"', source)
+        self.assertNotIn('id="fh6NavigatorClear"', source)
         self.assertIn('function clearFh6NavigatorTarget()', source)
         self.assertIn('fh6NavigatorTargetInstanceId = "";', source)
         self.assertIn('saveFh6NavigatorTargetInstanceId();', source)
         self.assertIn('updateFh6NavigatorUi(false);', source)
         self.assertIn('function updateFh6NavigatorUi(allowAutoSelect = true)', source)
-        self.assertIn('document.getElementById("fh6GlobalMoveClear")?.addEventListener("click", () => clearFh6NavigatorTarget());', source)
-        self.assertIn('document.getElementById("fh6NavigatorClear")?.addEventListener("click", () => clearFh6NavigatorTarget());', source)
+        self.assertNotIn('document.getElementById("fh6GlobalMoveClear")', source)
+        self.assertNotIn('document.getElementById("fh6NavigatorClear")', source)
 
-    def test_r11_fh6_move_target_clear_is_localized(self):
+    def test_r12_rev2_removed_move_clear_button_title_is_not_in_report_locale(self):
         import locales.en as en_locale
+        self.assertIsNone(en_locale.REPORT_TEXT.get("FH6移動対象の選択を解除します"))
         self.assertEqual(en_locale.REPORT_TEXT.get("選択解除"), "Clear selection")
+
+    def test_r12_rev2_selected_fh6_move_group_uses_full_accent_fill(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        marker = 'v0.4.58-r12 rev2 — FH6移動対象の選択表示をグループ全体へ統一'
+        self.assertIn(marker, source)
+        block = source[source.index(marker):source.index('v0.4.57-r09 — Navigator Bridge for FH6連携', source.index(marker))]
+        self.assertIn('background:var(--accent);', block)
+        self.assertIn('color:white;', block)
+        self.assertIn('.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"])', block)
+        self.assertIn('.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"])', block)
+
+    def test_r12_fh6_move_target_number_click_is_toggle(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('v0.4.58-r12 — FH6移動対象番号をトグル操作に統一', source)
+        self.assertIn('if (String(instance.instance_id || "") === fh6NavigatorTargetInstanceId)', source)
+        self.assertIn('clearFh6NavigatorTarget();\n    return;', source)
+        self.assertIn('setFh6NavigatorTargetInstance(instance);', source)
+
+    def test_r12_fh6_move_target_toggle_titles_are_localized(self):
+        import locales.en as en_locale
         self.assertEqual(
-            en_locale.REPORT_TEXT.get("FH6移動対象の選択を解除します"),
-            "Clear the FH6 move target selection",
+            en_locale.REPORT_ATTR.get("クリックしてFH6移動対象に設定"),
+            "Click to set as the FH6 move target",
+        )
+        self.assertEqual(
+            en_locale.REPORT_ATTR.get("クリックしてFH6移動対象の選択を解除"),
+            "Click to clear the FH6 move target selection",
         )
         script = i18n.build_report_i18n_script("en")
-        self.assertIn("Clear the FH6 move target selection", script)
+        self.assertIn("Click to clear the FH6 move target selection", script)
+        self.assertIn("Clear FH6 move target $1", script)
 
 if __name__ == "__main__":
     unittest.main()
