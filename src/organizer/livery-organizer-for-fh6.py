@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.58-r06
+Livery Organizer for FH6 v0.4.58-r10
 ====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -82,17 +82,15 @@ try:
         pseudo_localize,
         set_language,
         tr,
+        build_report_i18n_script,
+        locale_for_language,
     )
 except ImportError:
     from i18n import (
         DEFAULT_LANGUAGE, available_languages, get_language, language_display_name,
-        normalize_language, pseudo_localize, set_language, tr,
+        normalize_language, pseudo_localize, set_language, tr, build_report_i18n_script, locale_for_language,
     )
 
-try:
-    from .report_i18n import build_report_i18n_script
-except ImportError:
-    from report_i18n import build_report_i18n_script
 
 try:
     import tkinter as tk
@@ -104,7 +102,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r09"
+VERSION = "0.4.58-r10"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4097,7 +4095,7 @@ def write_excel_report(
 
     now_utc = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     workbook_title = xml_escape(tr("excel.workbook_title"))
-    workbook_language = "en-US" if get_language() in {"en", "qps"} else "ja-JP"
+    workbook_language = locale_for_language()
     core_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
  xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/"
@@ -4232,7 +4230,7 @@ def write_report(
     # 欠損時のフォールバック文言とJavaScriptのロケール依存表示だけを英語化します。
     report_language = get_language()
     report_english_like = report_language in {"en", "qps"}
-    report_locale = "en-US" if report_english_like else "ja-JP"
+    report_locale = locale_for_language(report_language)
 
     def report_text(ja: str, en: str) -> str:
         if report_language == "qps":

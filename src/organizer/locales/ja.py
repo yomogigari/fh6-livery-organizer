@@ -1,5 +1,10 @@
 """Japanese UI strings (fallback language)."""
 
+LANGUAGE_CODE = "ja"
+LANGUAGE_NAME = "日本語"
+REPORT_HTML_LANG = "ja"
+REPORT_LOCALE = "ja-JP"
+
 STRINGS = {
     "app.subtitle": (
         "Livery_*を解析し、Windows版FH6本体の車両アセットZIPから"

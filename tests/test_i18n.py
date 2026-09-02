@@ -18,7 +18,6 @@ sys.path.insert(0, str(ORGANIZER_DIR))
 import i18n  # noqa: E402
 from locales.en import STRINGS as EN_STRINGS  # noqa: E402
 from locales.ja import STRINGS as JA_STRINGS  # noqa: E402
-import report_i18n  # noqa: E402
 
 
 def placeholders(text: str) -> set[str]:
@@ -107,7 +106,7 @@ class LocalizationTests(unittest.TestCase):
 class OrganizerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_r06", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_r10", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -116,8 +115,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r09(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r09")
+    def test_version_is_r10(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r10")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -406,17 +405,16 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn('reportI18nEnglishOverrides', text)
 
     def test_report_translation_script_has_user_data_protection(self) -> None:
-        script = report_i18n.build_report_i18n_script("en")
+        script = i18n.build_report_i18n_script("en")
         self.assertIn("protectedSelectors", script)
         self.assertIn("MutationObserver", script)
-        self.assertIn("Move target", script)
         self.assertIn("compare-title-user-data", script)
         self.assertIn("compare-user-data", script)
-        self.assertEqual(report_i18n.build_report_i18n_script("ja"), "")
-        self.assertIn('const REPORT_LANGUAGE = "qps"', report_i18n.build_report_i18n_script("qps"))
+        self.assertEqual(i18n.build_report_i18n_script("ja"), "")
+        self.assertIn('const REPORT_LANGUAGE = "qps"', i18n.build_report_i18n_script("qps"))
 
     def test_report_translation_script_covers_dynamic_attributes(self) -> None:
-        script = report_i18n.build_report_i18n_script("en")
+        script = i18n.build_report_i18n_script("en")
         self.assertIn('"label"', script)
         self.assertIn('"data-closed-label"', script)
         self.assertIn('"data-base-label"', script)
@@ -424,18 +422,18 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn("Basic", script)
 
     def test_report_translation_script_covers_real_count_fh6_help(self) -> None:
-        script = report_i18n.build_report_i18n_script("en")
+        script = i18n.build_report_i18n_script("en")
         self.assertIn("Exact re-downloads: $1 groups / $2 items ($3 extra)", script)
         self.assertIn("Re-download duplicates: $1 items", script)
 
     def test_report_translation_script_covers_dynamic_navigator_plan(self) -> None:
-        script = report_i18n.build_report_i18n_script("en")
+        script = i18n.build_report_i18n_script("en")
         self.assertIn('["最終実スロット", "Final actual slot"]', script)
         self.assertIn('["初期位置", "origin"]', script)
         self.assertIn('["初期位置リセット", "origin reset"]', script)
 
     def test_report_translation_script_covers_similar_compare_summary(self) -> None:
-        script = report_i18n.build_report_i18n_script("en")
+        script = i18n.build_report_i18n_script("en")
         self.assertIn("Sorted by acquisition time, newest first.", script)
         self.assertIn('["サムネイル完全一致", "Exact thumbnail match"]', script)
 
@@ -515,7 +513,7 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn('const REPORT_FALLBACK_UNKNOWN_DATE = "日時不明";', text)
 
     def test_translation_layer_has_edge_case_fallback_safety_net(self) -> None:
-        script = report_i18n.build_report_i18n_script("en")
+        script = i18n.build_report_i18n_script("en")
         for expected in [
             "Manufacturer unavailable", "Vehicle asset unavailable", "(Title unavailable)",
             "No creator information", "No livery folders were found.", "Unknown date",
@@ -769,6 +767,59 @@ class GuiLocalizationAuditTests(unittest.TestCase):
             offenders.append((node.lineno, node.value))
         self.assertEqual(offenders, [], msg=f"tr()を迂回した日本語固定文字列があります: {offenders[:10]}")
 
+
+    def test_r10_report_i18n_is_consolidated(self):
+        self.assertFalse((ORGANIZER_DIR / "report_i18n.py").exists())
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertNotIn("from report_i18n", source)
+        self.assertNotIn("from .report_i18n", source)
+        self.assertIn("build_report_i18n_script", source)
+
+    def test_r10_report_resources_live_in_locale_module(self):
+        import locales.en as en_locale
+        import locales.ja as ja_locale
+        self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
+        self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
+        self.assertEqual(len(en_locale.REPORT_TEXT), 691)
+        self.assertEqual(len(en_locale.REPORT_ATTR), 97)
+        self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
+        self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
+        self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())
+        self.assertIn("const rules", i18n.build_report_i18n_script("en"))
+
+    def test_r10_report_locale_helper(self):
+        self.assertEqual(i18n.locale_for_language("ja"), "ja-JP")
+        self.assertEqual(i18n.locale_for_language("en"), "en-US")
+        self.assertEqual(i18n.locale_for_language("qps"), "en-US")
+
+    def test_r10_r09_move_target_does_not_reintroduce_per_button_label(self):
+        script = i18n.build_report_i18n_script("en")
+        self.assertNotIn('content:"Move target"', script)
+        self.assertNotIn('fh6-move-target-trigger[aria-pressed="true"]::after', script)
+
+    def test_r10_english_locale_translation_entries_use_one_physical_line(self):
+        source_path = ORGANIZER_DIR / "locales" / "en.py"
+        source = source_path.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        offenders: list[tuple[int, str]] = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Dict):
+                continue
+            for key, value in zip(node.keys, node.values):
+                if not (
+                    isinstance(key, ast.Constant)
+                    and isinstance(key.value, str)
+                    and isinstance(value, ast.Constant)
+                    and isinstance(value.value, str)
+                ):
+                    continue
+                if not (key.lineno == value.lineno == value.end_lineno):
+                    offenders.append((key.lineno, key.value))
+        self.assertEqual(
+            offenders,
+            [],
+            msg=f"locales/en.py の翻訳エントリが複数行に分割されています: {offenders[:10]}",
+        )
 
 if __name__ == "__main__":
     unittest.main()
