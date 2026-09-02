@@ -104,7 +104,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r07"
+VERSION = "0.4.58-r08"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -12490,9 +12490,44 @@ function jumpToFh6MyDesignTarget(rawValue = null) {{
 }}
 
 // =======================================================================
+// v0.4.58-r08 — FH6移動対象の再読込復元
+// =======================================================================
+// 選択したFH6移動対象は同じ生成HTMLの再読込で復元します。
+// 仮削除と同じレポート固有スコープを使い、新しく生成したHTMLへは引き継ぎません。
+const FH6_NAVIGATOR_TARGET_STORAGE_KEY = "livery-organizer-for-fh6-move-target:{fh6_temp_delete_scope}";
+let fh6NavigatorTargetInstanceId = "";
+
+function loadFh6NavigatorTargetInstanceId() {{
+  try {{
+    const saved = String(storageGet(FH6_NAVIGATOR_TARGET_STORAGE_KEY) || "");
+    if (!saved) return "";
+    const valid = (Array.isArray(FH6_CURRENT_MY_DESIGN_INSTANCES) ? FH6_CURRENT_MY_DESIGN_INSTANCES : [])
+      .some(instance => String(instance.instance_id || "") === saved);
+    if (!valid) {{
+      storageRemove(FH6_NAVIGATOR_TARGET_STORAGE_KEY);
+      return "";
+    }}
+    return saved;
+  }} catch (_) {{
+    return "";
+  }}
+}}
+
+function saveFh6NavigatorTargetInstanceId() {{
+  try {{
+    if (fh6NavigatorTargetInstanceId) {{
+      storageSet(FH6_NAVIGATOR_TARGET_STORAGE_KEY, fh6NavigatorTargetInstanceId);
+    }} else {{
+      storageRemove(FH6_NAVIGATOR_TARGET_STORAGE_KEY);
+    }}
+  }} catch (_) {{}}
+}}
+
+fh6NavigatorTargetInstanceId = loadFh6NavigatorTargetInstanceId();
+
+// =======================================================================
 // v0.4.57-r20 — Organizer全体で共有するFH6移動対象
 // =======================================================================
-let fh6NavigatorTargetInstanceId = "";
 
 function currentFh6InstancesForCard(card) {{
   if (!card) return [];
@@ -12612,6 +12647,7 @@ function ensureFh6NavigatorTargetStillValid() {{
   if (!fh6NavigatorTargetInstanceId) return true;
   if (selectedFh6NavigatorInstance()) return true;
   fh6NavigatorTargetInstanceId = "";
+  saveFh6NavigatorTargetInstanceId();
   return false;
 }}
 
@@ -12619,6 +12655,7 @@ function setFh6NavigatorTargetInstance(instance) {{
   const location = fh6LocationForInstance(instance);
   if (!location) return false;
   fh6NavigatorTargetInstanceId = location.instanceId;
+  saveFh6NavigatorTargetInstanceId();
   syncAllFh6CardPositionLabels();
   updateFh6NavigatorUi();
   return true;
@@ -12817,6 +12854,7 @@ function updateFh6NavigatorUi() {{
   const total = FH6_CURRENT_MY_DESIGN_INSTANCES.length;
   if (instance && !fh6NavigatorTargetInstanceId) {{
     fh6NavigatorTargetInstanceId = String(instance.instance_id || "");
+    saveFh6NavigatorTargetInstanceId();
   }}
   instance = selectedFh6NavigatorInstance() || instance;
   const location = fh6LocationForInstance(instance);

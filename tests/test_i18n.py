@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r07(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r07")
+    def test_version_is_r08(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r08")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -324,6 +324,51 @@ class ReportLocalizationTests(unittest.TestCase):
             text = html_path.read_text(encoding="utf-8")
         self.assertIn('<html lang="ja">', text)
         self.assertNotIn('reportI18nEnglishOverrides', text)
+
+    def test_report_scopes_fh6_move_target_to_generated_html(self) -> None:
+        self.organizer.set_language("ja")
+        scopes = []
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            root.mkdir()
+            record = self._record()
+            for index in range(2):
+                out = Path(tmp) / f"out{index}"
+                html_path = self.organizer.write_report(
+                    root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+                )
+                text = html_path.read_text(encoding="utf-8")
+                move_match = re.search(
+                    r'FH6_NAVIGATOR_TARGET_STORAGE_KEY = "livery-organizer-for-fh6-move-target:([0-9a-f]{20})"',
+                    text,
+                )
+                temp_match = re.search(
+                    r'FH6_TEMP_DELETE_STORAGE_KEY = "livery-organizer-for-fh6-temp-deleted:([0-9a-f]{20})"',
+                    text,
+                )
+                self.assertIsNotNone(move_match)
+                self.assertIsNotNone(temp_match)
+                assert move_match is not None and temp_match is not None
+                self.assertEqual(move_match.group(1), temp_match.group(1))
+                scopes.append(move_match.group(1))
+        self.assertNotEqual(scopes[0], scopes[1])
+
+    def test_report_persists_and_cleans_fh6_move_target(self) -> None:
+        self.organizer.set_language("ja")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn("function loadFh6NavigatorTargetInstanceId()", text)
+        self.assertIn("function saveFh6NavigatorTargetInstanceId()", text)
+        self.assertIn("fh6NavigatorTargetInstanceId = loadFh6NavigatorTargetInstanceId();", text)
+        self.assertIn("fh6NavigatorTargetInstanceId = location.instanceId;\n  saveFh6NavigatorTargetInstanceId();", text)
+        self.assertIn('fh6NavigatorTargetInstanceId = "";\n  saveFh6NavigatorTargetInstanceId();', text)
 
     def test_report_translation_script_has_user_data_protection(self) -> None:
         script = report_i18n.build_report_i18n_script("en")
