@@ -115,8 +115,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r10(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r10")
+    def test_version_is_r11(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r11")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -523,6 +523,37 @@ class ReportLocalizationTests(unittest.TestCase):
                 self.assertIn(expected, script)
 
 
+    def test_r11_generated_report_includes_move_target_clear_controls(self) -> None:
+        self.organizer.set_language("ja")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('id="fh6GlobalMoveClear"', text)
+        self.assertIn('id="fh6NavigatorClear"', text)
+        self.assertIn('function clearFh6NavigatorTarget()', text)
+        self.assertIn('updateFh6NavigatorUi(false);', text)
+        self.assertIn('>選択解除</button>', text)
+
+    def test_r11_english_report_embeds_move_target_clear_translation(self) -> None:
+        self.organizer.set_language("en")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn('"選択解除":"Clear selection"', text)
+        self.assertIn('"FH6移動対象の選択を解除します":"Clear the FH6 move target selection"', text)
+
 class ExcelLocalizationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -780,7 +811,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 691)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 692)
         self.assertEqual(len(en_locale.REPORT_ATTR), 97)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
@@ -820,6 +851,28 @@ class GuiLocalizationAuditTests(unittest.TestCase):
             [],
             msg=f"locales/en.py の翻訳エントリが複数行に分割されています: {offenders[:10]}",
         )
+
+    def test_r11_fh6_move_target_can_be_cleared(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('id="fh6GlobalMoveClear"', source)
+        self.assertIn('id="fh6NavigatorClear"', source)
+        self.assertIn('function clearFh6NavigatorTarget()', source)
+        self.assertIn('fh6NavigatorTargetInstanceId = "";', source)
+        self.assertIn('saveFh6NavigatorTargetInstanceId();', source)
+        self.assertIn('updateFh6NavigatorUi(false);', source)
+        self.assertIn('function updateFh6NavigatorUi(allowAutoSelect = true)', source)
+        self.assertIn('document.getElementById("fh6GlobalMoveClear")?.addEventListener("click", () => clearFh6NavigatorTarget());', source)
+        self.assertIn('document.getElementById("fh6NavigatorClear")?.addEventListener("click", () => clearFh6NavigatorTarget());', source)
+
+    def test_r11_fh6_move_target_clear_is_localized(self):
+        import locales.en as en_locale
+        self.assertEqual(en_locale.REPORT_TEXT.get("選択解除"), "Clear selection")
+        self.assertEqual(
+            en_locale.REPORT_TEXT.get("FH6移動対象の選択を解除します"),
+            "Clear the FH6 move target selection",
+        )
+        script = i18n.build_report_i18n_script("en")
+        self.assertIn("Clear the FH6 move target selection", script)
 
 if __name__ == "__main__":
     unittest.main()

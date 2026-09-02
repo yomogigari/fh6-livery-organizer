@@ -407,6 +407,7 @@ REPORT_TEXT = {
     "FH6位置なし": "No FH6 position",
     "現在のFH6マイデザイン実スロットには存在しません": "Not present in the current FH6 My Designs actual slots",
     "FH6移動対象に設定": "Set as FH6 move target",
+    "FH6移動対象の選択を解除します": "Clear the FH6 move target selection",
     "キー間隔": "Key interval",
     "FH6切替後": "After switching to FH6",
     "横→上下": "Horizontal → vertical",
