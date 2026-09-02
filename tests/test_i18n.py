@@ -8,6 +8,8 @@ import re
 import sys
 import unittest
 import tempfile
+import zipfile
+import xml.etree.ElementTree as ET
 
 ORGANIZER_DIR = Path(__file__).resolve().parents[1] / "src" / "organizer"
 ORGANIZER_SOURCE = ORGANIZER_DIR / "livery-organizer-for-fh6.py"
@@ -85,7 +87,7 @@ class LocalizationTests(unittest.TestCase):
 class OrganizerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_r05", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_r06", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -94,8 +96,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r05(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r05")
+    def test_version_is_r06(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r06")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -152,7 +154,7 @@ class OrganizerIntegrationTests(unittest.TestCase):
 class ReportLocalizationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_report_r05", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_report_r06", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -357,6 +359,157 @@ class ReportLocalizationTests(unittest.TestCase):
         ]:
             with self.subTest(expected=expected):
                 self.assertIn(expected, script)
+
+
+class ExcelLocalizationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        spec = importlib.util.spec_from_file_location("fh6_organizer_excel_r06", ORGANIZER_SOURCE)
+        assert spec is not None and spec.loader is not None
+        cls.organizer = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = cls.organizer
+        spec.loader.exec_module(cls.organizer)
+
+    def tearDown(self) -> None:
+        self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
+
+    def _record(self):
+        o = self.organizer
+        return o.LiveryRecord(
+            livery_id="Livery_0001_20260101000000", car_id=1, car_id_folder=1,
+            car_id_c_livery=1, car_id_verified=True, timestamp_raw="20260101000000",
+            timestamp_local_guess="2026-01-01 09:00:00 JST", fh6_date_raw="01012026",
+            fh6_date_display="01/01/2026", title="お気に入り Sample Title",
+            description="作成者 Sample Description", creator="メーカー Sample Creator", header_strings=[],
+            vehicle_display_name="2020 日本語 Sample Car", vehicle_make="日本語 Sample Make",
+            vehicle_model="日本語 Sample Model", vehicle_year=2020, vehicle_asset="sample_asset",
+            vehicle_source="sample", source_dir=r"C:\UserData\Livery_0001_20260101000000",
+            relative_source_dir="Livery_0001_20260101000000", snapshot_name="sample",
+            preferred_copy=True, header_path="", c_livery_path="", image_path="",
+            report_image="", header_size=1, c_livery_size=1, image_size=0,
+            header_sha256_16="a" * 16, c_livery_sha256_16="b" * 16,
+            image_sha256_16="", fingerprint="f" * 32, c_livery_compressed_size=1,
+            c_livery_uncompressed_size=1, c_livery_zlib_valid=True, vinyl_count=123,
+            duplicate_copies=1, duplicate_sources=[], livery_reference_id="ref1",
+            applied_state="unknown", applied_reference_paths=[], parse_warnings=["technical warning"], ui_key="key1",
+        )
+
+    @staticmethod
+    def _xlsx_snapshot(path: Path) -> dict:
+        main_ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+        dc_ns = "{http://purl.org/dc/elements/1.1/}"
+        with zipfile.ZipFile(path, "r") as zf:
+            workbook = ET.fromstring(zf.read("xl/workbook.xml"))
+            sheet = workbook.find(".//" + main_ns + "sheet")
+            worksheet = ET.fromstring(zf.read("xl/worksheets/sheet1.xml"))
+            core = ET.fromstring(zf.read("docProps/core.xml"))
+            app = ET.fromstring(zf.read("docProps/app.xml"))
+
+        values: dict[str, str] = {}
+        for cell in worksheet.findall(".//" + main_ns + "c"):
+            ref = cell.get("r") or ""
+            text_node = cell.find(".//" + main_ns + "t")
+            value_node = cell.find(main_ns + "v")
+            if text_node is not None:
+                values[ref] = text_node.text or ""
+            elif value_node is not None:
+                values[ref] = value_node.text or ""
+            else:
+                values[ref] = ""
+        cols = [float(col.get("width", "0")) for col in worksheet.findall(".//" + main_ns + "col")]
+        header_row = worksheet.find(".//" + main_ns + "row[@r='1']")
+        title = core.find(dc_ns + "title")
+        language = core.find(dc_ns + "language")
+        app_ns = "{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}"
+        app_version = app.find(app_ns + "AppVersion")
+        return {
+            "sheet_name": "" if sheet is None else sheet.get("name", ""),
+            "values": values,
+            "widths": cols,
+            "header_height": 0.0 if header_row is None else float(header_row.get("ht", "0")),
+            "title": "" if title is None else (title.text or ""),
+            "language": "" if language is None else (language.text or ""),
+            "app_version": "" if app_version is None else (app_version.text or ""),
+        }
+
+    def _generate(self, language: str) -> dict:
+        self.organizer.set_language(language)
+        with tempfile.TemporaryDirectory() as tmp:
+            path, image_count = self.organizer.write_excel_report([self._record()], Path(tmp))
+            self.assertEqual(image_count, 0)
+            return self._xlsx_snapshot(path)
+
+    def test_japanese_excel_keeps_existing_labels(self) -> None:
+        snap = self._generate("ja")
+        self.assertEqual(snap["sheet_name"], "ペイント一覧")
+        self.assertEqual(snap["title"], "Livery Organizer for FH6 ペイント一覧")
+        self.assertEqual(snap["language"], "ja-JP")
+        self.assertEqual(snap["values"]["A1"], "サムネイル")
+        self.assertEqual(snap["values"]["B1"], "整理状態")
+        self.assertEqual(snap["values"]["W1"], "解析メモ")
+        self.assertEqual(snap["values"]["A2"], "なし")
+        self.assertEqual(snap["values"]["B2"], "未決定")
+        self.assertEqual(snap["header_height"], 24.0)
+        self.assertEqual(snap["app_version"], "")
+
+    def test_english_excel_localizes_system_text_and_preserves_user_data(self) -> None:
+        snap = self._generate("en")
+        self.assertEqual(snap["sheet_name"], "Paint List")
+        self.assertEqual(snap["title"], "Livery Organizer for FH6 Paint List")
+        self.assertEqual(snap["language"], "en-US")
+        expected_headers = [
+            "Thumbnail", "Decision Status", "Car ID", "Vehicle Name", "Manufacturer", "Model",
+            "Year", "Vehicle Asset", "Creator", "Vinyl Count", "Title", "Description",
+            "Acquired At", "Tags", "Notes", "Favorite", "Review Later", "Livery Reference ID",
+            "Paint ID", "Fingerprint", "Thumbnail Source", "Source Folder", "Analysis Notes",
+        ]
+        actual_headers = [snap["values"][f"{self.organizer._xlsx_col_name(i)}1"] for i in range(1, 24)]
+        self.assertEqual(actual_headers, expected_headers)
+        self.assertEqual(snap["values"]["A2"], "No")
+        self.assertEqual(snap["values"]["B2"], "Undecided")
+        self.assertEqual(snap["values"]["D2"], "2020 日本語 Sample Car")
+        self.assertEqual(snap["values"]["E2"], "日本語 Sample Make")
+        self.assertEqual(snap["values"]["I2"], "メーカー Sample Creator")
+        self.assertEqual(snap["values"]["K2"], "お気に入り Sample Title")
+        self.assertEqual(snap["values"]["L2"], "作成者 Sample Description")
+        self.assertFalse(any(japanese_text(value) for value in actual_headers))
+        self.assertEqual(snap["app_version"], "")
+
+    def test_excel_appversion_validator_rejects_semver(self) -> None:
+        self.organizer.set_language("en")
+        with tempfile.TemporaryDirectory() as tmp:
+            path, _ = self.organizer.write_excel_report([self._record()], Path(tmp))
+            broken = Path(tmp) / "broken-appversion.xlsx"
+            with zipfile.ZipFile(path, "r") as src, zipfile.ZipFile(broken, "w", compression=zipfile.ZIP_DEFLATED) as dst:
+                for info in src.infolist():
+                    data = src.read(info.filename)
+                    if info.filename == "docProps/app.xml":
+                        text = data.decode("utf-8")
+                        text = text.replace(
+                            "</Properties>",
+                            "<AppVersion>0.4.58-r06</AppVersion></Properties>",
+                        )
+                        data = text.encode("utf-8")
+                    dst.writestr(info, data)
+            with self.assertRaisesRegex(ValueError, "Invalid XLSX AppVersion"):
+                self.organizer._validate_xlsx_package(broken, expected_rows=2, expected_cols=23)
+
+    def test_pseudo_excel_expands_headers_without_touching_user_data(self) -> None:
+        english = self._generate("en")
+        pseudo = self._generate("qps")
+        self.assertTrue(pseudo["sheet_name"].startswith("⟦"))
+        self.assertEqual(pseudo["language"], "en-US")
+        self.assertTrue(pseudo["values"]["A1"].startswith("⟦"))
+        self.assertTrue(pseudo["values"]["B2"].startswith("⟦"))
+        self.assertEqual(pseudo["values"]["D2"], "2020 日本語 Sample Car")
+        self.assertEqual(pseudo["values"]["K2"], "お気に入り Sample Title")
+        self.assertGreaterEqual(max(pseudo["widths"]), max(english["widths"]))
+        self.assertGreater(pseudo["widths"][1], english["widths"][1])
+        self.assertGreaterEqual(pseudo["header_height"], english["header_height"])
+
+    def test_excel_sheet_name_is_sanitized_and_bounded(self) -> None:
+        self.assertEqual(self.organizer._xlsx_sheet_name("A/B:C*D?E[Z]\\F"), "A-B-C-D-E-Z--F")
+        self.assertLessEqual(len(self.organizer._xlsx_sheet_name("x" * 80)), 31)
 
 
 class GuiLocalizationAuditTests(unittest.TestCase):

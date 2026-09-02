@@ -160,3 +160,36 @@ STRINGS.update({
     "progress.livery.parse": "ペイントフォルダー解析: {current:,}/{total:,}件",
     "progress.livery.complete": "ペイント探索完了: {folders:,} folders → {paints:,}件のペイント / {vehicles:,}車種 / 完全一致再DL {duplicates:,}件を別表示",
 })
+
+
+# v0.4.58-r06: Excelレポート。利用者データ値は翻訳せず、見出しとOrganizer生成値だけを切り替える。
+STRINGS.update({
+    "excel.sheet_name": "ペイント一覧",
+    "excel.workbook_title": "Livery Organizer for FH6 ペイント一覧",
+    "excel.header.thumbnail": "サムネイル",
+    "excel.header.decision": "整理状態",
+    "excel.header.car_id": "Car ID",
+    "excel.header.vehicle": "車両名",
+    "excel.header.make": "メーカー",
+    "excel.header.model": "モデル",
+    "excel.header.year": "年式",
+    "excel.header.vehicle_asset": "車両アセット",
+    "excel.header.creator": "作成者",
+    "excel.header.vinyl_count": "バイナル数",
+    "excel.header.title": "タイトル",
+    "excel.header.description": "説明",
+    "excel.header.acquired_at": "取得日時",
+    "excel.header.tags": "タグ",
+    "excel.header.notes": "メモ",
+    "excel.header.favorite": "お気に入り",
+    "excel.header.review_later": "後で確認",
+    "excel.header.livery_reference_id": "Livery参照ID",
+    "excel.header.paint_id": "ペイントID",
+    "excel.header.fingerprint": "フィンガープリント",
+    "excel.header.thumbnail_source": "サムネイル元",
+    "excel.header.source_folder": "保存元",
+    "excel.header.analysis_notes": "解析メモ",
+    "excel.value.thumbnail_yes": "あり",
+    "excel.value.thumbnail_no": "なし",
+    "excel.value.decision_undecided": "未決定",
+})

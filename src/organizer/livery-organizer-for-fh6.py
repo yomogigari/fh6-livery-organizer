@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.58-r04
+Livery Organizer for FH6 v0.4.58-r06
 ====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -52,6 +52,7 @@ import hashlib
 import html
 import io
 import json
+import math
 import os
 import platform
 import re
@@ -60,6 +61,7 @@ import struct
 import sys
 import threading
 import traceback
+import unicodedata
 import webbrowser
 import zlib
 import zipfile
@@ -102,7 +104,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r05"
+VERSION = "0.4.58-r06"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -3747,6 +3749,51 @@ def _xlsx_col_name(index_1based: int) -> str:
     return result or "A"
 
 
+def _xlsx_display_units(value: object) -> int:
+    """Excel列幅の概算用に、全角文字を2、その他を1として数えます。"""
+    text = _xlsx_clean_text(value)
+    return sum(2 if unicodedata.east_asian_width(ch) in {"W", "F"} else 1 for ch in text)
+
+
+def _xlsx_localized_column_widths(headers: list[str]) -> tuple[list[float], int]:
+    """翻訳後の見出しに合わせて列幅とヘッダー行高を安全な範囲で調整します。
+
+    日本語は従来幅を維持します。英語 / qpsでは狭い列だけ必要に応じて広げ、
+    qpsのような長い見出しは無制限に列を広げず、ヘッダーの折り返しも利用します。
+    """
+    base_widths = [
+        24, 12, 10, 34, 18, 24, 9, 24, 20, 12, 26, 40,
+        20, 22, 36, 12, 12, 20, 30, 24, 32, 48, 40,
+    ]
+    if len(headers) != len(base_widths):
+        raise ValueError("Excel header/column width count mismatch")
+    if get_language() == "ja":
+        return [float(width) for width in base_widths], 24
+
+    widths: list[float] = []
+    line_counts: list[int] = []
+    for header, base in zip(headers, base_widths):
+        units = max(1, _xlsx_display_units(header))
+        # 既存幅 + 10文字程度を上限にし、横長になりすぎないようにします。
+        cap = min(42.0, float(base) + 10.0)
+        width = max(float(base), min(cap, 4.0 + units * 0.92))
+        width = round(width, 1)
+        widths.append(width)
+        usable = max(8.0, width - 2.0)
+        line_counts.append(max(1, math.ceil(units / usable)))
+
+    max_lines = max(line_counts, default=1)
+    header_height = min(60, max(24, 18 * max_lines + 6))
+    return widths, header_height
+
+
+def _xlsx_sheet_name(value: object) -> str:
+    """Excelのシート名制約に合わせてローカライズ済み名称を安全化します。"""
+    text = _xlsx_clean_text(value, max_length=64).strip()
+    text = re.sub(r"[\[\]:*?/\\]", "-", text).strip(" '")
+    return (text or "Sheet1")[:31]
+
+
 def _xlsx_cell_xml(ref: str, value, style: int = 2, numeric: bool = False) -> str:
     if numeric and value is not None and value != "":
         try:
@@ -3810,6 +3857,19 @@ def _validate_xlsx_package(path: Path, expected_rows: int, expected_cols: int) -
                 except ET.ParseError as exc:
                     raise ValueError(f"Invalid XLSX XML: {name}: {exc}") from exc
 
+        # OOXML Extended Properties の AppVersion は、存在する場合 XX.YYYY 形式のみ有効です。
+        # 将来の変更で SemVer を直接書き戻してExcel修復警告を再発させないよう検査します。
+        if "docProps/app.xml" in names:
+            app_root = ET.fromstring(zf.read("docProps/app.xml"))
+            app_ns = "{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}"
+            app_version = app_root.find(app_ns + "AppVersion")
+            if app_version is not None:
+                app_version_text = (app_version.text or "").strip()
+                if not re.fullmatch(r"\d{2}\.\d{4}", app_version_text):
+                    raise ValueError(
+                        f"Invalid XLSX AppVersion: {app_version_text!r}; expected XX.YYYY"
+                    )
+
         sheet_root = ET.fromstring(zf.read("xl/worksheets/sheet1.xml"))
         ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
         children = [child.tag.rsplit("}", 1)[-1] for child in list(sheet_root)]
@@ -3849,11 +3909,15 @@ def write_excel_report(
     tmp_path = outdir / "livery-organizer-for-fh6.xlsx.tmp"
 
     headers = [
-        "サムネイル", "整理状態", "Car ID", "車両名", "メーカー", "モデル",
-        "年式", "車両アセット", "作成者", "バイナル数", "タイトル", "説明",
-        "取得日時", "タグ", "メモ", "お気に入り", "後で確認",
-        "Livery参照ID", "ペイントID", "フィンガープリント",
-        "サムネイル元", "保存元", "解析メモ",
+        tr("excel.header.thumbnail"), tr("excel.header.decision"), tr("excel.header.car_id"),
+        tr("excel.header.vehicle"), tr("excel.header.make"), tr("excel.header.model"),
+        tr("excel.header.year"), tr("excel.header.vehicle_asset"), tr("excel.header.creator"),
+        tr("excel.header.vinyl_count"), tr("excel.header.title"), tr("excel.header.description"),
+        tr("excel.header.acquired_at"), tr("excel.header.tags"), tr("excel.header.notes"),
+        tr("excel.header.favorite"), tr("excel.header.review_later"),
+        tr("excel.header.livery_reference_id"), tr("excel.header.paint_id"),
+        tr("excel.header.fingerprint"), tr("excel.header.thumbnail_source"),
+        tr("excel.header.source_folder"), tr("excel.header.analysis_notes"),
     ]
 
     rows: list[list] = []
@@ -3866,8 +3930,8 @@ def write_excel_report(
                 image_source = candidate
         image_sources.append(image_source)
         rows.append([
-            "あり" if image_source else "なし",
-            "未決定",
+            tr("excel.value.thumbnail_yes") if image_source else tr("excel.value.thumbnail_no"),
+            tr("excel.value.decision_undecided"),
             r.car_id,
             r.vehicle_display_name,
             r.vehicle_make,
@@ -3896,10 +3960,7 @@ def write_excel_report(
     last_col = _xlsx_col_name(col_count)
     filter_ref = f"A1:{last_col}{row_count}"
 
-    column_widths = [
-        24, 12, 10, 34, 18, 24, 9, 24, 20, 12, 26, 40,
-        20, 22, 36, 12, 12, 20, 30, 24, 32, 48, 40,
-    ]
+    column_widths, header_row_height = _xlsx_localized_column_widths(headers)
 
     media_by_source: dict[str, dict] = {}
     image_row_refs: list[tuple[int, str]] = []
@@ -3939,7 +4000,7 @@ def write_excel_report(
         for col, value in enumerate(headers, start=1)
     )
     sheet_rows = [
-        f'<row r="1" ht="24" customHeight="1">{header_cells}</row>'
+        f'<row r="1" ht="{header_row_height}" customHeight="1">{header_cells}</row>'
     ]
 
     numeric_columns = {3, 7, 10}
@@ -4007,11 +4068,13 @@ def write_excel_report(
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>'''
 
-    workbook_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    sheet_name = _xlsx_sheet_name(tr("excel.sheet_name"))
+    sheet_name_xml = xml_escape(sheet_name, {'"': '&quot;'})
+    workbook_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <bookViews><workbookView xWindow="0" yWindow="0" windowWidth="24000" windowHeight="12000"/></bookViews>
-  <sheets><sheet name="ペイント一覧" sheetId="1" r:id="rId1"/></sheets>
+  <sheets><sheet name="{sheet_name_xml}" sheetId="1" r:id="rId1"/></sheets>
 </workbook>'''
 
     workbook_rels = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -4028,22 +4091,27 @@ def write_excel_report(
 </Relationships>'''
 
     now_utc = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    workbook_title = xml_escape(tr("excel.workbook_title"))
+    workbook_language = "en-US" if get_language() in {"en", "qps"} else "ja-JP"
     core_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
  xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/"
  xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <dc:creator>Livery Organizer for FH6</dc:creator>
   <cp:lastModifiedBy>Livery Organizer for FH6</cp:lastModifiedBy>
-  <dc:title>Livery Organizer for FH6 ペイント一覧</dc:title>
+  <dc:title>{workbook_title}</dc:title>
+  <dc:language>{workbook_language}</dc:language>
   <dcterms:created xsi:type="dcterms:W3CDTF">{now_utc}</dcterms:created>
   <dcterms:modified xsi:type="dcterms:W3CDTF">{now_utc}</dcterms:modified>
 </cp:coreProperties>'''
 
-    app_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    # AppVersion は OOXML 仕様上 XX.YYYY の数値形式に制限されます。
+    # Organizer の SemVer / 開発リビジョン（例: 0.4.58-r06）をそのまま書くと
+    # Excel が修復対象として扱うため、任意要素である AppVersion は出力しません。
+    app_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
  xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
   <Application>Livery Organizer for FH6</Application>
-  <AppVersion>{VERSION}</AppVersion>
 </Properties>'''
 
     drawing_xml = ""

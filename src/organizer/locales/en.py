@@ -160,3 +160,36 @@ STRINGS.update({
     "progress.livery.parse": "Parsing paint folders: {current:,}/{total:,}",
     "progress.livery.complete": "Paint scan complete: {folders:,} folders → {paints:,} paints / {vehicles:,} vehicles / {duplicates:,} exact re-download duplicates shown separately",
 })
+
+
+# v0.4.58-r06: Excel report. User-data values remain verbatim; only Organizer UI/system text is localized.
+STRINGS.update({
+    "excel.sheet_name": "Paint List",
+    "excel.workbook_title": "Livery Organizer for FH6 Paint List",
+    "excel.header.thumbnail": "Thumbnail",
+    "excel.header.decision": "Decision Status",
+    "excel.header.car_id": "Car ID",
+    "excel.header.vehicle": "Vehicle Name",
+    "excel.header.make": "Manufacturer",
+    "excel.header.model": "Model",
+    "excel.header.year": "Year",
+    "excel.header.vehicle_asset": "Vehicle Asset",
+    "excel.header.creator": "Creator",
+    "excel.header.vinyl_count": "Vinyl Count",
+    "excel.header.title": "Title",
+    "excel.header.description": "Description",
+    "excel.header.acquired_at": "Acquired At",
+    "excel.header.tags": "Tags",
+    "excel.header.notes": "Notes",
+    "excel.header.favorite": "Favorite",
+    "excel.header.review_later": "Review Later",
+    "excel.header.livery_reference_id": "Livery Reference ID",
+    "excel.header.paint_id": "Paint ID",
+    "excel.header.fingerprint": "Fingerprint",
+    "excel.header.thumbnail_source": "Thumbnail Source",
+    "excel.header.source_folder": "Source Folder",
+    "excel.header.analysis_notes": "Analysis Notes",
+    "excel.value.thumbnail_yes": "Yes",
+    "excel.value.thumbnail_no": "No",
+    "excel.value.decision_undecided": "Undecided",
+})
