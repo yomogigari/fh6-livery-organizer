@@ -45,6 +45,26 @@ class LocalizationTests(unittest.TestCase):
             with self.subTest(key=key):
                 self.assertEqual(placeholders(JA_STRINGS[key]), placeholders(EN_STRINGS[key]))
 
+    def test_all_tr_calls_use_known_literal_keys_and_no_locale_keys_are_orphaned(self) -> None:
+        tree = ast.parse(ORGANIZER_SOURCE.read_text(encoding="utf-8"))
+        used: set[str] = set()
+        dynamic_calls: list[int] = []
+        for node in ast.walk(tree):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "tr"
+            ):
+                continue
+            if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                used.add(node.args[0].value)
+            else:
+                dynamic_calls.append(node.lineno)
+        self.assertEqual(dynamic_calls, [], msg=f"動的tr()キーがあります: {dynamic_calls}")
+        self.assertEqual(used - set(JA_STRINGS), set())
+        self.assertEqual(used - set(EN_STRINGS), set())
+        self.assertEqual(set(JA_STRINGS) - used, set(), msg="未使用の翻訳キーがあります")
+
     def test_language_normalization(self) -> None:
         self.assertEqual(i18n.normalize_language("ja-JP"), "ja")
         self.assertEqual(i18n.normalize_language("en_US"), "en")
@@ -96,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r06(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r06")
+    def test_version_is_r07(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r07")
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -119,6 +139,28 @@ class OrganizerIntegrationTests(unittest.TestCase):
             if previous is not None:
                 os.environ["FH6_ORGANIZER_LANG"] = previous
 
+    def test_saved_language_and_environment_override_precedence(self) -> None:
+        import os
+        previous = os.environ.pop("FH6_ORGANIZER_LANG", None)
+        try:
+            self.assertEqual(self.organizer.initialize_ui_language({"language": "en"}), "en")
+            os.environ["FH6_ORGANIZER_LANG"] = "qps"
+            self.assertEqual(self.organizer.initialize_ui_language({"language": "ja"}), "qps")
+        finally:
+            if previous is None:
+                os.environ.pop("FH6_ORGANIZER_LANG", None)
+            else:
+                os.environ["FH6_ORGANIZER_LANG"] = previous
+
+    def test_cli_help_is_localized_for_english_and_pseudo(self) -> None:
+        for language in ("en", "qps"):
+            with self.subTest(language=language):
+                self.organizer.set_language(language)
+                help_text = self.organizer.build_parser().format_help()
+                self.assertIn("--inspect-vehicle-assets", help_text)
+                self.assertFalse(japanese_text(help_text))
+                if language == "qps":
+                    self.assertIn("⟦", help_text)
 
     def test_preflight_is_localized(self) -> None:
         self.organizer.set_language("en")
@@ -149,6 +191,48 @@ class OrganizerIntegrationTests(unittest.TestCase):
         self.assertIn("Save data:", text)
         self.assertIn("Pre-run check:", text)
         self.assertNotIn("保存領域", text)
+
+    def test_vehicle_asset_diagnostics_are_localized(self) -> None:
+        vehicle_db = {1: object()}
+        empty_archives = [{"path": "media/Cars/empty.zip"}]
+        problems = [{
+            "path": "media/Cars/broken.zip",
+            "exception_type": "BadZipFile",
+            "exception": "sample technical error",
+            "size": 123,
+            "prefix_hex": "00112233",
+            "standard_zip_signature": False,
+            "signature_error": "",
+        }]
+        self.organizer.set_language("en")
+        text = self.organizer.format_vehicle_asset_problems(
+            Path("C:/FH6"), vehicle_db, empty_archives, problems
+        )
+        self.assertIn("FH6 vehicle asset ZIP diagnostics:", text)
+        self.assertIn("Detected Car IDs: 1", text)
+        self.assertIn("Unreadable ZIPs: 1", text)
+        self.assertIn("Exception summary: BadZipFile 1", text)
+        self.assertIn("Size: 123 bytes", text)
+        self.assertIn("sample technical error", text)
+        self.assertFalse(japanese_text(text))
+
+    def test_vehicle_asset_diagnostics_support_pseudo_locale_without_touching_technical_values(self) -> None:
+        self.organizer.set_language("qps")
+        technical_path = "media/Cars/日本語-user-data.zip"
+        problems = [{
+            "path": technical_path,
+            "exception_type": "BadZipFile",
+            "exception": "technical-value",
+            "size": None,
+            "prefix_hex": "",
+            "standard_zip_signature": False,
+            "signature_error": "signature-value",
+        }]
+        text = self.organizer.format_vehicle_asset_problems(Path("FH6"), {}, [], problems)
+        self.assertIn("⟦", text)
+        self.assertIn(technical_path, text)
+        self.assertIn("technical-value", text)
+        self.assertIn("signature-value", text)
 
 
 class ReportLocalizationTests(unittest.TestCase):
@@ -559,6 +643,51 @@ class GuiLocalizationAuditTests(unittest.TestCase):
             ):
                 offenders.append((node.lineno, node.value))
         self.assertEqual(offenders, [], msg=f"日本語固定のGUI文字列があります: {offenders[:10]}")
+
+    def test_non_report_python_display_literals_do_not_bypass_i18n(self) -> None:
+        """write_reportの日本語テンプレートとApp以外で日本語固定表示へ戻るのを防ぎます。"""
+        tree = ast.parse(ORGANIZER_SOURCE.read_text(encoding="utf-8"))
+        parents: dict[ast.AST, ast.AST] = {}
+        for parent in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent):
+                parents[child] = parent
+
+        def nearest(node: ast.AST, node_type):
+            current = node
+            while current in parents:
+                current = parents[current]
+                if isinstance(current, node_type):
+                    return current
+            return None
+
+        def is_docstring(node: ast.Constant) -> bool:
+            expr = parents.get(node)
+            owner = parents.get(expr) if expr is not None else None
+            return bool(
+                isinstance(expr, ast.Expr)
+                and owner is not None
+                and hasattr(owner, "body")
+                and getattr(owner, "body")
+                and getattr(owner, "body")[0] is expr
+            )
+
+        offenders: list[tuple[int, str]] = []
+        for node in ast.walk(tree):
+            if not (
+                isinstance(node, ast.Constant)
+                and isinstance(node.value, str)
+                and japanese_text(node.value)
+                and not is_docstring(node)
+            ):
+                continue
+            function = nearest(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            owner_class = nearest(node, ast.ClassDef)
+            if function is not None and function.name == "write_report":
+                continue
+            if owner_class is not None and owner_class.name == "App":
+                continue
+            offenders.append((node.lineno, node.value))
+        self.assertEqual(offenders, [], msg=f"tr()を迂回した日本語固定文字列があります: {offenders[:10]}")
 
 
 if __name__ == "__main__":

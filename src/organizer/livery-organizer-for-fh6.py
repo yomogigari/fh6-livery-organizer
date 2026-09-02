@@ -104,7 +104,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r06"
+VERSION = "0.4.58-r07"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -2331,19 +2331,17 @@ def format_vehicle_asset_problems(
     empty_archives: list[dict[str, object]],
     problems: list[dict[str, object]],
 ) -> str:
-    """車両アセット診断結果を、原因切り分け用のテキストへ整形します。"""
+    """車両アセット診断結果を、現在のUI言語で原因切り分け用テキストへ整形します。"""
     lines = [
-        f"FH6車両アセットZIP診断: {display_path_text(game_root)}",
-        f"検出Car IDs: {len(vehicle_db):,}",
-        f"空ZIP（0 bytes・正常スキップ）: {len(empty_archives):,}",
-        f"読み取り不可ZIP: {len(problems):,}",
+        tr("asset_diag.title", path=display_path_text(game_root)),
+        tr("asset_diag.detected_car_ids", count=len(vehicle_db)),
+        tr("asset_diag.empty_archives", count=len(empty_archives)),
+        tr("asset_diag.unreadable_archives", count=len(problems)),
     ]
 
     if empty_archives:
-        lines.append(
-            "※ 0バイトの .zip はFH6側の空プレースホルダーとして扱い、異常には数えません。"
-        )
-        lines.append("空ZIP一覧:")
+        lines.append(tr("asset_diag.empty_note"))
+        lines.append(tr("asset_diag.empty_list"))
         for index, item in enumerate(empty_archives, 1):
             lines.append(
                 f"{index:02d}. {display_path_text(item.get('path', ''))} / 0 bytes"
@@ -2352,7 +2350,7 @@ def format_vehicle_asset_problems(
     if not problems:
         if empty_archives:
             lines.append("")
-        lines.append("0バイト以外の読み取り不可ZIPは見つかりませんでした。")
+        lines.append(tr("asset_diag.no_unreadable"))
         return "\n".join(lines)
 
     if empty_archives:
@@ -2361,7 +2359,7 @@ def format_vehicle_asset_problems(
     reason_counts: dict[str, int] = {}
     signature_counts = {"standard": 0, "nonstandard": 0, "unknown": 0}
     for item in problems:
-        reason = str(item.get("exception_type", "不明"))
+        reason = str(item.get("exception_type") or tr("asset_diag.unknown"))
         reason_counts[reason] = reason_counts.get(reason, 0) + 1
         if item.get("signature_error"):
             signature_counts["unknown"] += 1
@@ -2370,43 +2368,50 @@ def format_vehicle_asset_problems(
         else:
             signature_counts["nonstandard"] += 1
 
-    lines.append(
-        "例外内訳: "
-        + ", ".join(f"{name} {count:,}" for name, count in sorted(reason_counts.items()))
+    reason_details = ", ".join(
+        f"{name} {count:,}" for name, count in sorted(reason_counts.items())
     )
+    lines.append(tr("asset_diag.reason_summary", details=reason_details))
     lines.append(
-        "先頭シグネチャ: "
-        f"標準ZIP {signature_counts['standard']:,} / "
-        f"非標準 {signature_counts['nonstandard']:,} / "
-        f"確認不可 {signature_counts['unknown']:,}"
+        tr(
+            "asset_diag.signature_summary",
+            standard=signature_counts["standard"],
+            nonstandard=signature_counts["nonstandard"],
+            unknown=signature_counts["unknown"],
+        )
     )
-    lines.append(
-        "※ 相対パスだけを表示します。FH6本体は読み取り専用で、ZIPの展開・変更は行いません。"
-    )
+    lines.append(tr("asset_diag.readonly_note"))
     lines.append("")
-    lines.append("読み取り不可ZIP一覧:")
+    lines.append(tr("asset_diag.unreadable_list"))
 
     for index, item in enumerate(problems, 1):
         size = item.get("size")
-        size_text = f"{int(size):,} bytes" if isinstance(size, int) else "不明"
-        prefix = str(item.get("prefix_hex") or "(取得できず)")
+        size_text = f"{int(size):,} bytes" if isinstance(size, int) else tr("asset_diag.unknown")
+        prefix = str(item.get("prefix_hex") or tr("asset_diag.prefix_unavailable"))
         signature = (
-            "標準ZIP"
+            tr("asset_diag.signature_standard")
             if item.get("standard_zip_signature")
-            else "確認不可"
+            else tr("asset_diag.signature_unknown")
             if item.get("signature_error")
-            else "非標準"
+            else tr("asset_diag.signature_nonstandard")
         )
         lines.append(
             f"{index:02d}. [{item.get('exception_type', 'Error')}] "
             f"{display_path_text(item.get('path', ''))}"
         )
         lines.append(
-            f"    サイズ: {size_text} / 先頭: {prefix} / {signature}"
+            tr(
+                "asset_diag.item_size",
+                size=size_text,
+                prefix=prefix,
+                signature=signature,
+            )
         )
-        lines.append(f"    例外: {item.get('exception', '')}")
+        lines.append(tr("asset_diag.item_exception", error=item.get("exception", "")))
         if item.get("signature_error"):
-            lines.append(f"    先頭確認エラー: {item.get('signature_error')}")
+            lines.append(
+                tr("asset_diag.item_signature_error", error=item.get("signature_error"))
+            )
 
     return "\n".join(lines)
 
