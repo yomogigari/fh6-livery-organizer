@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Navigator Bridge for FH6 v0.0.26
+"""Navigator Bridge for FH6 v0.0.26-r01
 
 非公式・非営利のファンメイド操作支援ツールです。
 Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承認・後援を
@@ -8,7 +8,8 @@ Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承�
 
 このツールは、Forza Horizon 6 の「マイデザイン」画面内で、利用者が指定した位置まで
 カーソルを移動しやすくするための補助Bridgeです。Organizer連携のBridgeモードでは、
-(1) ウィンドウタイトルから Forza Horizon 6 を検出してフォアグラウンドへ切り替えること、
+(1) 前後の空白を除いたウィンドウタイトルが Forza Horizon 6 と完全一致する場合だけ
+    FH6として検出し、フォアグラウンドへ切り替えること、
 (2) 位置移動に必要なカーソルキーを送ること、の2点だけを担当します。
 
 【固定された安全境界】
@@ -75,7 +76,7 @@ except Exception:
 
 APP_NAME = "Navigator Bridge for FH6"
 PACKAGED_EXE_FILENAME = "Navigator-Bridge-for-FH6.exe"
-APP_VERSION = "v0.0.26"
+APP_VERSION = "v0.0.26-r01"
 FH6_WINDOW_TITLE = "Forza Horizon 6"
 APP_USER_MODEL_ID = "LiveryTools.NavigatorBridgeForFH6"
 PROTOCOL_SCHEME = "navigatorbridgeforfh6"
@@ -506,11 +507,16 @@ def get_window_title(hwnd: int) -> str:
         return ""
     buf = ctypes.create_unicode_buffer(length + 1)
     user32.GetWindowTextW(hwnd, buf, len(buf))
-    return buf.value.strip()
+    return buf.value.strip(" ")
+
+
+def is_fh6_window_title(title: str) -> bool:
+    """FH6の既知タイトルと、前後空白を除いて完全一致する場合だけTrue。"""
+    return str(title or "").strip(" ") == FH6_WINDOW_TITLE
 
 
 def find_fh6_windows() -> list[tuple[int, str]]:
-    """Return visible top-level windows whose title contains 'Forza Horizon 6'."""
+    """Return visible top-level windows whose normalized title exactly matches FH6."""
     if not IS_WINDOWS or user32 is None:
         return []
 
@@ -524,13 +530,12 @@ def find_fh6_windows() -> list[tuple[int, str]]:
         if not user32.IsWindowVisible(hwnd):
             return True
         title = get_window_title(hwnd)
-        if title and FH6_WINDOW_TITLE.casefold() in title.casefold():
+        if is_fh6_window_title(title):
             found.append((int(hwnd), title))
         return True
 
     user32.EnumWindows(enum_proc, 0)
-    # Exact title first, then shorter title, then handle for deterministic selection.
-    found.sort(key=lambda x: (x[1].casefold() != FH6_WINDOW_TITLE.casefold(), len(x[1]), x[0]))
+    found.sort(key=lambda x: x[0])
     return found
 
 
@@ -568,6 +573,11 @@ def is_foreground_window(hwnd: int) -> bool:
     if not IS_WINDOWS or user32 is None:
         return False
     return int(user32.GetForegroundWindow() or 0) == int(hwnd)
+
+
+def is_foreground_fh6_window(hwnd: int) -> bool:
+    """Foreground handle and current title must both still identify FH6."""
+    return is_foreground_window(hwnd) and is_fh6_window_title(get_window_title(hwnd))
 
 @dataclass(frozen=True)
 class TargetPosition:
@@ -1272,7 +1282,7 @@ class NavigatorApp:
         self.reset_ret_delay_var = tk.StringVar(value=str(getattr(args, "reset_ret_delay_ms", 800.0)))
         self.plan_var = tk.StringVar(value="移動先と最終実スロット番号を入力してください。")
         self.operation_var = tk.StringVar(value="操作: —")
-        self.status_var = tk.StringVar(value="待機中（実行時にForza Horizon 6を自動検出します）")
+        self.status_var = tk.StringVar(value="待機中（タイトルが「Forza Horizon 6」と完全一致するウィンドウだけを検出します）")
         # Organizer連携欄で _build_ui() 中に参照するため、UI構築前に初期化する。
         self.protocol_status_var = tk.StringVar(value="Organizer連携: 確認中")
         self.execution_format_var = tk.StringVar(value=f"実行形式: {execution_format_label()}")
@@ -1745,7 +1755,7 @@ class NavigatorApp:
         if not windows:
             show_app_error(
                 self.root,
-                "Forza Horizon 6 のウィンドウが見つかりません。\n"
+                "タイトルが「Forza Horizon 6」と完全一致するウィンドウが見つかりません。\n"
                 "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。",
             )
             self.status_var.set("FH6が見つからなかったため、キー入力は行いませんでした。")
@@ -1815,9 +1825,9 @@ class NavigatorApp:
                     return
 
             # Safety check: never send keys if FH6 did not actually become foreground.
-            if not is_foreground_window(hwnd):
+            if not is_foreground_fh6_window(hwnd):
                 self._finish(
-                    f"安全のため中止: 「{title}」が前面になっていないためキー入力を送信しませんでした。",
+                    f"安全のため中止: 「{title}」をFH6として前面確認できないためキー入力を送信しませんでした。",
                     error=True,
                 )
                 return
@@ -1830,8 +1840,8 @@ class NavigatorApp:
             total = plan.total_presses + (2 if reset_origin else 0)
 
             if reset_origin:
-                if not is_foreground_window(hwnd):
-                    self._finish("安全のため中止: 初期位置リセット前にFH6が前面でなくなりました。", error=True)
+                if not is_foreground_fh6_window(hwnd):
+                    self._finish("安全のため中止: 初期位置リセット前にFH6として前面確認できなくなりました。", error=True)
                     return
                 self._set_status_threadsafe("初期位置リセット: ESC を送信…")
                 send_origin_reset_step("ESC")
@@ -1839,8 +1849,8 @@ class NavigatorApp:
                 if not self._sleep_abortable(reset_esc_delay_s):
                     self._finish(f"中止しました。{done}/{total}キー送信済み。")
                     return
-                if not is_foreground_window(hwnd):
-                    self._finish("安全のため中止: RET送信前にFH6が前面でなくなりました。", error=True)
+                if not is_foreground_fh6_window(hwnd):
+                    self._finish("安全のため中止: RET送信前にFH6として前面確認できなくなりました。", error=True)
                     return
                 self._set_status_threadsafe("初期位置リセット: RET を送信…")
                 send_origin_reset_step("RET")
@@ -1848,8 +1858,8 @@ class NavigatorApp:
                 if not self._sleep_abortable(reset_ret_delay_s):
                     self._finish(f"中止しました。{done}/{total}キー送信済み。")
                     return
-                if not is_foreground_window(hwnd):
-                    self._finish("安全のため中止: マイデザイン再入場後にFH6が前面でなくなりました。", error=True)
+                if not is_foreground_fh6_window(hwnd):
+                    self._finish("安全のため中止: マイデザイン再入場後にFH6として前面確認できなくなりました。", error=True)
                     return
 
             if plan.horizontal_key and plan.horizontal_presses:
@@ -1969,7 +1979,7 @@ def activate_fh6_window_confirmed(hwnd: int, timeout_s: float = 1.2) -> bool:
     deadline = time.perf_counter() + max(0.2, timeout_s)
     while True:
         activate_fh6_window(hwnd)
-        if is_foreground_window(hwnd):
+        if is_foreground_fh6_window(hwnd):
             return True
         if time.perf_counter() >= deadline:
             return False
@@ -1985,7 +1995,7 @@ def execute_headless_move(args: argparse.Namespace) -> str:
     windows = find_fh6_windows()
     if not windows:
         raise RuntimeError(
-            "Forza Horizon 6 のウィンドウが見つかりません。\n"
+            "タイトルが「Forza Horizon 6」と完全一致するウィンドウが見つかりません。\n"
             "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。"
         )
     hwnd, title = windows[0]
@@ -2001,36 +2011,36 @@ def execute_headless_move(args: argparse.Namespace) -> str:
     bridge_log("FH6 foreground confirmed")
     if switch_delay_s > 0:
         time.sleep(switch_delay_s)
-    if not is_foreground_window(hwnd):
+    if not is_foreground_fh6_window(hwnd):
         raise RuntimeError(
-            "FH6切替後の待機中に別のウィンドウが前面になりました。\n"
+            "FH6切替後の待機中にFH6として前面確認できなくなりました。\n"
             "安全のためキー入力は送信していません。"
         )
 
     done = 0
     if reset_origin:
-        if not is_foreground_window(hwnd):
-            raise RuntimeError("初期位置リセット前にFH6が前面でなくなったため、安全のため中止しました。")
+        if not is_foreground_fh6_window(hwnd):
+            raise RuntimeError("初期位置リセット前にFH6として前面確認できなくなったため、安全のため中止しました。")
         bridge_log("origin reset: ESC")
         send_origin_reset_step("ESC")
         done += 1
         if reset_esc_delay_s > 0:
             time.sleep(reset_esc_delay_s)
-        if not is_foreground_window(hwnd):
-            raise RuntimeError("RET送信前にFH6が前面でなくなったため、安全のため中止しました。")
+        if not is_foreground_fh6_window(hwnd):
+            raise RuntimeError("RET送信前にFH6として前面確認できなくなったため、安全のため中止しました。")
         bridge_log("origin reset: RET")
         send_origin_reset_step("RET")
         done += 1
         if reset_ret_delay_s > 0:
             time.sleep(reset_ret_delay_s)
-        if not is_foreground_window(hwnd):
-            raise RuntimeError("マイデザイン再入場後にFH6が前面でなくなったため、安全のため中止しました。")
+        if not is_foreground_fh6_window(hwnd):
+            raise RuntimeError("マイデザイン再入場後にFH6として前面確認できなくなったため、安全のため中止しました。")
 
     if plan.horizontal_key and plan.horizontal_presses:
         vk = key_name_to_vk(plan.horizontal_key)
         for i in range(plan.horizontal_presses):
-            if not is_foreground_window(hwnd):
-                raise RuntimeError("移動中にFH6が前面でなくなったため、安全のため中止しました。")
+            if not is_foreground_fh6_window(hwnd):
+                raise RuntimeError("移動中にFH6として前面確認できなくなったため、安全のため中止しました。")
             send_movement_key(vk)
             done += 1
             if i + 1 < plan.horizontal_presses:
@@ -2044,8 +2054,8 @@ def execute_headless_move(args: argparse.Namespace) -> str:
         time.sleep(turn_delay_s)
 
     if plan.vertical_key and plan.vertical_presses:
-        if not is_foreground_window(hwnd):
-            raise RuntimeError("上下移動前にFH6が前面でなくなったため、安全のため中止しました。")
+        if not is_foreground_fh6_window(hwnd):
+            raise RuntimeError("上下移動前にFH6として前面確認できなくなったため、安全のため中止しました。")
         # key_name_to_vk() + send_movement_key() both enforce LEFT / RIGHT / DOWN only.
         send_movement_key(key_name_to_vk(plan.vertical_key))
         done += 1
