@@ -1,30 +1,32 @@
-Livery Organizer for FH6 v0.4.58 Preview
+Livery Organizer for FH6 v0.4.59 Preview
 =========================================
 
-公開日: 2026-08-29
+公開日: 2026-09-04
 
 Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 ペイント（Livery）を、ローカル環境で一覧化・検索・整理するためのツールです。
 
 このリリースはプレビュー版です。
 
-v0.4.58では、任意の補助ツール Navigator Bridge for FH6 v0.0.26 を初めて同梱しました。
-FH6本体の「マイデザイン」上の実スロット位置を確認し、任意の一覧や比較画面から対象デザインを選んで、
-Bridgeを使ってFH6側の該当位置まで移動できます。
+v0.4.59では、OrganizerのデスクトップGUI・生成HTML・Excelを日本語 / 英語で利用できる
+多言語基盤を追加しました。生成HTMLでは、900～1000件規模のレポートでも検索入力を
+滑らかに保ちやすいよう、ライブ検索時の不要な全体再計算やlocalStorage再読込も削減しています。
 
-この連携は、不要なペイントを整理するときだけでなく、ダウンロード済みの多数のペイントから
-使いたいデザインをOrganizerで探し、FH6の「デザインを読み込み」で現在運転しているマシンへ
-適用するときにも利用できます。
+任意の補助ツール Navigator Bridge for FH6 は v0.0.27 へ更新し、前後の通常スペースを除いた
+ウィンドウタイトルが「Forza Horizon 6」と完全一致する場合だけFH6として扱うようにしました。
+タイトルにゲーム名を含むだけのブラウザや別アプリにはキーを送信しません。
 
 
 ■ 配布ファイル
 
 Livery-Organizer-for-FH6.exe
-livery-organizer-for-fh6-v0458.py
+livery-organizer-for-fh6-v0459.py
 Navigator-Bridge-for-FH6.exe
-navigator-bridge-for-fh6-v026.py
-NAVIGATOR-BRIDGE-README.txt
+navigator-bridge-for-fh6-v027.py
 README.txt
+README_EN.txt
+NAVIGATOR-BRIDGE-README.txt
+NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 
 OrganizerはEXE版とPython版のどちらか一方を選んで利用できます。
@@ -32,6 +34,28 @@ Navigator BridgeもEXE版とPython版のどちらか一方を利用します。
 
 Navigator Bridgeは任意機能です。
 一覧化・検索・整理・CSV / Excel出力など、Organizer本体の機能だけを使う場合は不要です。
+
+Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手順は、通常の配布物には含めていません。
+
+
+■ 言語 / 英語ドキュメント
+
+Organizerの利用者向け表示は、日本語と英語に対応しています。
+言語設定はsettings.jsonへ保存され、変更は次回起動時から反映されます。
+生成HTML / Excelは、レポート生成時点のOrganizer言語を使用します。
+Liveryタイトル、説明、作成者名、車名、タグ、メモ等の利用者データは翻訳しません。
+
+日本語を主要ドキュメントの正本、英語を共通の第二言語として扱います。
+英語の概要は同梱の README_EN.txt、Bridgeの英語詳細は NAVIGATOR-BRIDGE-README_EN.txt を参照してください。
+
+英語表示で不自然な表現や誤訳を見つけた場合は、Issue等でのフィードバックを歓迎します。
+可能であれば、GitHubリポジトリの src/organizer/locales/en.py に対する具体的な変更、
+またはPull Requestとして提案していただけると助かります。
+翻訳は機能の意味、既存用語、UIレイアウト、テスト等も確認してから反映するため、
+レビュー・反映には時間がかかる場合があります。
+
+今後、日本語・英語以外のUI言語が追加された場合でも、その言語専用の詳細文書一式を
+個別に増やす予定はありません。日本語を読めない場合は英語ドキュメントを共通参照として利用してください。
 
 
 ■ Navigator Bridge for FH6 とは
@@ -74,8 +98,9 @@ Windows 11
 PC版 Forza Horizon 6
 
 開発・動作確認はMicrosoft Store / Xbox App版を中心に行っています。
-Steam版でも利用者から正常動作の報告がありますが、開発側でSteam環境を
-正式に検証したものではありません。
+OrganizerについてはSteam版でも利用者から正常動作の報告がありますが、開発側でSteam環境を
+正式に検証したものではありません。Navigator BridgeもSteam環境での正式検証は行っておらず、
+利用にはFH6ウィンドウタイトルが「Forza Horizon 6」と一致する必要があります。
 
 Python版はPython標準ライブラリのみで動作し、GUIにはTkinterを使用します。
 
@@ -86,13 +111,13 @@ EXE版:
 Livery-Organizer-for-FH6.exe を起動してください。
 
 Python版:
-livery-organizer-for-fh6-v0458.py をPythonで実行してください。
+livery-organizer-for-fh6-v0459.py をPythonで実行してください。
 
 例:
-python livery-organizer-for-fh6-v0458.py
+python livery-organizer-for-fh6-v0459.py
 
 uvを利用している場合:
-uv run livery-organizer-for-fh6-v0458.py
+uv run livery-organizer-for-fh6-v0459.py
 
 GUIが起動したら、必要に応じて以下を確認してから解析を実行します。
 
@@ -209,7 +234,7 @@ GameSaveを書き換えず、新しくHTMLを生成した場合は引き継ぎ�
 
 ■ FH6上の選択デザインへ移動する
 
-この機能には Navigator Bridge for FH6 v0.0.26 を使用します。
+この機能には Navigator Bridge for FH6 v0.0.27 を使用します。
 Bridgeの仕組みは同梱の `NAVIGATOR-BRIDGE-README.txt` の冒頭で、
 #603 / #302U を例に詳しく説明しています。
 
@@ -270,7 +295,10 @@ Escを1回、Return（RET / Enter）を1回、この順序で送信します。
 任意のキーコード、キー名、キー順序を外部から指定する機能はありません。
 上、文字キー、ファンクションキーなどを位置移動用として送信しません。
 
-BridgeはForza Horizon 6のウィンドウを検出・前面化できた場合だけ入力を送信します。
+Bridgeは前後の通常スペースを除いたウィンドウタイトルが「Forza Horizon 6」と完全一致する
+ウィンドウだけをFH6として検出し、前面化できた場合だけ入力を送信します。
+タイトルに「Forza Horizon 6」を含むだけのブラウザ、GitHubページ、Organizer等は対象にしません。
+キー送信直前にも現在の前面ウィンドウを再確認し、条件を満たさない場合は入力しません。
 標準のWindows入力APIを使用し、ゲームのメモリ、実行コード、ゲームファイル、
 GameSaveを書き換えません。
 

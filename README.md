@@ -1,10 +1,12 @@
 # Livery Organizer for FH6
 
+**English:** [README_EN.md](README_EN.md)
+
 **Livery Organizer for FH6** は、PC版 **Forza Horizon 6** でダウンロードしたペイント（Livery）を、ローカル環境で一覧化・検索・整理するためのWindows向けツールです。
 
 GameSaveから取得した情報をもとに、サムネイル付きのHTMLレポートとExcelを生成します。生成されたHTMLでは、検索・絞り込み・並び替え・整理状態・タグ・メモ・バックアップなどを利用できます。
 
-**v0.4.58 Preview** では、Organizerで見つけたペイントに対応するFH6「マイデザイン」上の位置へカーソルを移動する、任意の補助ツール **Navigator Bridge for FH6 v0.0.26** を初めて同梱しました。
+**v0.4.59 Preview**（2026-09-04公開）では、OrganizerのデスクトップGUI・生成HTML・Excelを日本語 / 英語で利用できる多言語基盤を追加し、大規模レポートのライブ検索も軽量化しました。あわせて、任意の補助ツール **Navigator Bridge for FH6 v0.0.27** ではFH6ウィンドウ判定を厳格化し、別ウィンドウへの誤送信を防ぎやすくしています。
 
 > [!IMPORTANT]
 > 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。
@@ -16,6 +18,9 @@ GameSaveから取得した情報をもとに、サムネイル付きのHTMLレ�
 - サムネイルを埋め込んだローカルHTMLレポート
 - サムネイル付きExcel出力
 - 車種・メーカー・作成者・年式などによる検索、絞り込み、並び替え
+- Organizer GUI / 生成HTML / Excelの日本語・英語表示
+- `/` で検索欄へ移動、`?` でヘルプを開くキーボードショートカット
+- 大規模レポート向けに軽量化したライブ検索
 - FH6「マイデザイン」順での表示
 - 実スロット番号と `#列U / D` によるFH6上の位置表示
 - 「残す / 削除候補 / 未決定」の整理状態
@@ -33,7 +38,7 @@ GameSaveから取得した情報をもとに、サムネイル付きのHTMLレ�
 
 ## Navigator Bridge for FH6
 
-**Navigator Bridge for FH6 v0.0.26** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
+**Navigator Bridge for FH6 v0.0.27** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
 
 Organizerでは、各ペイントに次のような現在位置を表示します。
 
@@ -95,6 +100,8 @@ Navigator Bridgeは、FH6のGameSave・ゲームファイル・ゲームメモ�
 
 Bridgeが行うのは、FH6ウィンドウを検出して前面化し、FH6「マイデザイン」内の指定位置まで移動するためのカーソルキーをWindowsの標準入力APIから送信することです。
 
+現在のBridgeは、前後の通常スペースを除いたウィンドウタイトルが **`Forza Horizon 6` と完全一致する場合だけ** FH6として扱います。タイトルに文字列が含まれるだけのブラウザや別アプリは対象にしません。入力直前にも前面ウィンドウを再確認し、条件を満たさない場合はキーを送信しません。
+
 次の操作は自動化しません。
 
 - 「デザインを読み込み」
@@ -106,15 +113,17 @@ FH6画面の画像認識や解析、ゲーム内部の現在カーソル位置�
 
 ## 配布版
 
-GitHub Releasesでは、次の7ファイルをまとめたZIPを配布します。
+GitHub Releasesでは、次の9ファイルをまとめたZIPを配布します。
 
 ```text
 Livery-Organizer-for-FH6.exe
-livery-organizer-for-fh6-v0458.py
+livery-organizer-for-fh6-v0459.py
 Navigator-Bridge-for-FH6.exe
-navigator-bridge-for-fh6-v026.py
+navigator-bridge-for-fh6-v027.py
 README.txt
+README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
+NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 ```
 
@@ -123,6 +132,18 @@ OrganizerはEXE版とPython版のどちらか一方を選んで利用できま�
 Navigator BridgeもEXE版とPython版のどちらか一方を利用します。Navigator Bridgeを使用しない場合は、Bridgeのファイルを起動する必要はありません。
 
 Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手順は、通常の配布物には含めていません。
+
+## 言語・ドキュメント
+
+Organizerの利用者向け表示は、現在 **日本語** と **英語** に対応しています。言語設定は `settings.json` に保存され、変更は次回起動時から反映されます。生成HTML / Excelは、レポートを生成した時点のOrganizer言語を使用します。Liveryタイトル、説明、作成者名、車名、タグ、メモなどの利用者データは翻訳しません。
+
+このプロジェクトでは、**日本語を主要ドキュメントの正本、英語を共通の第二言語**として扱います。GitHubではこの `README.md` を日本語の基準文書とし、英語は [README_EN.md](README_EN.md) を参照してください。配布ZIPにも `README_EN.txt` と `NAVIGATOR-BRIDGE-README_EN.txt` を含めます。
+
+英語表示で不自然な表現、誤訳、用語の不統一を見つけた場合は、Issue等でのフィードバックを歓迎します。可能であれば、**`src/organizer/locales/en.py` に対する具体的な変更**またはPull Requestとして提案していただけると助かります。翻訳は意味・既存用語・UIレイアウトなども確認してから反映するため、レビューや反映に時間がかかる場合があります。
+
+今後、日本語・英語以外のUI言語が追加された場合でも、その言語専用のREADME・CHANGELOG・詳細ガイド一式を個別に維持する予定はありません。日本語を読めない場合は、英語ドキュメントを共通参照として利用してください。
+
+開発・翻訳方針の詳細は [docs/I18N.md](docs/I18N.md) / [docs/I18N_EN.md](docs/I18N_EN.md) を参照してください。
 
 ## 動作デモ
 
@@ -142,7 +163,7 @@ Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手
 
 開発・動作確認は **Microsoft Store / Xbox App版** を中心に行っています。
 
-**Steam版でも利用者から正常動作の報告があります**が、開発側でSteam環境を正式に検証したものではありません。環境によってFH6本体やセーブデータの保存先・ファイル構成などが異なる可能性があります。
+**OrganizerについてはSteam版でも利用者から正常動作の報告があります**が、開発側でSteam環境を正式に検証したものではありません。環境によってFH6本体やセーブデータの保存先・ファイル構成などが異なる可能性があります。Navigator BridgeもSteam環境での正式検証は行っておらず、利用にはウィンドウタイトルが `Forza Horizon 6` と一致する必要があります。
 
 Python版はPython標準ライブラリのみを使用し、GUIにはTkinterを使用します。
 
@@ -159,13 +180,13 @@ Livery-Organizer-for-FH6.exe
 ### Organizer Python版
 
 ```powershell
-python livery-organizer-for-fh6-v0458.py
+python livery-organizer-for-fh6-v0459.py
 ```
 
 uvを使用する場合:
 
 ```powershell
-uv run livery-organizer-for-fh6-v0458.py
+uv run livery-organizer-for-fh6-v0459.py
 ```
 
 GUIが起動したら、必要に応じて次の項目を確認して解析を実行します。
@@ -189,7 +210,7 @@ Navigator-Bridge-for-FH6.exe
 ### Navigator Bridge Python版
 
 ```powershell
-python navigator-bridge-for-fh6-v026.py
+python navigator-bridge-for-fh6-v027.py
 ```
 
 Organizerから利用する場合は、Python版Bridgeを単独起動して「連携を登録」を行ってください。
