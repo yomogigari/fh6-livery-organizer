@@ -1,6 +1,6 @@
 # Livery Organizer for FH6 v0.4.59 Preview — Release Notes — 2026-09-04
 
-**English documentation:** [README_EN.md](../../README_EN.md)
+**English documentation:** [README_EN.md](https://github.com/yomogigari/fh6-livery-organizer/blob/main/README_EN.md)
 
 Livery Organizer for FH6 v0.4.59 Previewでは、当初予定していた**日本語 / 英語の多言語対応**に加え、実際の利用・検証で見つかった生成HTMLの操作性と検索性能の改善をまとめて反映しました。
 
