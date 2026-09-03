@@ -4,6 +4,7 @@ from pathlib import Path
 from string import Formatter
 import ast
 import importlib.util
+import json
 import re
 import sys
 import unittest
@@ -844,12 +845,31 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 700)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 705)
         self.assertEqual(len(en_locale.REPORT_ATTR), 99)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
         self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())
         self.assertIn("const rules", i18n.build_report_i18n_script("en"))
+
+    def test_v0459_english_flat_sort_runtime_headings_are_localized(self):
+        import locales.en as en_locale
+        expected = {
+            "タイトル": "Title",
+            "取得日時:降順": "Acquired: newest first",
+            "取得日時:昇順": "Acquired: oldest first",
+            "バイナル数:降順": "Vinyl count: most first",
+            "バイナル数:昇順": "Vinyl count: fewest first",
+        }
+        for source, translated in expected.items():
+            self.assertEqual(en_locale.REPORT_TEXT.get(source), translated)
+
+        script = i18n.build_report_i18n_script("en")
+        for source, translated in expected.items():
+            self.assertIn(json.dumps(source, ensure_ascii=False), script)
+            self.assertIn(json.dumps(translated, ensure_ascii=False), script)
+        self.assertIn("MutationObserver", script)
+        self.assertIn("characterData:true", script)
 
     def test_r12_dynamic_report_translation_data_is_not_duplicated_in_i18n(self):
         i18n_source = (ORGANIZER_DIR / "i18n.py").read_text(encoding="utf-8")
