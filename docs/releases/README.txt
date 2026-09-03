@@ -20,16 +20,22 @@ v0.4.59では、OrganizerのデスクトップGUI・生成HTML・Excelを日本�
 ■ 配布ファイル
 
 Livery-Organizer-for-FH6.exe
-livery-organizer-for-fh6-v0459.py
 Navigator-Bridge-for-FH6.exe
-navigator-bridge-for-fh6-v027.py
 README.txt
 README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
+python\livery-organizer-for-fh6-v0459.py
+python\i18n.py
+python\navigator-bridge-for-fh6-v027.py
+python\locales\__init__.py
+python\locales\ja.py
+python\locales\en.py
 
 OrganizerはEXE版とPython版のどちらか一方を選んで利用できます。
+Python版Organizerでは日本語/英語の翻訳モジュールを使用するため、pythonフォルダー内の
+i18n.pyとlocalesフォルダーを削除・移動せず、そのままの構成で使用してください。
 Navigator BridgeもEXE版とPython版のどちらか一方を利用します。
 
 Navigator Bridgeは任意機能です。
@@ -111,13 +117,16 @@ EXE版:
 Livery-Organizer-for-FH6.exe を起動してください。
 
 Python版:
-livery-organizer-for-fh6-v0459.py をPythonで実行してください。
+配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0459.py を実行してください。
 
 例:
-python livery-organizer-for-fh6-v0459.py
+python python\livery-organizer-for-fh6-v0459.py
 
 uvを利用している場合:
-uv run livery-organizer-for-fh6-v0459.py
+uv run python\livery-organizer-for-fh6-v0459.py
+
+python\i18n.py と python\locales フォルダーは多言語表示に必要です。
+Organizer本体と同じpythonフォルダー構成のまま使用してください。
 
 GUIが起動したら、必要に応じて以下を確認してから解析を実行します。
 

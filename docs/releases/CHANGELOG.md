@@ -89,6 +89,7 @@ Bridgeの固定された安全境界は変更していません。通常移動�
 
 - GitHubの主要文書は引き続き日本語を正本とし、`README_EN.md` を英語版として追加
 - 配布ZIPへ `README_EN.txt` と `NAVIGATOR-BRIDGE-README_EN.txt` を追加
+- Python版Organizerの多言語モジュールを確実に同梱するため、Python関連ファイルを `python/` フォルダーへまとめる配布構成へ変更
 - 英語翻訳の修正は、可能であれば `src/organizer/locales/en.py` に対する具体的な変更・Pull Requestとして提案してもらう方針を明記
 - 翻訳は意味・既存用語・UIレイアウト・テストも確認するため、レビューや反映に時間がかかる場合があることを明記
 - 今後ほかのUI言語を追加しても、言語ごとのREADME / CHANGELOG / Release Notes / Bridge詳細ガイド一式を増やさず、日本語を読めない利用者には英語版を共通参照として案内

@@ -113,21 +113,27 @@ FH6画面の画像認識や解析、ゲーム内部の現在カーソル位置�
 
 ## 配布版
 
-GitHub Releasesでは、次の9ファイルをまとめたZIPを配布します。
+GitHub Releasesでは、EXE版・Python版・日本語/英語ドキュメントをまとめたZIPを配布します。
 
 ```text
 Livery-Organizer-for-FH6.exe
-livery-organizer-for-fh6-v0459.py
 Navigator-Bridge-for-FH6.exe
-navigator-bridge-for-fh6-v027.py
 README.txt
 README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
+python/
+  livery-organizer-for-fh6-v0459.py
+  i18n.py
+  navigator-bridge-for-fh6-v027.py
+  locales/
+    __init__.py
+    ja.py
+    en.py
 ```
 
-OrganizerはEXE版とPython版のどちらか一方を選んで利用できます。
+OrganizerはEXE版とPython版のどちらか一方を選んで利用できます。Python版Organizerは多言語リソースを使用するため、`python` フォルダー内の `i18n.py` と `locales` フォルダーを削除・移動せず、そのままの構成で使用してください。
 
 Navigator BridgeもEXE版とPython版のどちらか一方を利用します。Navigator Bridgeを使用しない場合は、Bridgeのファイルを起動する必要はありません。
 
@@ -179,15 +185,19 @@ Livery-Organizer-for-FH6.exe
 
 ### Organizer Python版
 
+配布ZIPを展開したフォルダーで、次のように実行します。
+
 ```powershell
-python livery-organizer-for-fh6-v0459.py
+python python\livery-organizer-for-fh6-v0459.py
 ```
 
 uvを使用する場合:
 
 ```powershell
-uv run livery-organizer-for-fh6-v0459.py
+uv run python\livery-organizer-for-fh6-v0459.py
 ```
+
+`python` フォルダー内の `i18n.py` と `locales` フォルダーはOrganizerの日本語/英語表示に必要です。
 
 GUIが起動したら、必要に応じて次の項目を確認して解析を実行します。
 
@@ -210,7 +220,7 @@ Navigator-Bridge-for-FH6.exe
 ### Navigator Bridge Python版
 
 ```powershell
-python navigator-bridge-for-fh6-v027.py
+python python\navigator-bridge-for-fh6-v027.py
 ```
 
 Organizerから利用する場合は、Python版Bridgeを単独起動して「連携を登録」を行ってください。
