@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.58-r11
+Livery Organizer for FH6 v0.4.58-r15
 ====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -102,7 +102,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.58-r13"
+VERSION = "0.4.58-r15"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -10278,12 +10278,12 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
         <span id="fh6MyDesignCount" class="small">0件</span>
       </div>
       <div class="fh6-my-design-jump" aria-label="FH6マイデザイン位置・車種ジャンプ">
-        <label for="fh6MyDesignJumpInput">位置・車種ジャンプ</label>
+        <label for="fh6MyDesignJumpInput">位置・車種ジャンプ <kbd>J</kbd></label>
         <span class="fh6-my-design-jump-input-wrap">
           <input id="fh6MyDesignJumpInput" type="text" inputmode="text" autocomplete="off"
             placeholder="537 / #269U / RX-7" aria-describedby="fh6VehicleMatchState"
-            aria-controls="fh6MyDesignJumpSuggestions" aria-autocomplete="list"
-            title="537 / #537、#269U / #269D、または車種名を入力して移動します">
+            aria-controls="fh6MyDesignJumpSuggestions" aria-autocomplete="list" aria-keyshortcuts="J"
+            title="537 / #537、#269U / #269D、または車種名を入力して移動します。Jキーでこの入力欄へ移動できます">
           <span id="fh6MyDesignJumpSuggestions" class="fh6-my-design-jump-suggestions hidden" role="listbox" aria-label="車種候補"></span>
         </span>
         <button id="fh6MyDesignJump" type="button" title="指定した位置または車種へ移動します">移動</button>
@@ -10352,7 +10352,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
     </div>
     <div class="fh6-my-design-foot small">
       <p><b class="fh6-foot-label">表示・基本移動</b>1列に上・下の2件を配置します。横スクロール、通常のマウスホイール（縦回転）、← / →キー、または「前へ / 次へ」で移動できます。端では反対側へ循環します。各カード下部にはFH6「マイデザイン」画面と同じ日付を DD/MM/YYYY 形式で表示します。</p>
-      <p><b class="fh6-foot-label">位置・車種ジャンプ</b><b>537 / #537</b> のような実スロット通し番号、<b>#269U / #269D</b> のようなFH6画面の列＋U/D位置（U=上段、D=下段）、または <b>RX-7</b> のような車種名を指定できます。車種名は部分一致で候補を表示し、↑ / ↓で選択できます。候補を選ばずにEnterまたは「移動」を押すと一致車種を1車種1位置で巡回し、候補を選択して確定するとその車種の実スロットを「前の一致 / 次の一致」で巡回できます。検索確定後は <b>Shift+← / Shift+→</b> で前後の一致へ移動し、<b>J</b> でジャンプ入力欄へ戻れます。</p>
+      <p><b class="fh6-foot-label">位置・車種ジャンプ</b><b>537 / #537</b> のような実スロット通し番号、<b>#269U / #269D</b> のようなFH6画面の列＋U/D位置（U=上段、D=下段）、または <b>RX-7</b> のような車種名を指定できます。車種名は部分一致で候補を表示し、↑ / ↓で選択できます。候補を選ばずにEnterまたは「移動」を押すと、一致した各車種を1車種1位置ずつ巡回します。↑ / ↓で特定の車種候補を選んでEnterすると、その1車種に属する実スロットを巡回します。どちらも検索を確定した後は <b>Shift+→</b> で次の一致、<b>Shift+←</b> で前の一致へ移動し、末尾では先頭へ循環します。<b>J</b> でいつでもジャンプ入力欄へ戻れます。</p>
       <p><b class="fh6-foot-label">重複・仮削除</b>完全一致の再ダウンロードも別ペイントとして表示し、FH6本体の実スロット位置を維持します。FH6で削除したデザインはカードの <b>FH6で削除済み</b> で一時的に非表示にでき、残りの実スロット番号とFH6位置を即時に詰め直します。上部の <b>FH6削除済み（仮）</b> から1件ずつ、または全件を復元できます。仮削除はこの生成HTML専用のlocalStorageへ保存され、新しくHTMLを生成すると引き継ぎません。再DL完全一致は {stats.get("fh6_exact_duplicate_groups", 0)}組 / {stats.get("fh6_exact_duplicate_cards", 0)}件（余分 {stats.get("fh6_exact_duplicate_instances", 0)}件）で、「再DL重複のみ」から直接絞り込めます。</p>
       <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カード上の実スロット番号 <b>#603</b> またはFH6位置 <b>#302U</b> をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中はFH6移動グループ全体をアクセント表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは <b>F</b> キーで移動できます。FH6標準の「マイデザイン」ではサムネイル・タイトル・作成者・作成者がUPした日付の4項目だけで目的のペイントを探す必要がありますが、Organizerでは車種・メーカー・年式・作成者・タイトルなどから先に使いたいデザインを特定できます。Bridgeで該当位置まで移動したあと、FH6上で利用者が<b>「デザインを読み込み」</b>を実行すれば、現在運転しているマシンへそのペイントを適用できます。また、不要なペイントをFH6で削除した場合は「FH6で削除済み（仮）」へ反映することで、残りの実スロット番号とFH6位置を再計算し、次の整理へ続けられます。Bridgeは読み込み・選択・削除・確定操作を行わず、対象位置までのカーソル移動だけを補助します。移動時は現在の最終実スロット番号と「FH6移動設定」を Navigator Bridge for FH6 v0.0.26 へ渡します。</p>
       <p><b class="fh6-foot-label">#001Uへ戻す</b>このオプションをONにした場合だけ、移動前に <b>ESC → RET</b> を各1回固定順序で送ってマイデザインを開き直します。標準待ち時間は <b>ESC後 500ms / RET後 800ms</b> です。任意のキーコード・キー名・キー順序は指定できず、上・文字キー・ファンクションキーその他は送信しません。</p>
@@ -10369,7 +10369,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
 
 <div id="emptyState" class="empty-state">条件に一致するペイントがありません。検索条件や絞り込みを変更してください。</div>
 <div class="keyboard-guide">
-  <a class="keyboard-copyright" href="https://x.com/Yomogigari" target="_blank" rel="noopener noreferrer" aria-label="YomogigariのXアカウントを開く">©Yomogigari</a><span>/ 検索</span><span>F FH6移動</span><span>K 残す</span><span>D 削除候補</span><span>U 未決定</span><span>Space 選択</span><span>Ctrl+Z 元に戻す</span><span>Ctrl+Y やり直す</span>
+  <a class="keyboard-copyright" href="https://x.com/Yomogigari" target="_blank" rel="noopener noreferrer" aria-label="YomogigariのXアカウントを開く">©Yomogigari</a><span>/ 検索</span><span>? ヘルプ</span><span>F FH6移動</span><span>K 残す</span><span>D 削除候補</span><span>U 未決定</span><span>Space 選択</span><span>Ctrl+Z 元に戻す</span><span>Ctrl+Y やり直す</span>
 </div>
 <nav class="mobile-bottom-nav" aria-label="スマホ用ナビゲーション">
   <button type="button" data-mobile-action="all">一覧</button>
@@ -10784,7 +10784,10 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
         <div class="help-shortcuts">
           <span><kbd>← ↑ → ↓</kbd> カード移動</span>
           <span><kbd>/</kbd> 検索欄へ移動</span>
+          <span><kbd>?</kbd> ヘルプを開く</span>
           <span><kbd>F</kbd> FH6で選択デザインへ移動</span>
+          <span><kbd>J</kbd> FH6マイデザイン順の位置・車種ジャンプへ移動</span>
+          <span><kbd>Shift</kbd> + <kbd>← / →</kbd> 車種検索を確定した後、前 / 次の一致へ巡回</span>
           <span><kbd>K</kbd> 残す</span>
           <span><kbd>D</kbd> 削除候補</span>
           <span><kbd>U</kbd> 未決定</span>
@@ -10798,7 +10801,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
           <span><kbd>Esc</kbd> 開いている操作パネル / ダイアログを閉じる</span>
         </div>
         <div class="help-tip">
-          ダイアログを開くとフォーカスはダイアログ内へ移動し、<kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd> はダイアログ内を循環します。閉じると、原則として開く前に操作していたボタンへ戻ります。<kbd>F</kbd> は類似ペイント比較・選択比較・再DL重複整理を開いている間も、選択済みのFH6移動対象へ移動できます。入力欄・テキストエリア・選択欄へフォーカスしている間は、文字キーのショートカットを誤作動させないようにしています。
+          ダイアログを開くとフォーカスはダイアログ内へ移動し、<kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd> はダイアログ内を循環します。閉じると、原則として開く前に操作していたボタンへ戻ります。<kbd>F</kbd> は類似ペイント比較・選択比較・再DL重複整理を開いている間も、選択済みのFH6移動対象へ移動できます。<kbd>J</kbd> と <kbd>Shift</kbd> + <kbd>← / →</kbd> はFH6マイデザイン順でのみ利用できます。入力欄・テキストエリア・選択欄へフォーカスしている間は、文字キーのショートカットを誤作動させないようにしています。
         </div>
       </section>
 
@@ -11126,6 +11129,13 @@ function migrateLegacyDecision(card) {{
   }}
 }}
 const cards = [...document.querySelectorAll(".card")];
+// v0.4.58-r15 rev3 — 1000件近いレポートでも検索中にlocalStorage読込や
+// 静的文字列の正規化を繰り返さないよう、ページ内だけで使うキャッシュを持ちます。
+// ユーザーデータ変更時は applyCardMeta() がメタ情報キャッシュを即時更新します。
+const CARD_META_CACHE = new WeakMap();
+const CARD_SEARCH_STATIC_CACHE = new WeakMap();
+let flatSortOrderCache = [];
+let flatSortOrderMode = "";
 const VEHICLE_CARDS = new Map();
 cards.forEach(card => {{
   const carId = String(card.dataset.car || "");
@@ -11783,11 +11793,16 @@ function renderHistory() {{
 }}
 
 function metaKey(card) {{ return META_PREFIX + card.dataset.key; }}
-function loadCardMeta(card) {{
+function loadCardMeta(card, forceReload = false) {{
+  if (!forceReload && CARD_META_CACHE.has(card)) return CARD_META_CACHE.get(card);
+  let meta = {{}};
   try {{
     const legacyKeys = LEGACY_META_PREFIXES.map(prefix => prefix + card.dataset.key);
-    return JSON.parse(storageGetMigrated(metaKey(card), legacyKeys) || "{{}}");
-  }} catch (_) {{ return {{}}; }}
+    const parsed = JSON.parse(storageGetMigrated(metaKey(card), legacyKeys) || "{{}}");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) meta = parsed;
+  }} catch (_) {{}}
+  CARD_META_CACHE.set(card, meta);
+  return meta;
 }}
 function saveCardMeta(card, patch, recordUndo = true) {{
   const previous = loadCardMeta(card);
@@ -11806,7 +11821,8 @@ function saveCardMeta(card, patch, recordUndo = true) {{
   if (typeof refreshBackupUi === "function") refreshBackupUi();
 }}
 function applyCardMeta(card) {{
-  const meta = loadCardMeta(card);
+  // storageを書き換えた直後にも必ず最新値をキャッシュへ取り込みます。
+  const meta = loadCardMeta(card, true);
   card.classList.toggle("favorite", Boolean(meta.favorite));
   card.classList.toggle("review-later", Boolean(meta.reviewLater));
   const fav = card.querySelector(".favorite-toggle");
@@ -13631,7 +13647,9 @@ function applySort() {{
     }});
 
     const direction = mode.endsWith("-desc") ? "desc" : "asc";
-    const visibleCards = cards.filter(card => !card.classList.contains("hidden"));
+    // 検索文字が変わっても並び順自体は変わらないため、全カードの順序をここで1度確定します。
+    // ライブ検索ではこの配列から表示対象だけを抜き出し、再ソートしません。
+    const sortedCards = [...cards];
     const collator = new Intl.Collator("ja", {{numeric:true, sensitivity:"base"}});
     const compareTextMissingLast = (a, b) => {{
       const av = String(a || "").trim();
@@ -13643,7 +13661,7 @@ function applySort() {{
     }};
 
     if (mode === "title") {{
-      visibleCards.sort((a, b) => {{
+      sortedCards.sort((a, b) => {{
         let result = compareTextMissingLast(a.dataset.titleDisplay || a.dataset.title, b.dataset.titleDisplay || b.dataset.title);
         if (result !== 0) return result;
         result = compareTextMissingLast(a.dataset.model || a.dataset.vehicle, b.dataset.model || b.dataset.vehicle);
@@ -13665,7 +13683,7 @@ function applySort() {{
         if (state === "delete") return 3;
         return 4;
       }};
-      visibleCards.sort((a, b) => {{
+      sortedCards.sort((a, b) => {{
         let result = workflowRank(a) - workflowRank(b);
         if (result !== 0) return result;
         result = compareTextMissingLast(a.dataset.model || a.dataset.vehicle, b.dataset.model || b.dataset.vehicle);
@@ -13680,7 +13698,7 @@ function applySort() {{
       }});
       if (flatTitle) flatTitle.textContent = "整理状態: 未決定 → 後で確認 → 残す → 削除候補";
     }} else if (mode.startsWith("vinyl-")) {{
-      visibleCards.sort((a, b) => {{
+      sortedCards.sort((a, b) => {{
         const av = Number(a.dataset.vinylCount || -1);
         const bv = Number(b.dataset.vinylCount || -1);
 
@@ -13696,7 +13714,7 @@ function applySort() {{
       if (flatTitle) flatTitle.textContent =
         direction === "desc" ? "バイナル数:降順" : "バイナル数:昇順";
     }} else {{
-      visibleCards.sort((a, b) => {{
+      sortedCards.sort((a, b) => {{
         // timestamp_rawはYYYYMMDDhhmmss（UTC）なので、文字列順がそのまま時系列順になります。
         // 表示時刻はJST（+09:00）ですが、並び順は同じです。
         const av = String(a.dataset.timestamp || "");
@@ -13709,8 +13727,10 @@ function applySort() {{
         direction === "desc" ? "取得日時:降順" : "取得日時:昇順";
     }}
 
-    flatGrid.innerHTML = "";
-    visibleCards.forEach(card => flatGrid.appendChild(card));
+    flatSortOrderCache = sortedCards;
+    flatSortOrderMode = mode;
+    const visibleCards = sortedCards.filter(card => !card.classList.contains("hidden"));
+    flatGrid.replaceChildren(...visibleCards);
     flatCount.textContent = `${{visibleCards.length}}件`;
     document.body.classList.add("flat-sort-mode");
   }}
@@ -13718,6 +13738,29 @@ function applySort() {{
 
 function normFilterValue(value) {{
   return String(value || "").trim().toLocaleLowerCase(REPORT_LOCALE);
+}}
+
+function staticCardSearchData(card) {{
+  const cached = CARD_SEARCH_STATIC_CACHE.get(card);
+  if (cached) return cached;
+  const value = {{
+    general:normFilterValue(card.dataset.search),
+    vehicle:normFilterValue([
+      card.dataset.vehicle,
+      card.dataset.make,
+      card.dataset.model,
+      card.dataset.year
+    ].join(" ")),
+    make:normFilterValue(card.dataset.make),
+    year:String(card.dataset.year || "").trim(),
+    creator:normFilterValue(card.dataset.creator),
+    title:normFilterValue(card.dataset.title),
+    description:normFilterValue(card.dataset.description),
+    paintCount:Number(card.dataset.paintCount || 0),
+    vinylCount:Number(card.dataset.vinylCount || -1)
+  }};
+  CARD_SEARCH_STATIC_CACHE.set(card, value);
+  return value;
 }}
 
 
@@ -13992,53 +14035,61 @@ function fieldSearchQuery(field, value) {{
   return `${{field}}:${{JSON.stringify(String(value || ""))}}`;
 }}
 
-function cardMatchesCriteria(card, overrides = {{}}) {{
-  if (fh6CardIsTempDeleted(card)) return false;
+function buildCardCriteriaContext(overrides = {{}}) {{
+  // 検索文字入力時に同じ検索式・フィルター状態をカード件数分だけ再解析しないよう、
+  // 1回の絞り込み更新につき判定条件を1度だけ組み立てて全カードで共用します。
   const pick = (name, current) =>
     Object.prototype.hasOwnProperty.call(overrides, name) ? overrides[name] : current;
 
   const rawQuery = String(pick("query", q.value) || "").trim();
-  const parsedQuery = parseSearchQuery(rawQuery);
-  const decisions = normalizeFilterValues(pick("decision", selectedFilterValues(filter)));
-  const progressStates = normalizeFilterValues(pick("progress", selectedFilterValues(progressFilter)));
-  const vehicles = normalizeFilterValues(pick("vehicle", selectedFilterValues(vehicleFilter)));
-  const makes = normalizeFilterValues(pick("make", selectedFilterValues(makeFilter))).map(normFilterValue);
-  const years = normalizeFilterValues(pick("year", selectedFilterValues(yearFilter)));
-  const creators = normalizeFilterValues(pick("creator", selectedFilterValues(creatorFilter))).map(normFilterValue);
-  const paintCountValues = normalizeFilterValues(pick("paintCount", selectedFilterValues(paintCountFilter)))
-    .map(Number).filter(Number.isFinite);
-  const vinylMin = parseOptionalNumber(pick("vinylMin", vinylMinInput?.value));
-  const vinylMax = parseOptionalNumber(pick("vinylMax", vinylMaxInput?.value));
-  const tagValues = normalizeFilterValues(pick("tag", selectedFilterValues(tagFilter)));
-  const tagMode = String(pick("tagMode", tagMatchMode) || "or").toLowerCase() === "and" ? "and" : "or";
-  const similarOnly = Boolean(pick("similarOnly", similarOnlyMode));
-  const similarKind = normalizeSimilarKind(pick("similarKind", similarKindMode));
-  const exactDuplicateOnly = Boolean(pick("exactDuplicateOnly", exactDuplicateOnlyMode));
-  const newOnly = Boolean(pick("newOnly", newOnlyMode));
-  const favoriteOnly = Boolean(pick("favoriteOnly", favoriteOnlyMode));
-  const reviewOnly = Boolean(pick("reviewOnly", reviewOnlyMode));
-  const selectedOnly = Boolean(pick("selectedOnly", selectedOnlyMode));
+  return {{
+    parsedQuery: parseSearchQuery(rawQuery),
+    decisions: normalizeFilterValues(pick("decision", selectedFilterValues(filter))),
+    progressStates: normalizeFilterValues(pick("progress", selectedFilterValues(progressFilter))),
+    vehicles: normalizeFilterValues(pick("vehicle", selectedFilterValues(vehicleFilter))),
+    makes: normalizeFilterValues(pick("make", selectedFilterValues(makeFilter))).map(normFilterValue),
+    years: normalizeFilterValues(pick("year", selectedFilterValues(yearFilter))),
+    creators: normalizeFilterValues(pick("creator", selectedFilterValues(creatorFilter))).map(normFilterValue),
+    paintCountValues: normalizeFilterValues(pick("paintCount", selectedFilterValues(paintCountFilter)))
+      .map(Number).filter(Number.isFinite),
+    vinylMin: parseOptionalNumber(pick("vinylMin", vinylMinInput?.value)),
+    vinylMax: parseOptionalNumber(pick("vinylMax", vinylMaxInput?.value)),
+    tagValues: normalizeFilterValues(pick("tag", selectedFilterValues(tagFilter))),
+    tagMode: String(pick("tagMode", tagMatchMode) || "or").toLowerCase() === "and" ? "and" : "or",
+    similarOnly: Boolean(pick("similarOnly", similarOnlyMode)),
+    similarKind: normalizeSimilarKind(pick("similarKind", similarKindMode)),
+    exactDuplicateOnly: Boolean(pick("exactDuplicateOnly", exactDuplicateOnlyMode)),
+    newOnly: Boolean(pick("newOnly", newOnlyMode)),
+    favoriteOnly: Boolean(pick("favoriteOnly", favoriteOnlyMode)),
+    reviewOnly: Boolean(pick("reviewOnly", reviewOnlyMode)),
+    selectedOnly: Boolean(pick("selectedOnly", selectedOnlyMode)),
+  }};
+}}
+
+function cardMatchesCriteria(card, overrides = {{}}, criteria = null) {{
+  if (fh6CardIsTempDeleted(card)) return false;
+  const ctx = criteria || buildCardCriteriaContext(overrides);
+  const {{
+    parsedQuery, decisions, progressStates, vehicles, makes, years, creators, paintCountValues,
+    vinylMin, vinylMax, tagValues, tagMode, similarOnly, similarKind, exactDuplicateOnly,
+    newOnly, favoriteOnly, reviewOnly, selectedOnly
+  }} = ctx;
 
   const meta = loadCardMeta(card);
-  const searchText = normFilterValue([
-    card.dataset.search,
-    meta.tags,
-    meta.note
-  ].join(" "));
-  const vehicleSearchText = normFilterValue([
-    card.dataset.vehicle,
-    card.dataset.make,
-    card.dataset.model,
-    card.dataset.year
-  ].join(" "));
-  const cardMake = normFilterValue(card.dataset.make);
-  const cardYear = String(card.dataset.year || "").trim();
-  const cardCreator = normFilterValue(card.dataset.creator);
-  const cardTitle = normFilterValue(card.dataset.title);
-  const cardDescription = normFilterValue(card.dataset.description);
+  const staticSearch = staticCardSearchData(card);
   const cardTags = normFilterValue(meta.tags);
-  const cardPaintCount = Number(card.dataset.paintCount || 0);
-  const cardVinylCount = Number(card.dataset.vinylCount || -1);
+  const cardNote = normFilterValue(meta.note);
+  const searchText = cardTags || cardNote
+    ? `${{staticSearch.general}} ${{cardTags}} ${{cardNote}}`
+    : staticSearch.general;
+  const vehicleSearchText = staticSearch.vehicle;
+  const cardMake = staticSearch.make;
+  const cardYear = staticSearch.year;
+  const cardCreator = staticSearch.creator;
+  const cardTitle = staticSearch.title;
+  const cardDescription = staticSearch.description;
+  const cardPaintCount = staticSearch.paintCount;
+  const cardVinylCount = staticSearch.vinylCount;
 
   if (parsedQuery.general && !searchText.includes(parsedQuery.general)) return false;
 
@@ -14088,7 +14139,8 @@ function cardMatchesCriteria(card, overrides = {{}}) {{
 }}
 
 function matchingCards(overrides = {{}}) {{
-  return indexedCandidateCards(overrides).filter(card => cardMatchesCriteria(card, overrides));
+  const criteria = buildCardCriteriaContext(overrides);
+  return indexedCandidateCards(overrides).filter(card => cardMatchesCriteria(card, overrides, criteria));
 }}
 
 function ensureBaseLabels(select) {{
@@ -14360,12 +14412,14 @@ function updateSimilarityFilterUi() {{
   exactStat?.setAttribute("aria-pressed", exactDuplicateOnlyMode ? "true" : "false");
 }}
 
-function refreshFilteredView() {{
+function refreshFilteredView(options = {{}}) {{
+  const settings = {{dynamicCounts:true, ...options}};
   restoreCardsToGroups();
 
+  const criteria = buildCardCriteriaContext();
   let visible = 0;
   cards.forEach(card => {{
-    const show = cardMatchesCriteria(card);
+    const show = cardMatchesCriteria(card, {{}}, criteria);
     card.classList.toggle("hidden", !show);
     if (show) visible++;
   }});
@@ -14444,8 +14498,95 @@ function refreshFilteredView() {{
   const vehicleSummary = vehicleProgressSummary();
   updateVehicleWorkflowQuickUi(vehicleSummary);
 
-  updateDynamicFilterCounts();
+  if (settings.dynamicCounts) updateDynamicFilterCounts();
   return {{visible, stateSummary, vehicleSummary}};
+}}
+
+// v0.4.58-r15 rev3 — 検索文字の変更だけでは並び順、整理進捗、バックアップ状態、
+// 選択状態などは変化しません。ライブ検索中はカード一致判定と現在レイアウトの
+// 表示/非表示だけを更新し、全体再ソート・全状態再集計を避けます。
+function updateGroupedLiveSearchVisibility() {{
+  document.querySelectorAll(".car-group").forEach(group => {{
+    const members = [...group.querySelectorAll(".card")];
+    const shown = members.filter(card => !card.classList.contains("hidden")).length;
+    group.classList.toggle("hidden", shown === 0);
+    const count = group.querySelector(".group-count-badge");
+    if (count) count.textContent = shown === members.length
+      ? `${{members.length}}件`
+      : `${{shown}} / ${{members.length}}件`;
+  }});
+}}
+
+function updateCreatorLiveSearchVisibility() {{
+  document.querySelectorAll("#creatorGroupedSections .creator-group").forEach(group => {{
+    const members = [...group.querySelectorAll(".card")];
+    const shown = members.filter(card => !card.classList.contains("hidden")).length;
+    group.classList.toggle("hidden", shown === 0);
+    const count = group.querySelector(".group-count-badge");
+    if (count) count.textContent = shown === members.length
+      ? `${{members.length}}件`
+      : `${{shown}} / ${{members.length}}件`;
+  }});
+}}
+
+function updateFlatLiveSearchVisibility(mode) {{
+  const flatGrid = document.getElementById("flatSortGrid");
+  const flatCount = document.getElementById("flatSortCount");
+  if (!flatGrid) return;
+  // 通常はapplySort()で確定済みの順序を再利用します。万一キャッシュが無い場合だけ
+  // 現在のカード配列を使い、次の通常更新で正規の並び順へ戻します。
+  const ordered = flatSortOrderMode === mode && flatSortOrderCache.length
+    ? flatSortOrderCache
+    : cards;
+  const visibleCards = ordered.filter(card => !card.classList.contains("hidden"));
+  flatGrid.replaceChildren(...visibleCards);
+  if (flatCount) flatCount.textContent = `${{visibleCards.length}}件`;
+}}
+
+function updateFh6LiveSearchVisibility() {{
+  const visibility = new Map(cards.map(card => [
+    String(card.dataset.key || ""),
+    !card.classList.contains("hidden")
+  ]));
+  document.querySelectorAll("#fh6MyDesignTrack .card").forEach(card => {{
+    const key = String(card.dataset.key || "");
+    if (visibility.has(key)) card.classList.toggle("hidden", !visibility.get(key));
+  }});
+  syncFh6MyDesignColumnVisibility();
+}}
+
+function syncLiveSearchLayout() {{
+  const mode = sortOrder.value;
+  if (mode === "fh6-my-designs") {{
+    updateFh6LiveSearchVisibility();
+    return;
+  }}
+  if (mode === "creator") {{
+    updateCreatorLiveSearchVisibility();
+    return;
+  }}
+  if (["title","decision","vinyl-asc","vinyl-desc","timestamp-asc","timestamp-desc"].includes(mode)) {{
+    updateFlatLiveSearchVisibility(mode);
+    return;
+  }}
+  updateGroupedLiveSearchVisibility();
+}}
+
+function refreshLiveSearchView() {{
+  const criteria = buildCardCriteriaContext();
+  let visible = 0;
+  cards.forEach(card => {{
+    const show = cardMatchesCriteria(card, {{}}, criteria);
+    card.classList.toggle("hidden", !show);
+    if (show) visible++;
+  }});
+  syncLiveSearchLayout();
+  const visibleCount = document.getElementById("visibleCount");
+  if (visibleCount) visibleCount.textContent = String(visible);
+  document.getElementById("emptyState")?.classList.toggle("show", visible === 0);
+  renderActiveFilterChips();
+  updateMobileFilterSummary();
+  return visible;
 }}
 
 const UI_REFRESH_DEFAULTS = Object.freeze({{
@@ -14454,12 +14595,13 @@ const UI_REFRESH_DEFAULTS = Object.freeze({{
   sort:true,
   navigation:true,
   mobile:false,
-  persist:false
+  persist:false,
+  dynamicCounts:true
 }});
 
 function refreshOrganizerUi(options = {{}}) {{
   const settings = {{...UI_REFRESH_DEFAULTS, ...options}};
-  const viewState = settings.view ? refreshFilteredView() : null;
+  const viewState = settings.view ? refreshFilteredView({{dynamicCounts:settings.dynamicCounts}}) : null;
 
   if (settings.backup) updateBackupStatus(viewState?.stateSummary || null);
   if (settings.sort) applySort();
@@ -14946,13 +15088,17 @@ document.getElementById("historyAction").addEventListener("click", () => {{
   renderHistory();
   openModal("historyModal");
 }});
-document.getElementById("helpAction").addEventListener("click", () => {{
+function openHelpDialog(tab = activeHelpTab, opener = null) {{
   setStatQuickFilterOpen(null);
   setFilterPanelOpen(false);
   setSecondaryActionsOpen(false);
   setReportInfoOpen(false);
-  setHelpTab(activeHelpTab);
-  openModal("helpModal");
+  setHelpTab(tab);
+  openModal("helpModal", opener);
+}}
+
+document.getElementById("helpAction").addEventListener("click", event => {{
+  openHelpDialog(activeHelpTab, event.currentTarget);
 }});
 
 const statQuickFilterPanel = document.getElementById("statQuickFilterPanel");
@@ -15748,13 +15894,8 @@ async function runSelfDiagnostics() {{
 document.getElementById("selfDiagnostics").addEventListener("click", () => {{ void runSelfDiagnostics(); }});
 document.getElementById("startupDiagnosticsAction")?.addEventListener("click", () => {{ void runSelfDiagnostics(); }});
 document.getElementById("runtimeDiagnosticsAction")?.addEventListener("click", () => {{ void runSelfDiagnostics(); }});
-document.getElementById("startupHelpAction")?.addEventListener("click", () => {{
-  setStatQuickFilterOpen(null);
-  setFilterPanelOpen(false);
-  setSecondaryActionsOpen(false);
-  setReportInfoOpen(false);
-  setHelpTab("environment");
-  openModal("helpModal");
+document.getElementById("startupHelpAction")?.addEventListener("click", event => {{
+  openHelpDialog("environment", event.currentTarget);
 }});
 
 document.getElementById("themeToggle").addEventListener("click",()=>{{document.body.classList.toggle("dark-theme");document.getElementById("themeToggle").textContent=document.body.classList.contains("dark-theme")?"ライトテーマ":"ダークテーマ";saveUiState();}});
@@ -16252,13 +16393,20 @@ document.getElementById("sequentialModeToggle")?.addEventListener("click", () =>
   saveUiState();
 }});
 
-// v0.4.58-r13 — 検索欄へすぐ移動するキーボードショートカット
+// v0.4.58-r14 — 検索 / ヘルプへすぐ移動するキーボードショートカット
 document.addEventListener("keydown",event=>{{
   if (getTopOpenModal() || document.getElementById("lightbox")?.classList.contains("open")) return;
+  const activeTag = document.activeElement?.tagName;
   if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key === "/"
-      && !["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)) {{
+      && !["INPUT","TEXTAREA","SELECT"].includes(activeTag)) {{
     q.focus();
     q.select();
+    event.preventDefault();
+    return;
+  }}
+  if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key === "?"
+      && !["INPUT","TEXTAREA","SELECT"].includes(activeTag)) {{
+    openHelpDialog(activeHelpTab);
     event.preventDefault();
     return;
   }}
@@ -16424,11 +16572,41 @@ fh6MyDesignSection?.addEventListener("wheel", event => {{
   }}, 110);
 }}, {{passive:false, capture:true}});
 
-q.addEventListener("input", applyAndPersist);
+// v0.4.58-r15 — 900～1000件でも検索入力を滑らかに保つため、
+// 入力中は表示結果を先に更新し、負荷の高い候補件数再集計とlocalStorage保存は
+// 入力が少し止まってから追従させます。検索結果・絞り込み条件そのものは従来と同じです。
+let liveSearchRefreshTimer = 0;
+let liveSearchSecondaryTimer = 0;
+const LIVE_SEARCH_REFRESH_DELAY_MS = 70;
+const LIVE_SEARCH_SECONDARY_DELAY_MS = 240;
+
+function flushLiveSearchSecondaryRefresh() {{
+  clearTimeout(liveSearchSecondaryTimer);
+  liveSearchSecondaryTimer = 0;
+  updateDynamicFilterCounts();
+  // 検索で表示対象が変わるため、車種ナビゲーションだけは入力停止後に追従させます。
+  // 並び替え、バックアップ、整理進捗、選択状態の全再計算は行いません。
+  updateVehicleNavigationUi();
+  saveUiState();
+}}
+
+function scheduleLiveSearchRefresh() {{
+  clearTimeout(liveSearchRefreshTimer);
+  clearTimeout(liveSearchSecondaryTimer);
+  liveSearchRefreshTimer = setTimeout(() => {{
+    liveSearchRefreshTimer = 0;
+    refreshLiveSearchView();
+  }}, LIVE_SEARCH_REFRESH_DELAY_MS);
+  liveSearchSecondaryTimer = setTimeout(flushLiveSearchSecondaryRefresh, LIVE_SEARCH_SECONDARY_DELAY_MS);
+}}
+
+q.addEventListener("input", scheduleLiveSearchRefresh);
 q.addEventListener("keydown", event => {{
   if (event.key !== "Escape") return;
   if (q.value) {{
     q.value = "";
+    clearTimeout(liveSearchRefreshTimer);
+    clearTimeout(liveSearchSecondaryTimer);
     applyAndPersist();
   }}
   q.blur();

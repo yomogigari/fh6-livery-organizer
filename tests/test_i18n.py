@@ -115,8 +115,12 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_r13(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.58-r13")
+    def test_version_is_r15(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.58-r15")
+
+    def test_source_header_matches_version(self) -> None:
+        header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
+        self.assertIn(f"Livery Organizer for FH6 v{self.organizer.VERSION}", header)
 
     def test_display_path_changes_with_language(self) -> None:
         self.organizer.set_language("ja")
@@ -840,7 +844,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 693)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 700)
         self.assertEqual(len(en_locale.REPORT_ATTR), 99)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
@@ -939,7 +943,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
 
     def test_r13_search_shortcut_focuses_query_and_escape_clears_it(self):
         source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
-        self.assertIn('v0.4.58-r13 — 検索欄へすぐ移動するキーボードショートカット', source)
+        self.assertIn('v0.4.58-r14 — 検索 / ヘルプへすぐ移動するキーボードショートカット', source)
         self.assertIn('event.key === "/"', source)
         self.assertIn('q.focus();', source)
         self.assertIn('q.select();', source)
@@ -960,6 +964,112 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         script = i18n.build_report_i18n_script('en')
         self.assertIn('/ Search', script)
         self.assertIn('Focus search', script)
+
+    def test_r14_help_shortcut_opens_help_without_hijacking_inputs(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('v0.4.58-r14 — 検索 / ヘルプへすぐ移動するキーボードショートカット', source)
+        self.assertIn('event.key === "?"', source)
+        self.assertIn('openHelpDialog(activeHelpTab);', source)
+        self.assertIn('!["INPUT","TEXTAREA","SELECT"].includes(activeTag)', source)
+        self.assertIn('function openHelpDialog(tab = activeHelpTab, opener = null)', source)
+
+    def test_r14_help_shortcut_is_documented_in_generated_report(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('<span>? ヘルプ</span>', source)
+        self.assertIn('<span><kbd>?</kbd> ヘルプを開く</span>', source)
+
+    def test_r14_help_shortcut_labels_are_localized(self):
+        import locales.en as en_locale
+        self.assertEqual(en_locale.REPORT_TEXT.get('? ヘルプ'), '? Help')
+        self.assertEqual(en_locale.REPORT_TEXT.get('ヘルプを開く'), 'Open help')
+        script = i18n.build_report_i18n_script('en')
+        self.assertIn('? Help', script)
+        self.assertIn('Open help', script)
+
+    def test_r15_fh6_my_design_jump_shortcuts_are_discoverable(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('<label for="fh6MyDesignJumpInput">位置・車種ジャンプ <kbd>J</kbd></label>', source)
+        self.assertIn('aria-keyshortcuts="J"', source)
+        self.assertIn('<span><kbd>J</kbd> FH6マイデザイン順の位置・車種ジャンプへ移動</span>', source)
+        self.assertIn('<span><kbd>Shift</kbd> + <kbd>← / →</kbd> 車種検索を確定した後、前 / 次の一致へ巡回</span>', source)
+        self.assertIn('event.key.toLowerCase() === "j"', source)
+        self.assertIn('["ArrowLeft","ArrowRight"].includes(event.key)', source)
+
+    def test_r15_fh6_my_design_jump_shortcut_labels_are_localized(self):
+        import locales.en as en_locale
+        self.assertEqual(
+            en_locale.REPORT_TEXT.get("FH6マイデザイン順の位置・車種ジャンプへ移動"),
+            "Focus the position / vehicle jump in FH6 My Designs order",
+        )
+        self.assertEqual(
+            en_locale.REPORT_TEXT.get("車種検索を確定した後、前 / 次の一致へ巡回"),
+            "After confirming a vehicle search, cycle to the previous / next match",
+        )
+        self.assertEqual(
+            en_locale.REPORT_ATTR.get("537 / #537、#269U / #269D、または車種名を入力して移動します。Jキーでこの入力欄へ移動できます"),
+            "Enter 537 / #537, #269U / #269D, or a vehicle name to jump. Press J to focus this field",
+        )
+        script = i18n.build_report_i18n_script("en")
+        self.assertIn("Focus the position / vehicle jump in FH6 My Designs order", script)
+        self.assertIn("After confirming a vehicle search, cycle to the previous / next match", script)
+        self.assertIn("Press J to focus this field", script)
+
+
+    def test_r15_live_search_reuses_compiled_criteria_and_defers_secondary_work(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("function buildCardCriteriaContext(overrides = {{}})", source)
+        self.assertIn("const criteria = buildCardCriteriaContext();", source)
+        self.assertIn("cardMatchesCriteria(card, {{}}, criteria)", source)
+        self.assertIn("const LIVE_SEARCH_REFRESH_DELAY_MS = 70;", source)
+        self.assertIn("const LIVE_SEARCH_SECONDARY_DELAY_MS = 240;", source)
+        self.assertIn('q.addEventListener("input", scheduleLiveSearchRefresh);', source)
+        self.assertIn("refreshLiveSearchView();", source)
+        self.assertIn("updateDynamicFilterCounts();", source)
+        self.assertIn("updateVehicleNavigationUi();", source)
+        self.assertIn("saveUiState();", source)
+
+    def test_r15_rev3_live_search_skips_full_sort_and_state_refresh(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("v0.4.58-r15 rev3 — 検索文字の変更だけでは並び順", source)
+        self.assertIn("function refreshLiveSearchView()", source)
+        scheduler_start = source.index("function scheduleLiveSearchRefresh()")
+        scheduler_end = source.index('q.addEventListener("input", scheduleLiveSearchRefresh);', scheduler_start)
+        scheduler = source[scheduler_start:scheduler_end]
+        self.assertIn("refreshLiveSearchView();", scheduler)
+        self.assertNotIn("refreshOrganizerUi", scheduler)
+        self.assertNotIn("applySort", scheduler)
+        self.assertNotIn("collectCardStateSummary", scheduler)
+        self.assertIn("function syncLiveSearchLayout()", source)
+        self.assertIn("updateGroupedLiveSearchVisibility();", source)
+        self.assertIn("updateCreatorLiveSearchVisibility();", source)
+        self.assertIn("updateFlatLiveSearchVisibility(mode);", source)
+        self.assertIn("updateFh6LiveSearchVisibility();", source)
+
+    def test_r15_rev3_search_uses_in_memory_static_and_meta_caches(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("const CARD_META_CACHE = new WeakMap();", source)
+        self.assertIn("const CARD_SEARCH_STATIC_CACHE = new WeakMap();", source)
+        self.assertIn("function loadCardMeta(card, forceReload = false)", source)
+        self.assertIn("CARD_META_CACHE.set(card, meta);", source)
+        self.assertIn("const meta = loadCardMeta(card, true);", source)
+        self.assertIn("function staticCardSearchData(card)", source)
+        self.assertIn("CARD_SEARCH_STATIC_CACHE.set(card, value);", source)
+        self.assertIn("const staticSearch = staticCardSearchData(card);", source)
+
+    def test_r15_rev3_flat_sort_reuses_precomputed_order_during_search(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn('let flatSortOrderCache = [];', source)
+        self.assertIn('let flatSortOrderMode = "";', source)
+        self.assertIn("flatSortOrderCache = sortedCards;", source)
+        self.assertIn("flatSortOrderMode = mode;", source)
+        self.assertIn("const ordered = flatSortOrderMode === mode && flatSortOrderCache.length", source)
+        self.assertIn("flatGrid.replaceChildren(...visibleCards);", source)
+
+    def test_r15_vehicle_match_help_explains_both_cycle_modes(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("一致した各車種を1車種1位置ずつ巡回します", source)
+        self.assertIn("その1車種に属する実スロットを巡回します", source)
+        self.assertIn("末尾では先頭へ循環します", source)
 
 if __name__ == "__main__":
     unittest.main()
