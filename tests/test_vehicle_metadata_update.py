@@ -331,7 +331,7 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
             "\u8eca\u7a2e\u30c7\u30fc\u30bf\u66f4\u65b0\u78ba\u8a8d",
         )
         self.assertIn(
-            "\u30c7\u30fc\u30bf\u306e\u81ea\u52d5\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u30fb\u7f6e\u63db\u306f\u884c\u3044\u307e\u305b\u3093\u3002",
+            "\u66f4\u65b0\u30c7\u30fc\u30bf\u306f\u78ba\u8a8d\u5f8c\u306b\u3060\u3051\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u3001\u73fe\u5728\u5b9f\u884c\u4e2d\u306e\u8eca\u7a2e\u30c7\u30fc\u30bf\u306f\u5909\u66f4\u3057\u307e\u305b\u3093\u3002",
             body,
         )
 
@@ -536,6 +536,82 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
                     ),
                 )
             self.assertEqual(target.read_bytes(), b"do-not-touch\n")
+
+
+    def test_check_with_manifest_retains_exact_approved_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            local = root / "local.json"
+            remote = root / "remote.json"
+            write_json(local, metadata_payload(updated="2026-08-13"))
+            write_json(
+                remote,
+                metadata_payload(updated="2026-09-01", extra=True),
+            )
+            manifest = manifest_bytes(manifest_for_metadata(remote))
+
+            result, retained = mod.check_vehicle_metadata_update_with_manifest(
+                local,
+                "https://example.test/manifest.json",
+                fetcher=lambda _url, *, timeout: manifest,
+            )
+
+            self.assertEqual(
+                result.status,
+                mod.STATUS_UPDATE_AVAILABLE,
+            )
+            self.assertEqual(retained, manifest)
+
+    def test_check_with_manifest_failure_returns_no_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            local = Path(td) / "local.json"
+            write_json(local, metadata_payload())
+
+            def fail(_url: str, *, timeout: float) -> bytes:
+                raise mod.VehicleMetadataUpdateError("offline")
+
+            result, retained = mod.check_vehicle_metadata_update_with_manifest(
+                local,
+                "https://example.test/manifest.json",
+                fetcher=fail,
+            )
+
+            self.assertEqual(result.status, mod.STATUS_CHECK_FAILED)
+            self.assertIsNone(retained)
+
+    def test_r06_gui_download_strings_are_readable(self) -> None:
+        self.assertEqual(
+            mod.update_gui_text("download_question", "ja"),
+            "\u65b0\u3057\u3044\u8eca\u7a2e\u30c7\u30fc\u30bf\u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u3001"
+            "\u6b21\u56de\u8d77\u52d5\u304b\u3089\u4f7f\u7528\u3057\u307e\u3059\u304b\uff1f",
+        )
+        self.assertIn(
+            "\u6b21\u56de\u8d77\u52d5",
+            mod.update_gui_text("download_success", "ja"),
+        )
+
+    def test_r06_gui_requires_explicit_yes_before_download(self) -> None:
+        source_path = (
+            HERE
+            / "src"
+            / "organizer"
+            / "livery-organizer-for-fh6.py"
+        )
+        source = source_path.read_text(encoding="utf-8")
+        self.assertIn("messagebox.askyesno(", source)
+        self.assertIn(
+            "download_and_cache_vehicle_metadata(",
+            source,
+        )
+        self.assertIn(
+            "check_vehicle_metadata_update_with_manifest(",
+            source,
+        )
+        self.assertIn(
+            "vehicle_metadata_runtime_path()",
+            source,
+        )
+        self.assertNotIn("_vehicle_metadata_path()", source)
 
 if __name__ == "__main__":
     unittest.main()

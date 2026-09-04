@@ -3,7 +3,7 @@
 """
 Livery Organizer for FH6 - optional vehicle metadata update checker.
 
-v0.4.59-r05:
+v0.4.59-r06:
 - Explicit/manual check only.
 - The local fh6-vehicle-metadata.json always remains the runtime source.
 - No metadata download or replacement is performed.
@@ -269,7 +269,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     if policy.get("mode") != SUPPORTED_UPDATE_POLICY:
         raise VehicleMetadataUpdateError(
             "manifest update_policy.mode is unsupported; "
-            "r05 accepts optional only"
+            "r06 accepts optional only"
         )
 
     source_updated = _require_iso_date(
@@ -476,7 +476,7 @@ def fetch_metadata_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r05",
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r06",
             "Accept": "application/json",
         },
         method="GET",
@@ -804,7 +804,7 @@ def fetch_manifest_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r05",
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r06",
             "Accept": "application/json",
         },
         method="GET",
@@ -926,18 +926,19 @@ def check_vehicle_metadata_update_from_file(
     )
 
 
-def check_vehicle_metadata_update(
+def check_vehicle_metadata_update_with_manifest(
     local_metadata_path: Path,
     manifest_url: str,
     *,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     fetcher: Callable[..., bytes] | None = None,
-) -> VehicleMetadataUpdateResult:
+) -> tuple[VehicleMetadataUpdateResult, bytes | None]:
     """
-    Check-only network path.
+    Check for an update and retain the exact manifest bytes that were checked.
 
-    This function never writes local_metadata_path and never downloads the
-    metadata JSON described by the manifest.
+    Retaining the bytes lets an explicit follow-up download validate against
+    the same manifest the user approved. A later metadata change at the URL is
+    therefore rejected by the manifest hashes instead of being silently used.
     """
     try:
         if fetcher is None:
@@ -951,23 +952,52 @@ def check_vehicle_metadata_update(
                 timeout=timeout,
             )
     except VehicleMetadataUpdateError as exc:
-        return VehicleMetadataUpdateResult(
-            STATUS_CHECK_FAILED,
-            manifest_url=manifest_url,
-            detail=str(exc),
+        return (
+            VehicleMetadataUpdateResult(
+                STATUS_CHECK_FAILED,
+                manifest_url=manifest_url,
+                detail=str(exc),
+            ),
+            None,
         )
     except Exception as exc:
-        return VehicleMetadataUpdateResult(
-            STATUS_CHECK_FAILED,
-            manifest_url=manifest_url,
-            detail=f"manifest fetch failed: {type(exc).__name__}: {exc}",
+        return (
+            VehicleMetadataUpdateResult(
+                STATUS_CHECK_FAILED,
+                manifest_url=manifest_url,
+                detail=f"manifest fetch failed: {type(exc).__name__}: {exc}",
+            ),
+            None,
         )
 
-    return check_vehicle_metadata_update_from_bytes(
+    result = check_vehicle_metadata_update_from_bytes(
         local_metadata_path,
         manifest_bytes,
         manifest_url=manifest_url,
     )
+    return result, manifest_bytes
+
+
+def check_vehicle_metadata_update(
+    local_metadata_path: Path,
+    manifest_url: str,
+    *,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+    fetcher: Callable[..., bytes] | None = None,
+) -> VehicleMetadataUpdateResult:
+    """
+    Check-only network path.
+
+    This function never writes local_metadata_path and never downloads the
+    metadata JSON described by the manifest.
+    """
+    result, _manifest_bytes = check_vehicle_metadata_update_with_manifest(
+        local_metadata_path,
+        manifest_url,
+        timeout=timeout,
+        fetcher=fetcher,
+    )
+    return result
 
 
 
@@ -977,8 +1007,23 @@ _GUI_TEXT = {
         "checking": "\u8eca\u7a2e\u30c7\u30fc\u30bf\u306e\u66f4\u65b0\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059\u2026",
         "title": "\u8eca\u7a2e\u30c7\u30fc\u30bf\u66f4\u65b0\u78ba\u8a8d",
         "update_note": (
-            "\u3053\u306e\u958b\u767a\u7248\u3067\u306f\u66f4\u65b0\u306e\u901a\u77e5\u306e\u307f\u884c\u3044\u3001"
-            "\u30c7\u30fc\u30bf\u306e\u81ea\u52d5\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u30fb\u7f6e\u63db\u306f\u884c\u3044\u307e\u305b\u3093\u3002"
+            "\u66f4\u65b0\u30c7\u30fc\u30bf\u306f\u78ba\u8a8d\u5f8c\u306b\u3060\u3051\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u3001"
+            "\u73fe\u5728\u5b9f\u884c\u4e2d\u306e\u8eca\u7a2e\u30c7\u30fc\u30bf\u306f\u5909\u66f4\u3057\u307e\u305b\u3093\u3002"
+        ),
+        "download_question": (
+            "\u65b0\u3057\u3044\u8eca\u7a2e\u30c7\u30fc\u30bf\u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u3001"
+            "\u6b21\u56de\u8d77\u52d5\u304b\u3089\u4f7f\u7528\u3057\u307e\u3059\u304b\uff1f"
+        ),
+        "downloading": (
+            "\u8eca\u7a2e\u30c7\u30fc\u30bf\u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u3066\u691c\u8a3c\u3057\u3066\u3044\u307e\u3059\u2026"
+        ),
+        "download_success": (
+            "\u8eca\u7a2e\u30c7\u30fc\u30bf\u3092\u691c\u8a3c\u3057\u3066\u4fdd\u5b58\u3057\u307e\u3057\u305f\u3002"
+            "\u6b21\u56de\u8d77\u52d5\u304b\u3089\u65b0\u3057\u3044\u30c7\u30fc\u30bf\u3092\u4f7f\u7528\u3057\u307e\u3059\u3002"
+        ),
+        "download_failed": (
+            "\u8eca\u7a2e\u30c7\u30fc\u30bf\u306e\u66f4\u65b0\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002"
+            "\u73fe\u5728\u306e\u30c7\u30fc\u30bf\u306f\u5909\u66f4\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002"
         ),
     },
     "en": {
@@ -986,8 +1031,22 @@ _GUI_TEXT = {
         "checking": "Checking for a vehicle data update...",
         "title": "Vehicle data update check",
         "update_note": (
-            "This development revision only reports the update. "
-            "It does not automatically download or replace vehicle metadata."
+            "Update data is downloaded only after confirmation. "
+            "The vehicle data used by the current process is not changed."
+        ),
+        "download_question": (
+            "Download the new vehicle data and use it from the next startup?"
+        ),
+        "downloading": (
+            "Downloading and validating the vehicle data..."
+        ),
+        "download_success": (
+            "The vehicle data was validated and saved. "
+            "The new data will be used from the next startup."
+        ),
+        "download_failed": (
+            "The vehicle data update failed. "
+            "The current data was not changed."
         ),
     },
 }

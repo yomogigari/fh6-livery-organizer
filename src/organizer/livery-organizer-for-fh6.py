@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r05
+Livery Organizer for FH6 v0.4.59-r06
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -96,8 +96,12 @@ try:
     from .vehicle_metadata_update import (
         STATUS_CHECK_FAILED,
         STATUS_INCOMPATIBLE,
+        STATUS_UPDATE_AVAILABLE,
         DEFAULT_MANIFEST_URL,
         check_vehicle_metadata_update,
+        check_vehicle_metadata_update_with_manifest,
+        default_vehicle_metadata_cache_path,
+        download_and_cache_vehicle_metadata,
         format_update_check_result,
         gui_update_presentation,
         select_runtime_vehicle_metadata_path,
@@ -108,8 +112,12 @@ except ImportError:
     from vehicle_metadata_update import (
         STATUS_CHECK_FAILED,
         STATUS_INCOMPATIBLE,
+        STATUS_UPDATE_AVAILABLE,
         DEFAULT_MANIFEST_URL,
         check_vehicle_metadata_update,
+        check_vehicle_metadata_update_with_manifest,
+        default_vehicle_metadata_cache_path,
+        download_and_cache_vehicle_metadata,
         format_update_check_result,
         gui_update_presentation,
         select_runtime_vehicle_metadata_path,
@@ -128,7 +136,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r05"
+VERSION = "0.4.59-r06"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -17604,8 +17612,8 @@ class App:
         self.log(update_gui_text("checking", get_language()))
 
         def worker():
-            result = check_vehicle_metadata_update(
-                _vehicle_metadata_path(),
+            result, manifest_bytes = check_vehicle_metadata_update_with_manifest(
+                vehicle_metadata_runtime_path(),
                 DEFAULT_MANIFEST_URL,
             )
             try:
@@ -17613,19 +17621,18 @@ class App:
                     0,
                     self._finish_vehicle_metadata_update_check,
                     result,
+                    manifest_bytes,
                 )
             except Exception:
                 pass
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _finish_vehicle_metadata_update_check(self, result):
-        self._vehicle_metadata_update_running = False
-        try:
-            self.vehicle_metadata_update_btn.configure(state="normal")
-        except Exception:
-            pass
-
+    def _finish_vehicle_metadata_update_check(
+        self,
+        result,
+        manifest_bytes,
+    ):
         language = get_language()
         kind, title, body = gui_update_presentation(result, language)
         try:
@@ -17634,10 +17641,103 @@ class App:
         except Exception:
             pass
 
+        if (
+            result.status == STATUS_UPDATE_AVAILABLE
+            and manifest_bytes is not None
+        ):
+            question = (
+                body
+                + "\n\n"
+                + update_gui_text("download_question", language)
+            )
+            approved = messagebox.askyesno(
+                title,
+                question,
+                parent=self.master,
+            )
+            if approved:
+                self.log(update_gui_text("downloading", language))
+
+                def download_worker():
+                    try:
+                        state = download_and_cache_vehicle_metadata(
+                            manifest_bytes,
+                            default_vehicle_metadata_cache_path(),
+                        )
+                        error = None
+                    except Exception as exc:
+                        state = None
+                        error = f"{type(exc).__name__}: {exc}"
+
+                    try:
+                        self.master.after(
+                            0,
+                            self._finish_vehicle_metadata_download,
+                            state,
+                            error,
+                        )
+                    except Exception:
+                        pass
+
+                threading.Thread(
+                    target=download_worker,
+                    daemon=True,
+                ).start()
+                return
+
+            self._set_vehicle_metadata_update_idle()
+            return
+
+        self._set_vehicle_metadata_update_idle()
+
         if kind == "info":
             messagebox.showinfo(title, body, parent=self.master)
         else:
             messagebox.showwarning(title, body, parent=self.master)
+
+    def _set_vehicle_metadata_update_idle(self):
+        self._vehicle_metadata_update_running = False
+        try:
+            self.vehicle_metadata_update_btn.configure(state="normal")
+        except Exception:
+            pass
+
+    def _finish_vehicle_metadata_download(self, state, error):
+        self._set_vehicle_metadata_update_idle()
+
+        language = get_language()
+        title = update_gui_text("title", language)
+        if error:
+            body = update_gui_text("download_failed", language)
+            body += "\n\n" + str(error)
+            try:
+                self.log(body.splitlines()[0])
+            except Exception:
+                pass
+            messagebox.showwarning(
+                title,
+                body,
+                parent=self.master,
+            )
+            return
+
+        body = update_gui_text("download_success", language)
+        if isinstance(state, dict):
+            source_updated = state.get("source_updated")
+            record_count = state.get("record_count")
+            if source_updated:
+                body += f"\n\n{source_updated}"
+            if record_count is not None:
+                body += f" / {record_count}"
+        try:
+            self.log(body.splitlines()[0])
+        except Exception:
+            pass
+        messagebox.showinfo(
+            title,
+            body,
+            parent=self.master,
+        )
 
     def update_preflight(self):
         self._preflight_update_job = None
@@ -18057,7 +18157,7 @@ def main() -> int:
             )
             return 2
         result = check_vehicle_metadata_update(
-            _vehicle_metadata_path(),
+            vehicle_metadata_runtime_path(),
             manifest_url,
         )
         print(format_update_check_result(result, get_language()))
