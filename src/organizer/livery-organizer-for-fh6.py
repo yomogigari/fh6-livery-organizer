@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r02
+Livery Organizer for FH6 v0.4.59-r03
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -96,17 +96,23 @@ try:
     from .vehicle_metadata_update import (
         STATUS_CHECK_FAILED,
         STATUS_INCOMPATIBLE,
+        DEFAULT_MANIFEST_URL,
         check_vehicle_metadata_update,
         format_update_check_result,
+        gui_update_presentation,
         update_cli_text,
+        update_gui_text,
     )
 except ImportError:
     from vehicle_metadata_update import (
         STATUS_CHECK_FAILED,
         STATUS_INCOMPATIBLE,
+        DEFAULT_MANIFEST_URL,
         check_vehicle_metadata_update,
         format_update_check_result,
+        gui_update_presentation,
         update_cli_text,
+        update_gui_text,
     )
 
 
@@ -120,7 +126,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r02"
+VERSION = "0.4.59-r03"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -17204,6 +17210,7 @@ class App:
         self._settings_save_job = None
         self._preflight_update_job = None
         self._scan_running = False
+        self._vehicle_metadata_update_running = False
         for var in (
             self.root_var,
             self.game_root_var,
@@ -17294,12 +17301,18 @@ class App:
         btns = ttk.Frame(frm)
         btns.pack(fill="x")
         self.scan_btn = ttk.Button(btns, text=tr("button.scan"), command=self.start_scan)
+        self.vehicle_metadata_update_btn = ttk.Button(
+            btns,
+            text=update_gui_text("button", get_language()),
+            command=self.check_vehicle_metadata_update_gui,
+        )
         action_buttons = [
             self.scan_btn,
             ttk.Button(btns, text=tr("button.open_output"), command=self.open_output),
             ttk.Button(btns, text=tr("button.recheck"), command=self.update_preflight),
             ttk.Button(btns, text=tr("button.quick_start"), command=self.show_quick_start_guide),
             ttk.Button(btns, text=tr("button.support_info"), command=self.show_support_info),
+            self.vehicle_metadata_update_btn,
         ]
         for index, button in enumerate(action_buttons):
             button.pack(side="left", padx=(0 if index == 0 else 8, 0))
@@ -17559,6 +17572,53 @@ class App:
         position_child_window(win, self.master, 920, 700)
         win.deiconify()
         win.lift()
+
+    def check_vehicle_metadata_update_gui(self):
+        if self._vehicle_metadata_update_running:
+            return
+
+        self._vehicle_metadata_update_running = True
+        try:
+            self.vehicle_metadata_update_btn.configure(state="disabled")
+        except Exception:
+            pass
+        self.log(update_gui_text("checking", get_language()))
+
+        def worker():
+            result = check_vehicle_metadata_update(
+                _vehicle_metadata_path(),
+                DEFAULT_MANIFEST_URL,
+            )
+            try:
+                self.master.after(
+                    0,
+                    self._finish_vehicle_metadata_update_check,
+                    result,
+                )
+            except Exception:
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_vehicle_metadata_update_check(self, result):
+        self._vehicle_metadata_update_running = False
+        try:
+            self.vehicle_metadata_update_btn.configure(state="normal")
+        except Exception:
+            pass
+
+        language = get_language()
+        kind, title, body = gui_update_presentation(result, language)
+        try:
+            first_line = body.splitlines()[0] if body else title
+            self.log(first_line)
+        except Exception:
+            pass
+
+        if kind == "info":
+            messagebox.showinfo(title, body, parent=self.master)
+        else:
+            messagebox.showwarning(title, body, parent=self.master)
 
     def update_preflight(self):
         self._preflight_update_job = None

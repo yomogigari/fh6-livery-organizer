@@ -3,7 +3,7 @@
 """
 Livery Organizer for FH6 - optional vehicle metadata update checker.
 
-v0.4.59-r02:
+v0.4.59-r03:
 - Explicit/manual check only.
 - The local fh6-vehicle-metadata.json always remains the runtime source.
 - No metadata download or replacement is performed.
@@ -29,6 +29,16 @@ MANIFEST_DATASET = "fh6-vehicle-metadata-manifest"
 METADATA_SCHEMA_VERSION = 1
 METADATA_DATASET = "fh6-official-vehicle-metadata"
 SUPPORTED_UPDATE_POLICY = "optional"
+
+DEFAULT_METADATA_URL = (
+    "https://raw.githubusercontent.com/yomogigari/"
+    "fh6-livery-organizer/main/src/organizer/fh6-vehicle-metadata.json"
+)
+DEFAULT_MANIFEST_URL = (
+    "https://raw.githubusercontent.com/yomogigari/"
+    "fh6-livery-organizer/main/src/organizer/"
+    "fh6-vehicle-metadata-manifest.json"
+)
 
 DEFAULT_TIMEOUT_SECONDS = 10.0
 MAX_MANIFEST_BYTES = 256 * 1024
@@ -258,7 +268,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     if policy.get("mode") != SUPPORTED_UPDATE_POLICY:
         raise VehicleMetadataUpdateError(
             "manifest update_policy.mode is unsupported; "
-            "r02 accepts optional only"
+            "r03 accepts optional only"
         )
 
     source_updated = _require_iso_date(
@@ -329,7 +339,7 @@ def fetch_manifest_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r02",
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r03",
             "Accept": "application/json",
         },
         method="GET",
@@ -493,6 +503,46 @@ def check_vehicle_metadata_update(
         manifest_bytes,
         manifest_url=manifest_url,
     )
+
+
+
+_GUI_TEXT = {
+    "ja": {
+        "button": "\u8eca\u7a2e\u30c7\u30fc\u30bf\u66f4\u65b0\u78ba\u8a8d",
+        "checking": "\u8eca\u7a2e\u30c7\u30fc\u30bf\u306e\u66f4\u65b0\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059\u2026",
+        "title": "\u8eca\u7a2e\u30c7\u30fc\u30bf\u66f4\u65b0\u78ba\u8a8d",
+        "update_note": (
+            "\u3053\u306e\u958b\u767a\u7248\u3067\u306f\u66f4\u65b0\u306e\u901a\u77e5\u306e\u307f\u884c\u3044\u3001"
+            "\u30c7\u30fc\u30bf\u306e\u81ea\u52d5\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u30fb\u7f6e\u63db\u306f\u884c\u3044\u307e\u305b\u3093\u3002"
+        ),
+    },
+    "en": {
+        "button": "Check vehicle data update",
+        "checking": "Checking for a vehicle data update...",
+        "title": "Vehicle data update check",
+        "update_note": (
+            "This development revision only reports the update. "
+            "It does not automatically download or replace vehicle metadata."
+        ),
+    },
+}
+
+
+def update_gui_text(key: str, language: str | None) -> str:
+    lang = "ja" if str(language or "").lower().startswith("ja") else "en"
+    return _GUI_TEXT[lang].get(key, key)
+
+
+def gui_update_presentation(
+    result: VehicleMetadataUpdateResult,
+    language: str | None = "ja",
+) -> tuple[str, str, str]:
+    kind = "info" if result.status == STATUS_UP_TO_DATE else "warning"
+    title = update_gui_text("title", language)
+    body = format_update_check_result(result, language)
+    if result.status == STATUS_UPDATE_AVAILABLE:
+        body += "\n\n" + update_gui_text("update_note", language)
+    return kind, title, body
 
 
 _CLI_TEXT = {

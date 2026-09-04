@@ -304,5 +304,70 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
             text,
         )
 
+
+    def test_default_manifest_url_is_public_https_path(self) -> None:
+        self.assertEqual(
+            mod.DEFAULT_MANIFEST_URL,
+            "https://raw.githubusercontent.com/yomogigari/"
+            "fh6-livery-organizer/main/src/organizer/"
+            "fh6-vehicle-metadata-manifest.json",
+        )
+        self.assertTrue(mod._is_https_url(mod.DEFAULT_MANIFEST_URL))
+        self.assertTrue(mod._is_https_url(mod.DEFAULT_METADATA_URL))
+
+    def test_gui_update_presentation_is_optional_only(self) -> None:
+        result = mod.VehicleMetadataUpdateResult(
+            mod.STATUS_UPDATE_AVAILABLE,
+            local_source_updated="2026-08-13",
+            remote_source_updated="2026-09-01",
+            local_record_count=636,
+            remote_record_count=637,
+        )
+        kind, title, body = mod.gui_update_presentation(result, "ja")
+        self.assertEqual(kind, "warning")
+        self.assertEqual(
+            title,
+            "\u8eca\u7a2e\u30c7\u30fc\u30bf\u66f4\u65b0\u78ba\u8a8d",
+        )
+        self.assertIn(
+            "\u30c7\u30fc\u30bf\u306e\u81ea\u52d5\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u30fb\u7f6e\u63db\u306f\u884c\u3044\u307e\u305b\u3093\u3002",
+            body,
+        )
+
+    def test_repository_manifest_matches_local_metadata(self) -> None:
+        metadata_path = HERE / "src" / "organizer" / "fh6-vehicle-metadata.json"
+        manifest_path = (
+            HERE / "src" / "organizer" / "fh6-vehicle-metadata-manifest.json"
+        )
+        manifest_bytes = manifest_path.read_bytes()
+        state = mod.validate_manifest_bytes(manifest_bytes)
+        local = mod.inspect_local_metadata(metadata_path)
+
+        self.assertEqual(state["source_updated"], local["source_updated"])
+        self.assertEqual(state["record_count"], local["record_count"])
+        self.assertEqual(state["records_sha256"], local["records_sha256"])
+        self.assertEqual(state["file_sha256"], local["file_sha256"])
+        self.assertEqual(state["file_size"], local["file_size"])
+        self.assertEqual(state["metadata_url"], mod.DEFAULT_METADATA_URL)
+
+        result = mod.check_vehicle_metadata_update_from_bytes(
+            metadata_path,
+            manifest_bytes,
+        )
+        self.assertEqual(result.status, mod.STATUS_UP_TO_DATE)
+
+    def test_organizer_gui_check_is_explicit_and_background_only(self) -> None:
+        source_path = HERE / "src" / "organizer" / "livery-organizer-for-fh6.py"
+        source = source_path.read_text(encoding="utf-8")
+        self.assertIn(
+            "command=self.check_vehicle_metadata_update_gui",
+            source,
+        )
+        self.assertIn(
+            "threading.Thread(target=worker, daemon=True).start()",
+            source,
+        )
+        self.assertIn("DEFAULT_MANIFEST_URL", source)
+
 if __name__ == "__main__":
     unittest.main()
