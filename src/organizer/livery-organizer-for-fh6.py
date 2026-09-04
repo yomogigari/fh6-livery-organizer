@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r04
+Livery Organizer for FH6 v0.4.59-r05
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -100,6 +100,7 @@ try:
         check_vehicle_metadata_update,
         format_update_check_result,
         gui_update_presentation,
+        select_runtime_vehicle_metadata_path,
         update_cli_text,
         update_gui_text,
     )
@@ -111,6 +112,7 @@ except ImportError:
         check_vehicle_metadata_update,
         format_update_check_result,
         gui_update_presentation,
+        select_runtime_vehicle_metadata_path,
         update_cli_text,
         update_gui_text,
     )
@@ -126,7 +128,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r04"
+VERSION = "0.4.59-r05"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -1288,6 +1290,23 @@ def vehicle_metadata_resource_path() -> Path:
     return Path(__file__).resolve().with_name(VEHICLE_METADATA_FILENAME)
 
 
+
+def vehicle_metadata_runtime_path() -> Path:
+    """
+    Prefer a fully validated, strictly newer local cache.
+
+    This performs no network access. Missing, stale, damaged, or incompatible
+    cache files fall back to the bundled metadata resource.
+    """
+    bundled = vehicle_metadata_resource_path()
+    try:
+        return select_runtime_vehicle_metadata_path(
+            bundled_path=bundled,
+        )
+    except Exception:
+        return bundled
+
+
 def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict:
     result = {}
     for key, value in pairs:
@@ -1306,7 +1325,7 @@ def load_official_vehicle_metadata(
     r01 intentionally performs no network update/check. Missing or malformed bundled
     metadata is an error instead of silently changing vehicle display names.
     '''
-    metadata_path = Path(path) if path is not None else vehicle_metadata_resource_path()
+    metadata_path = Path(path) if path is not None else vehicle_metadata_runtime_path()
 
     try:
         raw_text = metadata_path.read_text(encoding="utf-8")

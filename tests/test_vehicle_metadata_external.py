@@ -55,4 +55,6 @@ def test_embedded_vehicle_metadata_was_removed():
     source = ORGANIZER_PATH.read_text(encoding="utf-8")
     assert "OFFICIAL_VEHICLE_METADATA: dict[" not in source
     assert 'VEHICLE_METADATA_FILENAME = "fh6-vehicle-metadata.json"' in source
-    assert 'VERSION = "0.4.59-r04"' in source
+    assert "vehicle_metadata_runtime_path()" in source
+    assert "select_runtime_vehicle_metadata_path(" in source
+    assert 'VERSION = "0.4.59-r05"' in source

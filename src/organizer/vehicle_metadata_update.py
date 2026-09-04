@@ -3,7 +3,7 @@
 """
 Livery Organizer for FH6 - optional vehicle metadata update checker.
 
-v0.4.59-r04:
+v0.4.59-r05:
 - Explicit/manual check only.
 - The local fh6-vehicle-metadata.json always remains the runtime source.
 - No metadata download or replacement is performed.
@@ -269,7 +269,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     if policy.get("mode") != SUPPORTED_UPDATE_POLICY:
         raise VehicleMetadataUpdateError(
             "manifest update_policy.mode is unsupported; "
-            "r04 accepts optional only"
+            "r05 accepts optional only"
         )
 
     source_updated = _require_iso_date(
@@ -476,7 +476,7 @@ def fetch_metadata_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r04",
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r05",
             "Accept": "application/json",
         },
         method="GET",
@@ -575,6 +575,185 @@ def cache_validated_metadata_bytes(
     return state
 
 
+
+CACHED_MANIFEST_FILENAME = "fh6-vehicle-metadata-manifest.json"
+
+
+def cached_vehicle_metadata_manifest_path(
+    metadata_path: Path,
+) -> Path:
+    metadata_path = Path(metadata_path)
+    return metadata_path.with_name(CACHED_MANIFEST_FILENAME)
+
+
+def _cache_manifest_bytes(
+    destination: Path,
+    manifest_bytes: bytes,
+) -> None:
+    if len(manifest_bytes) > MAX_MANIFEST_BYTES:
+        raise VehicleMetadataUpdateError(
+            f"manifest exceeds {MAX_MANIFEST_BYTES} bytes"
+        )
+    validate_manifest_bytes(manifest_bytes)
+
+    destination = Path(destination)
+    if destination.exists() and destination.is_symlink():
+        raise VehicleMetadataUpdateError(
+            "metadata cache manifest destination must not be a symbolic link"
+        )
+
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise VehicleMetadataUpdateError(
+            f"metadata cache manifest directory cannot be created: {exc}"
+        ) from exc
+
+    temp_path = destination.with_name(
+        destination.name + f".tmp-{os.getpid()}"
+    )
+    if temp_path.exists():
+        try:
+            temp_path.unlink()
+        except OSError as exc:
+            raise VehicleMetadataUpdateError(
+                "stale metadata cache manifest temp file cannot be removed: "
+                f"{exc}"
+            ) from exc
+
+    try:
+        with temp_path.open("xb") as handle:
+            handle.write(manifest_bytes)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        validate_manifest_bytes(temp_path.read_bytes())
+        os.replace(temp_path, destination)
+        validate_manifest_bytes(destination.read_bytes())
+    except VehicleMetadataUpdateError:
+        raise
+    except OSError as exc:
+        raise VehicleMetadataUpdateError(
+            f"metadata cache manifest write failed: {exc}"
+        ) from exc
+    finally:
+        try:
+            if temp_path.exists():
+                temp_path.unlink()
+        except OSError:
+            pass
+
+
+def cache_validated_metadata_package(
+    destination: Path,
+    metadata_bytes: bytes,
+    manifest_bytes: bytes,
+) -> dict[str, Any]:
+    manifest_state = validate_manifest_bytes(manifest_bytes)
+    metadata_url = manifest_state.get("metadata_url")
+    if not isinstance(metadata_url, str) or not metadata_url:
+        raise VehicleMetadataUpdateError(
+            "manifest metadata.url is required for a cached metadata package"
+        )
+
+    state = cache_validated_metadata_bytes(
+        destination,
+        metadata_bytes,
+        manifest_state,
+    )
+
+    manifest_path = cached_vehicle_metadata_manifest_path(destination)
+    _cache_manifest_bytes(
+        manifest_path,
+        manifest_bytes,
+    )
+
+    selected = select_runtime_vehicle_metadata_path(
+        destination,
+        bundled_path=None,
+        require_newer_than_bundled=False,
+    )
+    if selected != Path(destination):
+        raise VehicleMetadataUpdateError(
+            "cached metadata package could not be revalidated after installation"
+        )
+
+    return state
+
+
+def select_runtime_vehicle_metadata_path(
+    cache_path: Path | None = None,
+    *,
+    bundled_path: Path | None,
+    require_newer_than_bundled: bool = True,
+) -> Path:
+    """
+    Select a local runtime metadata file without network access.
+
+    A cache is eligible only when both the metadata JSON and its cached manifest
+    exist, neither path is a symbolic link, and the metadata exactly matches the
+    cached manifest. When a bundled file is supplied, the cache must also have a
+    strictly newer source date; same-date/different-content and older caches
+    fall back to the bundled file.
+    """
+    bundled = None if bundled_path is None else Path(bundled_path)
+    cache = (
+        Path(cache_path)
+        if cache_path is not None
+        else default_vehicle_metadata_cache_path()
+    )
+    manifest_path = cached_vehicle_metadata_manifest_path(cache)
+    fallback = bundled if bundled is not None else cache
+
+    try:
+        if not cache.is_file() or not manifest_path.is_file():
+            return fallback
+        if cache.is_symlink() or manifest_path.is_symlink():
+            return fallback
+
+        metadata_bytes = cache.read_bytes()
+        manifest_bytes = manifest_path.read_bytes()
+
+        if len(metadata_bytes) > MAX_METADATA_BYTES:
+            return fallback
+        if len(manifest_bytes) > MAX_MANIFEST_BYTES:
+            return fallback
+
+        manifest_state = validate_manifest_bytes(manifest_bytes)
+        metadata_url = manifest_state.get("metadata_url")
+        if not isinstance(metadata_url, str) or not metadata_url:
+            return fallback
+
+        cache_state = validate_metadata_bytes_against_manifest(
+            metadata_bytes,
+            manifest_state,
+        )
+
+        if bundled is None or not require_newer_than_bundled:
+            return cache
+
+        bundled_state = inspect_metadata_bytes(
+            bundled.read_bytes(),
+            label="bundled metadata",
+        )
+
+        cache_date = date.fromisoformat(cache_state["source_updated"])
+        bundled_date = date.fromisoformat(
+            bundled_state["source_updated"]
+        )
+
+        if cache_date <= bundled_date:
+            return bundled
+
+        return cache
+    except (
+        OSError,
+        ValueError,
+        VehicleMetadataUpdateError,
+    ):
+        return fallback
+
+
 def download_and_cache_vehicle_metadata(
     manifest_bytes: bytes,
     destination: Path,
@@ -600,10 +779,10 @@ def download_and_cache_vehicle_metadata(
             timeout=timeout,
         )
 
-    return cache_validated_metadata_bytes(
+    return cache_validated_metadata_package(
         destination,
         data,
-        manifest_state,
+        manifest_bytes,
     )
 
 def fetch_manifest_bytes(
@@ -625,7 +804,7 @@ def fetch_manifest_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r04",
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r05",
             "Accept": "application/json",
         },
         method="GET",
