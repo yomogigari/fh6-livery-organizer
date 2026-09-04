@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -368,6 +369,173 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
             source,
         )
         self.assertIn("DEFAULT_MANIFEST_URL", source)
+
+
+    def test_default_vehicle_metadata_cache_path_uses_existing_cache_root(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            path = mod.default_vehicle_metadata_cache_path(
+                local_appdata=base,
+            )
+            self.assertEqual(
+                path,
+                base
+                / "Livery-Organizer-for-FH6"
+                / "cache"
+                / "fh6-vehicle-metadata.json",
+            )
+
+    def test_valid_downloaded_metadata_is_cached_atomically(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            remote = root / "remote.json"
+            destination = root / "cache" / "fh6-vehicle-metadata.json"
+            data = write_json(
+                remote,
+                metadata_payload(updated="2026-09-01", extra=True),
+            )
+            manifest = manifest_for_metadata(remote)
+            manifest["metadata"]["url"] = (
+                "https://example.test/fh6-vehicle-metadata.json"
+            )
+
+            state = mod.download_and_cache_vehicle_metadata(
+                manifest_bytes(manifest),
+                destination,
+                metadata_fetcher=lambda _url, *, timeout: data,
+            )
+
+            self.assertEqual(destination.read_bytes(), data)
+            self.assertEqual(
+                state["file_sha256"],
+                hashlib.sha256(data).hexdigest(),
+            )
+            self.assertFalse(
+                destination.with_name(
+                    destination.name + f".tmp-{os.getpid()}"
+                ).exists()
+            )
+
+    def test_sha_mismatch_never_replaces_existing_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            good = root / "good.json"
+            wrong = root / "wrong.json"
+            destination = root / "cache.json"
+
+            write_json(
+                good,
+                metadata_payload(updated="2026-09-01", extra=True),
+            )
+            wrong_data = write_json(
+                wrong,
+                metadata_payload(updated="2026-09-02", extra=True),
+            )
+            manifest = manifest_for_metadata(good)
+            manifest["metadata"]["url"] = (
+                "https://example.test/fh6-vehicle-metadata.json"
+            )
+
+            original = b"existing-safe-cache\n"
+            destination.write_bytes(original)
+
+            with self.assertRaises(mod.VehicleMetadataUpdateError):
+                mod.download_and_cache_vehicle_metadata(
+                    manifest_bytes(manifest),
+                    destination,
+                    metadata_fetcher=lambda _url, *, timeout: wrong_data,
+                )
+
+            self.assertEqual(destination.read_bytes(), original)
+
+    def test_http_metadata_url_is_rejected_before_network(self) -> None:
+        calls = []
+
+        def forbidden(*args, **kwargs):
+            calls.append((args, kwargs))
+            raise AssertionError("network must not be called")
+
+        with self.assertRaises(mod.VehicleMetadataUpdateError):
+            mod.fetch_metadata_bytes(
+                "http://example.test/fh6-vehicle-metadata.json",
+                urlopen=forbidden,
+            )
+        self.assertEqual(calls, [])
+
+    def test_metadata_redirect_to_http_is_rejected(self) -> None:
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def geturl(self):
+                return "http://example.test/fh6-vehicle-metadata.json"
+
+            def read(self, size):
+                return b"{}"
+
+        def opener(_request, timeout):
+            return Response()
+
+        with self.assertRaises(mod.VehicleMetadataUpdateError):
+            mod.fetch_metadata_bytes(
+                "https://example.test/fh6-vehicle-metadata.json",
+                urlopen=opener,
+            )
+
+    def test_metadata_over_maximum_is_rejected(self) -> None:
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def geturl(self):
+                return "https://example.test/fh6-vehicle-metadata.json"
+
+            def read(self, size):
+                return b"x" * size
+
+        def opener(_request, timeout):
+            return Response()
+
+        with self.assertRaises(mod.VehicleMetadataUpdateError):
+            mod.fetch_metadata_bytes(
+                "https://example.test/fh6-vehicle-metadata.json",
+                max_bytes=32,
+                urlopen=opener,
+            )
+
+    def test_symbolic_link_cache_destination_is_rejected_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            remote = root / "remote.json"
+            target = root / "target.json"
+            link = root / "cache-link.json"
+
+            data = write_json(
+                remote,
+                metadata_payload(updated="2026-09-01", extra=True),
+            )
+            target.write_bytes(b"do-not-touch\n")
+            try:
+                link.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("symbolic links are unavailable")
+
+            manifest = manifest_for_metadata(remote)
+            with self.assertRaises(mod.VehicleMetadataUpdateError):
+                mod.cache_validated_metadata_bytes(
+                    link,
+                    data,
+                    mod.validate_manifest_bytes(
+                        manifest_bytes(manifest)
+                    ),
+                )
+            self.assertEqual(target.read_bytes(), b"do-not-touch\n")
 
 if __name__ == "__main__":
     unittest.main()

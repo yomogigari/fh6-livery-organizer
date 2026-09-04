@@ -3,7 +3,7 @@
 """
 Livery Organizer for FH6 - optional vehicle metadata update checker.
 
-v0.4.59-r03:
+v0.4.59-r04:
 - Explicit/manual check only.
 - The local fh6-vehicle-metadata.json always remains the runtime source.
 - No metadata download or replacement is performed.
@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import date
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any, Callable
@@ -268,7 +269,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     if policy.get("mode") != SUPPORTED_UPDATE_POLICY:
         raise VehicleMetadataUpdateError(
             "manifest update_policy.mode is unsupported; "
-            "r03 accepts optional only"
+            "r04 accepts optional only"
         )
 
     source_updated = _require_iso_date(
@@ -320,6 +321,291 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     }
 
 
+
+MAX_METADATA_BYTES = 2 * 1024 * 1024
+CACHED_METADATA_FILENAME = "fh6-vehicle-metadata.json"
+
+
+def default_vehicle_metadata_cache_path(
+    *,
+    local_appdata: Path | None = None,
+) -> Path:
+    if local_appdata is not None:
+        base = Path(local_appdata)
+        return (
+            base
+            / "Livery-Organizer-for-FH6"
+            / "cache"
+            / CACHED_METADATA_FILENAME
+        )
+
+    if os.name == "nt":
+        base_text = os.environ.get("LOCALAPPDATA")
+        if base_text:
+            return (
+                Path(base_text)
+                / "Livery-Organizer-for-FH6"
+                / "cache"
+                / CACHED_METADATA_FILENAME
+            )
+
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg:
+        return (
+            Path(xdg)
+            / "Livery-Organizer-for-FH6"
+            / CACHED_METADATA_FILENAME
+        )
+
+    return (
+        Path.home()
+        / ".cache"
+        / "Livery-Organizer-for-FH6"
+        / CACHED_METADATA_FILENAME
+    )
+
+
+def inspect_metadata_bytes(data: bytes, *, label: str = "metadata") -> dict[str, Any]:
+    payload = _json_load_no_duplicates(data, label=label)
+    if not isinstance(payload, dict):
+        raise VehicleMetadataUpdateError(f"{label}: root must be an object")
+    if payload.get("schema_version") != METADATA_SCHEMA_VERSION:
+        raise VehicleMetadataUpdateError(
+            f"{label}: schema_version is unsupported"
+        )
+    if payload.get("dataset") != METADATA_DATASET:
+        raise VehicleMetadataUpdateError(
+            f"{label}: dataset is unexpected"
+        )
+
+    source = payload.get("source")
+    records = payload.get("records")
+    if not isinstance(source, dict):
+        raise VehicleMetadataUpdateError(
+            f"{label}: source must be an object"
+        )
+    if not isinstance(records, dict) or not records:
+        raise VehicleMetadataUpdateError(
+            f"{label}: records must be a non-empty object"
+        )
+
+    source_updated = _require_iso_date(
+        source.get("updated"),
+        label=f"{label} source.updated",
+    )
+
+    expected_fields = {"year", "make", "model", "display_name"}
+    for key, raw in records.items():
+        if not isinstance(key, str) or not key.isdecimal():
+            raise VehicleMetadataUpdateError(
+                f"{label}: invalid Car ID key: {key!r}"
+            )
+        car_id = int(key)
+        if car_id <= 0 or str(car_id) != key:
+            raise VehicleMetadataUpdateError(
+                f"{label}: non-canonical Car ID key: {key!r}"
+            )
+        if not isinstance(raw, dict) or set(raw) != expected_fields:
+            raise VehicleMetadataUpdateError(
+                f"{label}: Car ID {car_id}: invalid fields"
+            )
+
+        year = raw.get("year")
+        if isinstance(year, bool) or not isinstance(year, int):
+            raise VehicleMetadataUpdateError(
+                f"{label}: Car ID {car_id}: year must be an integer"
+            )
+
+        for field in ("make", "model", "display_name"):
+            value = raw.get(field)
+            if not isinstance(value, str) or not value:
+                raise VehicleMetadataUpdateError(
+                    f"{label}: Car ID {car_id}: invalid {field}"
+                )
+
+    return {
+        "source_updated": source_updated,
+        "record_count": len(records),
+        "records_sha256": _metadata_records_fingerprint(records),
+        "file_sha256": _sha256_bytes(data),
+        "file_size": len(data),
+    }
+
+
+def validate_metadata_bytes_against_manifest(
+    data: bytes,
+    manifest_state: dict[str, Any],
+) -> dict[str, Any]:
+    state = inspect_metadata_bytes(
+        data,
+        label="downloaded metadata",
+    )
+
+    expected = {
+        "source_updated": manifest_state["source_updated"],
+        "record_count": manifest_state["record_count"],
+        "records_sha256": manifest_state["records_sha256"],
+        "file_sha256": manifest_state["file_sha256"],
+        "file_size": manifest_state["file_size"],
+    }
+    for key, expected_value in expected.items():
+        if state[key] != expected_value:
+            raise VehicleMetadataUpdateError(
+                "downloaded metadata does not match manifest: "
+                f"{key}: expected {expected_value!r}, found {state[key]!r}"
+            )
+    return state
+
+
+def fetch_metadata_bytes(
+    url: str,
+    *,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+    max_bytes: int = MAX_METADATA_BYTES,
+    urlopen: Callable[..., Any] = urllib.request.urlopen,
+) -> bytes:
+    if not isinstance(url, str) or not _is_https_url(url):
+        raise VehicleMetadataUpdateError(
+            "metadata URL must use https:// and must not include credentials"
+        )
+    if timeout <= 0:
+        raise VehicleMetadataUpdateError("timeout must be positive")
+    if max_bytes < 1:
+        raise VehicleMetadataUpdateError("max_bytes must be positive")
+
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r04",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            final_url = response.geturl()
+            if not isinstance(final_url, str) or not _is_https_url(final_url):
+                raise VehicleMetadataUpdateError(
+                    "metadata redirect/final URL is not HTTPS"
+                )
+            data = response.read(max_bytes + 1)
+    except VehicleMetadataUpdateError:
+        raise
+    except (HTTPError, URLError, OSError, TimeoutError) as exc:
+        raise VehicleMetadataUpdateError(
+            f"metadata fetch failed: {type(exc).__name__}: {exc}"
+        ) from exc
+
+    if len(data) > max_bytes:
+        raise VehicleMetadataUpdateError(
+            f"metadata exceeds {max_bytes} bytes"
+        )
+    return data
+
+
+def cache_validated_metadata_bytes(
+    destination: Path,
+    data: bytes,
+    manifest_state: dict[str, Any],
+    *,
+    replace_func: Callable[[str | bytes | Path, str | bytes | Path], None] = os.replace,
+) -> dict[str, Any]:
+    state = validate_metadata_bytes_against_manifest(
+        data,
+        manifest_state,
+    )
+
+    destination = Path(destination)
+    if destination.exists() and destination.is_symlink():
+        raise VehicleMetadataUpdateError(
+            "metadata cache destination must not be a symbolic link"
+        )
+
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise VehicleMetadataUpdateError(
+            f"metadata cache directory cannot be created: {exc}"
+        ) from exc
+
+    temp_path = destination.with_name(
+        destination.name + f".tmp-{os.getpid()}"
+    )
+    if temp_path.exists():
+        try:
+            temp_path.unlink()
+        except OSError as exc:
+            raise VehicleMetadataUpdateError(
+                f"stale metadata cache temp file cannot be removed: {exc}"
+            ) from exc
+
+    try:
+        with temp_path.open("xb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        temp_data = temp_path.read_bytes()
+        validate_metadata_bytes_against_manifest(
+            temp_data,
+            manifest_state,
+        )
+
+        replace_func(temp_path, destination)
+
+        installed = destination.read_bytes()
+        validate_metadata_bytes_against_manifest(
+            installed,
+            manifest_state,
+        )
+    except VehicleMetadataUpdateError:
+        raise
+    except OSError as exc:
+        raise VehicleMetadataUpdateError(
+            f"metadata cache write failed: {exc}"
+        ) from exc
+    finally:
+        try:
+            if temp_path.exists():
+                temp_path.unlink()
+        except OSError:
+            pass
+
+    return state
+
+
+def download_and_cache_vehicle_metadata(
+    manifest_bytes: bytes,
+    destination: Path,
+    *,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+    metadata_fetcher: Callable[..., bytes] | None = None,
+) -> dict[str, Any]:
+    manifest_state = validate_manifest_bytes(manifest_bytes)
+    metadata_url = manifest_state.get("metadata_url")
+    if not isinstance(metadata_url, str) or not metadata_url:
+        raise VehicleMetadataUpdateError(
+            "manifest metadata.url is required to download metadata"
+        )
+
+    if metadata_fetcher is None:
+        data = fetch_metadata_bytes(
+            metadata_url,
+            timeout=timeout,
+        )
+    else:
+        data = metadata_fetcher(
+            metadata_url,
+            timeout=timeout,
+        )
+
+    return cache_validated_metadata_bytes(
+        destination,
+        data,
+        manifest_state,
+    )
+
 def fetch_manifest_bytes(
     url: str,
     *,
@@ -339,7 +625,7 @@ def fetch_manifest_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r03",
+            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r04",
             "Accept": "application/json",
         },
         method="GET",

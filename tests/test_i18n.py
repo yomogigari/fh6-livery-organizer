@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_v0459_r03(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.59-r03")
+    def test_version_is_v0459_r04(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.59-r04")
 
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
