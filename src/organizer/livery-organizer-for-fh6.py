@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r01
+Livery Organizer for FH6 v0.4.59-r02
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -93,6 +93,24 @@ except ImportError:
 
 
 try:
+    from .vehicle_metadata_update import (
+        STATUS_CHECK_FAILED,
+        STATUS_INCOMPATIBLE,
+        check_vehicle_metadata_update,
+        format_update_check_result,
+        update_cli_text,
+    )
+except ImportError:
+    from vehicle_metadata_update import (
+        STATUS_CHECK_FAILED,
+        STATUS_INCOMPATIBLE,
+        check_vehicle_metadata_update,
+        format_update_check_result,
+        update_cli_text,
+    )
+
+
+try:
     import tkinter as tk
     from tkinter import filedialog, messagebox, ttk
     from tkinter import font as tkfont
@@ -102,7 +120,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r01"
+VERSION = "0.4.59-r02"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -17926,6 +17944,15 @@ def build_parser() -> argparse.ArgumentParser:
         help=tr("cli.inspect_assets_help"),
     )
     p.add_argument(
+        "--check-vehicle-metadata-update",
+        action="store_true",
+        help=update_cli_text("check_help", get_language()),
+    )
+    p.add_argument(
+        "--vehicle-metadata-manifest-url",
+        help=update_cli_text("url_help", get_language()),
+    )
+    p.add_argument(
         "--cli",
         action="store_true",
         help=tr("cli.cli_help"),
@@ -17941,6 +17968,23 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     initialize_ui_language()
     args = build_parser().parse_args()
+
+    if args.check_vehicle_metadata_update:
+        manifest_url = str(args.vehicle_metadata_manifest_url or "").strip()
+        if not manifest_url:
+            print(
+                update_cli_text("url_required", get_language()),
+                file=sys.stderr,
+            )
+            return 2
+        result = check_vehicle_metadata_update(
+            _vehicle_metadata_path(),
+            manifest_url,
+        )
+        print(format_update_check_result(result, get_language()))
+        if result.status in {STATUS_CHECK_FAILED, STATUS_INCOMPATIBLE}:
+            return 2
+        return 0
 
     if args.print_default_game_roots:
         roots = default_game_roots()
