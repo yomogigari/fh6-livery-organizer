@@ -1,0 +1,3828 @@
+{
+  "schema_version": 1,
+  "dataset": "fh6-official-vehicle-metadata",
+  "source": {
+    "name": "Forza official car list",
+    "url": "https://forza.net/fh6cars",
+    "updated": "2026-08-13"
+  },
+  "generated_from": "Livery Organizer for FH6 v0.4.59",
+  "records": {
+    "247": {
+      "year": 1969,
+      "make": "Toyota",
+      "model": "2000GT",
+      "display_name": "1969 Toyota 2000GT"
+    },
+    "249": {
+      "year": 1962,
+      "make": "Ferrari",
+      "model": "250 GTO",
+      "display_name": "1962 Ferrari 250 GTO"
+    },
+    "251": {
+      "year": 1954,
+      "make": "Mercedes-Benz",
+      "model": "300 SL Coupé",
+      "display_name": "1954 Mercedes-Benz 300 SL Coupé"
+    },
+    "253": {
+      "year": 1994,
+      "make": "Ferrari",
+      "model": "F355 Berlinetta",
+      "display_name": "1994 Ferrari F355 Berlinetta"
+    },
+    "255": {
+      "year": 1992,
+      "make": "Ferrari",
+      "model": "512 TR",
+      "display_name": "1992 Ferrari 512 TR"
+    },
+    "260": {
+      "year": 1973,
+      "make": "Porsche",
+      "model": "911 Carrera RS",
+      "display_name": "1973 Porsche 911 Carrera RS"
+    },
+    "261": {
+      "year": 1995,
+      "make": "Porsche",
+      "model": "911 GT2",
+      "display_name": "1995 Porsche 911 GT2"
+    },
+    "262": {
+      "year": 2004,
+      "make": "Porsche",
+      "model": "911 GT3",
+      "display_name": "2004 Porsche 911 GT3"
+    },
+    "265": {
+      "year": 1982,
+      "make": "Porsche",
+      "model": "911 Turbo 3.3",
+      "display_name": "1982 Porsche 911 Turbo 3.3"
+    },
+    "268": {
+      "year": 1989,
+      "make": "Porsche",
+      "model": "944 Turbo",
+      "display_name": "1989 Porsche 944 Turbo"
+    },
+    "269": {
+      "year": 1987,
+      "make": "Porsche",
+      "model": "959",
+      "display_name": "1987 Porsche 959"
+    },
+    "281": {
+      "year": 1968,
+      "make": "Plymouth",
+      "model": "Barracuda Formula S",
+      "display_name": "1968 Plymouth Barracuda Formula S"
+    },
+    "289": {
+      "year": 1969,
+      "make": "Chevrolet",
+      "model": "Camaro Super Sport Coupe",
+      "display_name": "1969 Chevrolet Camaro Super Sport Coupe"
+    },
+    "292": {
+      "year": 2003,
+      "make": "Porsche",
+      "model": "Carrera GT",
+      "display_name": "2003 Porsche Carrera GT"
+    },
+    "295": {
+      "year": 2003,
+      "make": "Toyota",
+      "model": "Celica Sport Specialty II",
+      "display_name": "2003 Toyota Celica Sport Specialty II"
+    },
+    "296": {
+      "year": 1998,
+      "make": "TVR",
+      "model": "Cerbera Speed 12",
+      "display_name": "1998 TVR Cerbera Speed 12"
+    },
+    "299": {
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "Chevelle Super Sport 454",
+      "display_name": "1970 Chevrolet Chevelle Super Sport 454"
+    },
+    "302": {
+      "year": 2004,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "display_name": "2004 Honda Civic Type R"
+    },
+    "306": {
+      "year": 1965,
+      "make": "Shelby",
+      "model": "Cobra 427 S/C",
+      "display_name": "1965 Shelby Cobra 427 S/C"
+    },
+    "309": {
+      "year": 1995,
+      "make": "Volkswagen",
+      "model": "Corrado VR6",
+      "display_name": "1995 Volkswagen Corrado VR6"
+    },
+    "312": {
+      "year": 1967,
+      "make": "Chevrolet",
+      "model": "Corvette Stingray 427",
+      "display_name": "1967 Chevrolet Corvette Stingray 427"
+    },
+    "314": {
+      "year": 2002,
+      "make": "Chevrolet",
+      "model": "Corvette Z06",
+      "display_name": "2002 Chevrolet Corvette Z06"
+    },
+    "315": {
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "Corvette ZR-1",
+      "display_name": "1970 Chevrolet Corvette ZR-1"
+    },
+    "316": {
+      "year": 1988,
+      "make": "Lamborghini",
+      "model": "Countach LP5000 QV",
+      "display_name": "1988 Lamborghini Countach LP5000 QV"
+    },
+    "320": {
+      "year": 1991,
+      "make": "Honda",
+      "model": "CR-X SiR",
+      "display_name": "1991 Honda CR-X SiR"
+    },
+    "323": {
+      "year": 1992,
+      "make": "Lancia",
+      "model": "Delta HF Integrale EVO",
+      "display_name": "1992 Lancia Delta HF Integrale EVO"
+    },
+    "324": {
+      "year": 1999,
+      "make": "Lamborghini",
+      "model": "Diablo GTR",
+      "display_name": "1999 Lamborghini Diablo GTR"
+    },
+    "325": {
+      "year": 1997,
+      "make": "Lamborghini",
+      "model": "Diablo SV",
+      "display_name": "1997 Lamborghini Diablo SV"
+    },
+    "326": {
+      "year": 1969,
+      "make": "Ferrari",
+      "model": "Dino 246 GT",
+      "display_name": "1969 Ferrari Dino 246 GT"
+    },
+    "327": {
+      "year": 1995,
+      "make": "Mitsubishi",
+      "model": "Eclipse GSX",
+      "display_name": "1995 Mitsubishi Eclipse GSX"
+    },
+    "333": {
+      "year": 2002,
+      "make": "Ferrari",
+      "model": "Enzo Ferrari",
+      "display_name": "2002 Ferrari Enzo Ferrari"
+    },
+    "336": {
+      "year": 1961,
+      "make": "Jaguar",
+      "model": "E-type",
+      "display_name": "1961 Jaguar E-type"
+    },
+    "338": {
+      "year": 1997,
+      "make": "McLaren",
+      "model": "F1 GT",
+      "display_name": "1997 McLaren F1 GT"
+    },
+    "340": {
+      "year": 1987,
+      "make": "Ferrari",
+      "model": "F40",
+      "display_name": "1987 Ferrari F40"
+    },
+    "342": {
+      "year": 1995,
+      "make": "Ferrari",
+      "model": "F50",
+      "display_name": "1995 Ferrari F50"
+    },
+    "343": {
+      "year": 1969,
+      "make": "Nissan",
+      "model": "Fairlady Z 432",
+      "display_name": "1969 Nissan Fairlady Z 432"
+    },
+    "344": {
+      "year": 2003,
+      "make": "Nissan",
+      "model": "Fairlady Z",
+      "display_name": "2003 Nissan Fairlady Z"
+    },
+    "345": {
+      "year": 1994,
+      "make": "Nissan",
+      "model": "Fairlady Z Version S Twin Turbo",
+      "display_name": "1994 Nissan Fairlady Z Version S Twin Turbo"
+    },
+    "348": {
+      "year": 2005,
+      "make": "Ford",
+      "model": "GT",
+      "display_name": "2005 Ford GT"
+    },
+    "353": {
+      "year": 1992,
+      "make": "Volkswagen",
+      "model": "Golf Gti 16v Mk2",
+      "display_name": "1992 Volkswagen Golf Gti 16v Mk2"
+    },
+    "357": {
+      "year": 1997,
+      "make": "Mitsubishi",
+      "model": "GTO",
+      "display_name": "1997 Mitsubishi GTO"
+    },
+    "358": {
+      "year": 1984,
+      "make": "Ferrari",
+      "model": "288 GTO",
+      "display_name": "1984 Ferrari 288 GTO"
+    },
+    "363": {
+      "year": 1998,
+      "make": "Subaru",
+      "model": "Impreza 22B-STi Version",
+      "display_name": "1998 Subaru Impreza 22B-STi Version"
+    },
+    "364": {
+      "year": 2004,
+      "make": "Subaru",
+      "model": "IMPREZA WRX STI",
+      "display_name": "2004 Subaru IMPREZA WRX STI"
+    },
+    "365": {
+      "year": 2005,
+      "make": "Subaru",
+      "model": "IMPREZA WRX STI",
+      "display_name": "2005 Subaru IMPREZA WRX STI"
+    },
+    "368": {
+      "year": 2001,
+      "make": "Acura",
+      "model": "Integra Type R",
+      "display_name": "2001 Acura Integra Type R"
+    },
+    "374": {
+      "year": 2006,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution IX MR",
+      "display_name": "2006 Mitsubishi Lancer Evolution IX MR"
+    },
+    "378": {
+      "year": 2004,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution VIII MR",
+      "display_name": "2004 Mitsubishi Lancer Evolution VIII MR"
+    },
+    "379": {
+      "year": 2005,
+      "make": "Subaru",
+      "model": "LEGACY B4 2.0 GT",
+      "display_name": "2005 Subaru LEGACY B4 2.0 GT"
+    },
+    "382": {
+      "year": 1997,
+      "make": "BMW",
+      "model": "M3",
+      "display_name": "1997 BMW M3"
+    },
+    "383": {
+      "year": 2005,
+      "make": "BMW",
+      "model": "M3",
+      "display_name": "2005 BMW M3"
+    },
+    "391": {
+      "year": 2004,
+      "make": "Maserati",
+      "model": "MC12",
+      "display_name": "2004 Maserati MC12"
+    },
+    "398": {
+      "year": 1995,
+      "make": "Toyota",
+      "model": "MR2 GT",
+      "display_name": "1995 Toyota MR2 GT"
+    },
+    "405": {
+      "year": 2000,
+      "make": "Ford",
+      "model": "Mustang SVT Cobra R",
+      "display_name": "2000 Ford Mustang SVT Cobra R"
+    },
+    "411": {
+      "year": 2005,
+      "make": "Honda",
+      "model": "NSX-R",
+      "display_name": "2005 Honda NSX-R"
+    },
+    "412": {
+      "year": 1992,
+      "make": "Honda",
+      "model": "NSX-R",
+      "display_name": "1992 Honda NSX-R"
+    },
+    "417": {
+      "year": 1987,
+      "make": "Buick",
+      "model": "Regal GNX",
+      "display_name": "1987 Buick Regal GNX"
+    },
+    "419": {
+      "year": 2006,
+      "make": "Audi",
+      "model": "RS 4",
+      "display_name": "2006 Audi RS 4"
+    },
+    "420": {
+      "year": 2003,
+      "make": "Audi",
+      "model": "RS 6",
+      "display_name": "2003 Audi RS 6"
+    },
+    "422": {
+      "year": 2002,
+      "make": "Acura",
+      "model": "RSX Type S",
+      "display_name": "2002 Acura RSX Type S"
+    },
+    "423": {
+      "year": 1990,
+      "make": "Mazda",
+      "model": "Savanna RX-7",
+      "display_name": "1990 Mazda Savanna RX-7"
+    },
+    "427": {
+      "year": 2003,
+      "make": "Honda",
+      "model": "S2000",
+      "display_name": "2003 Honda S2000"
+    },
+    "433": {
+      "year": 2005,
+      "make": "TVR",
+      "model": "Sagaris",
+      "display_name": "2005 TVR Sagaris"
+    },
+    "440": {
+      "year": 1994,
+      "make": "Nissan",
+      "model": "Silvia K's",
+      "display_name": "1994 Nissan Silvia K's"
+    },
+    "455": {
+      "year": 1985,
+      "make": "Toyota",
+      "model": "Sprinter Trueno GT Apex",
+      "display_name": "1985 Toyota Sprinter Trueno GT Apex"
+    },
+    "458": {
+      "year": 1974,
+      "make": "Lancia",
+      "model": "Stratos HF Stradale",
+      "display_name": "1974 Lancia Stratos HF Stradale"
+    },
+    "460": {
+      "year": 1992,
+      "make": "Toyota",
+      "model": "Supra 2.0 GT",
+      "display_name": "1992 Toyota Supra 2.0 GT"
+    },
+    "461": {
+      "year": 1998,
+      "make": "Toyota",
+      "model": "Supra RZ",
+      "display_name": "1998 Toyota Supra RZ"
+    },
+    "483": {
+      "year": 1999,
+      "make": "Dodge",
+      "model": "Viper GTS ACR",
+      "display_name": "1999 Dodge Viper GTS ACR"
+    },
+    "489": {
+      "year": 1993,
+      "make": "Jaguar",
+      "model": "XJ220",
+      "display_name": "1993 Jaguar XJ220"
+    },
+    "513": {
+      "year": 1969,
+      "make": "Dodge",
+      "model": "Charger R/T",
+      "display_name": "1969 Dodge Charger R/T"
+    },
+    "567": {
+      "year": 1998,
+      "make": "Nissan",
+      "model": "R390 (GT1)",
+      "display_name": "1998 Nissan R390 (GT1)"
+    },
+    "568": {
+      "year": 1998,
+      "make": "Mercedes-Benz",
+      "model": "AMG CLK GTR",
+      "display_name": "1998 Mercedes-Benz AMG CLK GTR"
+    },
+    "569": {
+      "year": 2005,
+      "make": "Honda",
+      "model": "NSX-R GT",
+      "display_name": "2005 Honda NSX-R GT"
+    },
+    "615": {
+      "year": 2007,
+      "make": "Peugeot",
+      "model": "207 Super 2000",
+      "display_name": "2007 Peugeot 207 Super 2000"
+    },
+    "625": {
+      "year": 2007,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "display_name": "2007 Honda Civic Type R"
+    },
+    "633": {
+      "year": 1984,
+      "make": "Audi",
+      "model": "Sport quattro",
+      "display_name": "1984 Audi Sport quattro"
+    },
+    "634": {
+      "year": 1980,
+      "make": "Renault",
+      "model": "5 Turbo",
+      "display_name": "1980 Renault 5 Turbo"
+    },
+    "637": {
+      "year": 1967,
+      "make": "Lamborghini",
+      "model": "Miura P400",
+      "display_name": "1967 Lamborghini Miura P400"
+    },
+    "639": {
+      "year": 1970,
+      "make": "Dodge",
+      "model": "Challenger R/T",
+      "display_name": "1970 Dodge Challenger R/T"
+    },
+    "641": {
+      "year": 1997,
+      "make": "Porsche",
+      "model": "911 GT1 Strassenversion",
+      "display_name": "1997 Porsche 911 GT1 Strassenversion"
+    },
+    "1006": {
+      "year": 2005,
+      "make": "Ferrari",
+      "model": "FXX",
+      "display_name": "2005 Ferrari FXX"
+    },
+    "1007": {
+      "year": 2008,
+      "make": "Koenigsegg",
+      "model": "CCGT",
+      "display_name": "2008 Koenigsegg CCGT"
+    },
+    "1009": {
+      "year": 2008,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution X GSR",
+      "display_name": "2008 Mitsubishi Lancer Evolution X GSR"
+    },
+    "1011": {
+      "year": 2008,
+      "make": "BMW",
+      "model": "M3",
+      "display_name": "2008 BMW M3"
+    },
+    "1020": {
+      "year": 1996,
+      "make": "Ferrari",
+      "model": "F50 GT",
+      "display_name": "1996 Ferrari F50 GT"
+    },
+    "1022": {
+      "year": 2007,
+      "make": "Ferrari",
+      "model": "430 Scuderia",
+      "display_name": "2007 Ferrari 430 Scuderia"
+    },
+    "1023": {
+      "year": 1989,
+      "make": "Ferrari",
+      "model": "F40 Competizione",
+      "display_name": "1989 Ferrari F40 Competizione"
+    },
+    "1032": {
+      "year": 2007,
+      "make": "Alfa Romeo",
+      "model": "8C Competizione",
+      "display_name": "2007 Alfa Romeo 8C Competizione"
+    },
+    "1034": {
+      "year": 1994,
+      "make": "Toyota",
+      "model": "Celica GT-Four ST205",
+      "display_name": "1994 Toyota Celica GT-Four ST205"
+    },
+    "1040": {
+      "year": 1981,
+      "make": "BMW",
+      "model": "M1",
+      "display_name": "1981 BMW M1"
+    },
+    "1041": {
+      "year": 1993,
+      "make": "Ford",
+      "model": "Mustang SVT Cobra R",
+      "display_name": "1993 Ford Mustang SVT Cobra R"
+    },
+    "1042": {
+      "year": 1971,
+      "make": "Nissan",
+      "model": "Skyline 2000GT-R",
+      "display_name": "1971 Nissan Skyline 2000GT-R"
+    },
+    "1045": {
+      "year": 1987,
+      "make": "Pontiac",
+      "model": "Firebird Trans Am GTA",
+      "display_name": "1987 Pontiac Firebird Trans Am GTA"
+    },
+    "1046": {
+      "year": 2008,
+      "make": "Dodge",
+      "model": "Viper SRT-10 ACR",
+      "display_name": "2008 Dodge Viper SRT-10 ACR"
+    },
+    "1052": {
+      "year": 2006,
+      "make": "Dodge",
+      "model": "Ram SRT-10",
+      "display_name": "2006 Dodge Ram SRT-10"
+    },
+    "1059": {
+      "year": 2008,
+      "make": "BMW",
+      "model": "Z4 M Coupé",
+      "display_name": "2008 BMW Z4 M Coupé"
+    },
+    "1060": {
+      "year": 2008,
+      "make": "Subaru",
+      "model": "IMPREZA WRX STI",
+      "display_name": "2008 Subaru IMPREZA WRX STI"
+    },
+    "1063": {
+      "year": 1969,
+      "make": "Dodge",
+      "model": "Charger Daytona HEMI",
+      "display_name": "1969 Dodge Charger Daytona HEMI"
+    },
+    "1064": {
+      "year": 1979,
+      "make": "Chevrolet",
+      "model": "Camaro Z28",
+      "display_name": "1979 Chevrolet Camaro Z28"
+    },
+    "1069": {
+      "year": 2009,
+      "make": "Chevrolet",
+      "model": "Corvette ZR1",
+      "display_name": "2009 Chevrolet Corvette ZR1"
+    },
+    "1086": {
+      "year": 2009,
+      "make": "Ford",
+      "model": "Focus RS",
+      "display_name": "2009 Ford Focus RS"
+    },
+    "1090": {
+      "year": 2009,
+      "make": "Mercedes-Benz",
+      "model": "SL 65 AMG Black Series",
+      "display_name": "2009 Mercedes-Benz SL 65 AMG Black Series"
+    },
+    "1093": {
+      "year": 1960,
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "display_name": "1960 Chevrolet Corvette"
+    },
+    "1103": {
+      "year": 2010,
+      "make": "Nissan",
+      "model": "370Z",
+      "display_name": "2010 Nissan 370Z"
+    },
+    "1104": {
+      "year": 1970,
+      "make": "Datsun",
+      "model": "510",
+      "display_name": "1970 Datsun 510"
+    },
+    "1105": {
+      "year": 1964,
+      "make": "Aston Martin",
+      "model": "DB5",
+      "display_name": "1964 Aston Martin DB5"
+    },
+    "1108": {
+      "year": 1985,
+      "make": "Ford",
+      "model": "RS200 Evolution",
+      "display_name": "1985 Ford RS200 Evolution"
+    },
+    "1110": {
+      "year": 1994,
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "display_name": "1994 Mazda MX-5 Miata"
+    },
+    "1124": {
+      "year": 1980,
+      "make": "Abarth",
+      "model": "Fiat 131",
+      "display_name": "1980 Abarth Fiat 131"
+    },
+    "1126": {
+      "year": 2009,
+      "make": "BMW",
+      "model": "M5",
+      "display_name": "2009 BMW M5"
+    },
+    "1130": {
+      "year": 2011,
+      "make": "McLaren",
+      "model": "12C Coupé",
+      "display_name": "2011 McLaren 12C Coupé"
+    },
+    "1131": {
+      "year": 2009,
+      "make": "Ferrari",
+      "model": "458 Italia",
+      "display_name": "2009 Ferrari 458 Italia"
+    },
+    "1150": {
+      "year": 1965,
+      "make": "Alfa Romeo",
+      "model": "Giulia Sprint GTA Stradale",
+      "display_name": "1965 Alfa Romeo Giulia Sprint GTA Stradale"
+    },
+    "1155": {
+      "year": 1965,
+      "make": "Shelby",
+      "model": "Cobra Daytona Coupe",
+      "display_name": "1965 Shelby Cobra Daytona Coupe"
+    },
+    "1171": {
+      "year": 2010,
+      "make": "Ferrari",
+      "model": "599XX",
+      "display_name": "2010 Ferrari 599XX"
+    },
+    "1173": {
+      "year": 2010,
+      "make": "Lamborghini",
+      "model": "Murciélago LP 670-4 SV",
+      "display_name": "2010 Lamborghini Murciélago LP 670-4 SV"
+    },
+    "1175": {
+      "year": 2009,
+      "make": "Pagani",
+      "model": "Zonda R",
+      "display_name": "2009 Pagani Zonda R"
+    },
+    "1184": {
+      "year": 2009,
+      "make": "Audi",
+      "model": "RS 6",
+      "display_name": "2009 Audi RS 6"
+    },
+    "1200": {
+      "year": 2009,
+      "make": "Audi",
+      "model": "R8 LMS",
+      "display_name": "2009 Audi R8 LMS"
+    },
+    "1204": {
+      "year": 2010,
+      "make": "Renault",
+      "model": "Megane RS 250",
+      "display_name": "2010 Renault Megane RS 250"
+    },
+    "1216": {
+      "year": 2011,
+      "make": "Audi",
+      "model": "RS 3 Sportback",
+      "display_name": "2011 Audi RS 3 Sportback"
+    },
+    "1220": {
+      "year": 2010,
+      "make": "Audi",
+      "model": "TT RS Coupé",
+      "display_name": "2010 Audi TT RS Coupé"
+    },
+    "1221": {
+      "year": 2010,
+      "make": "Mazda",
+      "model": "Mazdaspeed 3",
+      "display_name": "2010 Mazda Mazdaspeed 3"
+    },
+    "1229": {
+      "year": 2008,
+      "make": "Mazda",
+      "model": "Furai",
+      "display_name": "2008 Mazda Furai"
+    },
+    "1231": {
+      "year": 2010,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "display_name": "2010 Volkswagen Golf R"
+    },
+    "1253": {
+      "year": 2010,
+      "make": "Noble",
+      "model": "M600",
+      "display_name": "2010 Noble M600"
+    },
+    "1260": {
+      "year": 2010,
+      "make": "Lexus",
+      "model": "LFA",
+      "display_name": "2010 Lexus LFA"
+    },
+    "1269": {
+      "year": 1973,
+      "make": "BMW",
+      "model": "2002 Turbo",
+      "display_name": "1973 BMW 2002 Turbo"
+    },
+    "1270": {
+      "year": 1982,
+      "make": "DeLorean",
+      "model": "DMC-12",
+      "display_name": "1982 DeLorean DMC-12"
+    },
+    "1272": {
+      "year": 1992,
+      "make": "Ford",
+      "model": "Escort RS Cosworth",
+      "display_name": "1992 Ford Escort RS Cosworth"
+    },
+    "1273": {
+      "year": 1997,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "display_name": "1997 Honda Civic Type R"
+    },
+    "1276": {
+      "year": 1977,
+      "make": "Pontiac",
+      "model": "Firebird Trans Am",
+      "display_name": "1977 Pontiac Firebird Trans Am"
+    },
+    "1277": {
+      "year": 1971,
+      "make": "Plymouth",
+      "model": "Cuda 426 HEMI",
+      "display_name": "1971 Plymouth Cuda 426 HEMI"
+    },
+    "1278": {
+      "year": 1973,
+      "make": "Ford",
+      "model": "XB Falcon GT",
+      "display_name": "1973 Ford XB Falcon GT"
+    },
+    "1282": {
+      "year": 1993,
+      "make": "Nissan",
+      "model": "240SX",
+      "display_name": "1993 Nissan 240SX"
+    },
+    "1283": {
+      "year": 1957,
+      "make": "Ford",
+      "model": "Thunderbird",
+      "display_name": "1957 Ford Thunderbird"
+    },
+    "1291": {
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "El Camino Super Sport 454",
+      "display_name": "1970 Chevrolet El Camino Super Sport 454"
+    },
+    "1293": {
+      "year": 1987,
+      "make": "Ford",
+      "model": "Sierra Cosworth RS500",
+      "display_name": "1987 Ford Sierra Cosworth RS500"
+    },
+    "1294": {
+      "year": 1991,
+      "make": "GMC",
+      "model": "Syclone",
+      "display_name": "1991 GMC Syclone"
+    },
+    "1295": {
+      "year": 1982,
+      "make": "Lancia",
+      "model": "037 Stradale",
+      "display_name": "1982 Lancia 037 Stradale"
+    },
+    "1296": {
+      "year": 1990,
+      "make": "Mercedes-Benz",
+      "model": "190 E 2.5-16 Evolution II",
+      "display_name": "1990 Mercedes-Benz 190 E 2.5-16 Evolution II"
+    },
+    "1297": {
+      "year": 1988,
+      "make": "Mitsubishi",
+      "model": "Starion ESI-R",
+      "display_name": "1988 Mitsubishi Starion ESI-R"
+    },
+    "1299": {
+      "year": 1983,
+      "make": "Volvo",
+      "model": "242 Turbo Evolution",
+      "display_name": "1983 Volvo 242 Turbo Evolution"
+    },
+    "1300": {
+      "year": 1964,
+      "make": "Chevrolet",
+      "model": "Impala Super Sport 409",
+      "display_name": "1964 Chevrolet Impala Super Sport 409"
+    },
+    "1301": {
+      "year": 1956,
+      "make": "Jaguar",
+      "model": "D-Type",
+      "display_name": "1956 Jaguar D-Type"
+    },
+    "1314": {
+      "year": 1993,
+      "make": "McLaren",
+      "model": "F1",
+      "display_name": "1993 McLaren F1"
+    },
+    "1323": {
+      "year": 2011,
+      "make": "Subaru",
+      "model": "WRX STI",
+      "display_name": "2011 Subaru WRX STI"
+    },
+    "1330": {
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "Camaro Z28",
+      "display_name": "1970 Chevrolet Camaro Z28"
+    },
+    "1332": {
+      "year": 1968,
+      "make": "Dodge",
+      "model": "Dart HEMI Super Stock",
+      "display_name": "1968 Dodge Dart HEMI Super Stock"
+    },
+    "1335": {
+      "year": 1991,
+      "make": "Mazda",
+      "model": "#55 Mazda 787B",
+      "display_name": "1991 Mazda #55 Mazda 787B"
+    },
+    "1350": {
+      "year": 2011,
+      "make": "BMW",
+      "model": "X5 M",
+      "display_name": "2011 BMW X5 M"
+    },
+    "1352": {
+      "year": 1970,
+      "make": "Dodge",
+      "model": "Coronet Super Bee",
+      "display_name": "1970 Dodge Coronet Super Bee"
+    },
+    "1355": {
+      "year": 1965,
+      "make": "Ford",
+      "model": "Mustang GT Coupe",
+      "display_name": "1965 Ford Mustang GT Coupe"
+    },
+    "1367": {
+      "year": 2003,
+      "make": "BMW",
+      "model": "M5",
+      "display_name": "2003 BMW M5"
+    },
+    "1368": {
+      "year": 1988,
+      "make": "BMW",
+      "model": "M5",
+      "display_name": "1988 BMW M5"
+    },
+    "1369": {
+      "year": 2010,
+      "make": "Pagani",
+      "model": "Zonda Cinque Roadster",
+      "display_name": "2010 Pagani Zonda Cinque Roadster"
+    },
+    "1376": {
+      "year": 1999,
+      "make": "Lotus",
+      "model": "Elise Series 1 Sport 190",
+      "display_name": "1999 Lotus Elise Series 1 Sport 190"
+    },
+    "1379": {
+      "year": 1996,
+      "make": "Chevrolet",
+      "model": "Impala Super Sport",
+      "display_name": "1996 Chevrolet Impala Super Sport"
+    },
+    "1381": {
+      "year": 1992,
+      "make": "Mitsubishi",
+      "model": "Galant VR-4",
+      "display_name": "1992 Mitsubishi Galant VR-4"
+    },
+    "1382": {
+      "year": 1990,
+      "make": "Subaru",
+      "model": "LEGACY RS",
+      "display_name": "1990 Subaru LEGACY RS"
+    },
+    "1388": {
+      "year": 2012,
+      "make": "BMW",
+      "model": "M5",
+      "display_name": "2012 BMW M5"
+    },
+    "1392": {
+      "year": 2011,
+      "make": "Lamborghini",
+      "model": "Sesto Elemento",
+      "display_name": "2011 Lamborghini Sesto Elemento"
+    },
+    "1393": {
+      "year": 1992,
+      "make": "Alfa Romeo",
+      "model": "155 Q4",
+      "display_name": "1992 Alfa Romeo 155 Q4"
+    },
+    "1394": {
+      "year": 1992,
+      "make": "GMC",
+      "model": "Typhoon",
+      "display_name": "1992 GMC Typhoon"
+    },
+    "1395": {
+      "year": 1989,
+      "make": "Toyota",
+      "model": "MR2 SC",
+      "display_name": "1989 Toyota MR2 SC"
+    },
+    "1397": {
+      "year": 2011,
+      "make": "Koenigsegg",
+      "model": "Agera",
+      "display_name": "2011 Koenigsegg Agera"
+    },
+    "1398": {
+      "year": 2012,
+      "make": "Lamborghini",
+      "model": "Aventador LP700-4",
+      "display_name": "2012 Lamborghini Aventador LP700-4"
+    },
+    "1417": {
+      "year": 2011,
+      "make": "Audi",
+      "model": "RS 5 Coupé",
+      "display_name": "2011 Audi RS 5 Coupé"
+    },
+    "1418": {
+      "year": 1995,
+      "make": "BMW",
+      "model": "M5",
+      "display_name": "1995 BMW M5"
+    },
+    "1426": {
+      "year": 2011,
+      "make": "Mazda",
+      "model": "RX-8 R3",
+      "display_name": "2011 Mazda RX-8 R3"
+    },
+    "1428": {
+      "year": 2011,
+      "make": "Volkswagen",
+      "model": "Scirocco R",
+      "display_name": "2011 Volkswagen Scirocco R"
+    },
+    "1429": {
+      "year": 1969,
+      "make": "Chevrolet",
+      "model": "Nova Super Sport 396",
+      "display_name": "1969 Chevrolet Nova Super Sport 396"
+    },
+    "1435": {
+      "year": 1963,
+      "make": "Volkswagen",
+      "model": "Beetle",
+      "display_name": "1963 Volkswagen Beetle"
+    },
+    "1459": {
+      "year": 1957,
+      "make": "Chevrolet",
+      "model": "Bel Air",
+      "display_name": "1957 Chevrolet Bel Air"
+    },
+    "1477": {
+      "year": 2011,
+      "make": "Ford",
+      "model": "Transit SuperSportVan",
+      "display_name": "2011 Ford Transit SuperSportVan"
+    },
+    "1478": {
+      "year": 1986,
+      "make": "Audi",
+      "model": "#2 Audi Sport quattro S1",
+      "display_name": "1986 Audi #2 Audi Sport quattro S1"
+    },
+    "1480": {
+      "year": 1985,
+      "make": "Mazda",
+      "model": "RX-7 GSL-SE",
+      "display_name": "1985 Mazda RX-7 GSL-SE"
+    },
+    "1481": {
+      "year": 1965,
+      "make": "Austin-Healey",
+      "model": "3000 MkIII",
+      "display_name": "1965 Austin-Healey 3000 MkIII"
+    },
+    "1493": {
+      "year": 1995,
+      "make": "BMW",
+      "model": "850CSi",
+      "display_name": "1995 BMW 850CSi"
+    },
+    "1500": {
+      "year": 2012,
+      "make": "Mercedes-Benz",
+      "model": "C 63 AMG Coupé Black Series",
+      "display_name": "2012 Mercedes-Benz C 63 AMG Coupé Black Series"
+    },
+    "1513": {
+      "year": 1997,
+      "make": "Maserati",
+      "model": "Ghibli Cup",
+      "display_name": "1997 Maserati Ghibli Cup"
+    },
+    "1514": {
+      "year": 1973,
+      "make": "Mazda",
+      "model": "RX-3",
+      "display_name": "1973 Mazda RX-3"
+    },
+    "1517": {
+      "year": 1992,
+      "make": "Toyota",
+      "model": "Celica GT-Four RC ST185",
+      "display_name": "1992 Toyota Celica GT-Four RC ST185"
+    },
+    "1522": {
+      "year": 2012,
+      "make": "Jeep",
+      "model": "Wrangler Rubicon",
+      "display_name": "2012 Jeep Wrangler Rubicon"
+    },
+    "1529": {
+      "year": 1973,
+      "make": "Ford",
+      "model": "Capri RS3100",
+      "display_name": "1973 Ford Capri RS3100"
+    },
+    "1532": {
+      "year": 2012,
+      "make": "Hennessey",
+      "model": "Venom GT",
+      "display_name": "2012 Hennessey Venom GT"
+    },
+    "1533": {
+      "year": 1977,
+      "make": "Holden",
+      "model": "Torana A9X",
+      "display_name": "1977 Holden Torana A9X"
+    },
+    "1537": {
+      "year": 1974,
+      "make": "Toyota",
+      "model": "Corolla SR5",
+      "display_name": "1974 Toyota Corolla SR5"
+    },
+    "1549": {
+      "year": 1968,
+      "make": "Alfa Romeo",
+      "model": "33 Stradale",
+      "display_name": "1968 Alfa Romeo 33 Stradale"
+    },
+    "1559": {
+      "year": 1955,
+      "make": "Mercedes-Benz",
+      "model": "300 SLR",
+      "display_name": "1955 Mercedes-Benz 300 SLR"
+    },
+    "1562": {
+      "year": 2013,
+      "make": "SRT",
+      "model": "Viper GTS",
+      "display_name": "2013 SRT Viper GTS"
+    },
+    "1564": {
+      "year": 1953,
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "display_name": "1953 Chevrolet Corvette"
+    },
+    "1568": {
+      "year": 1974,
+      "make": "Honda",
+      "model": "Civic RS",
+      "display_name": "1974 Honda Civic RS"
+    },
+    "1575": {
+      "year": 1988,
+      "make": "Chevrolet",
+      "model": "Monte Carlo Super Sport",
+      "display_name": "1988 Chevrolet Monte Carlo Super Sport"
+    },
+    "1578": {
+      "year": 1962,
+      "make": "Ferrari",
+      "model": "250 GT Berlinetta Lusso",
+      "display_name": "1962 Ferrari 250 GT Berlinetta Lusso"
+    },
+    "1586": {
+      "year": 1962,
+      "make": "Lincoln",
+      "model": "Continental",
+      "display_name": "1962 Lincoln Continental"
+    },
+    "1587": {
+      "year": 1972,
+      "make": "Mazda",
+      "model": "Cosmo 110S Series II",
+      "display_name": "1972 Mazda Cosmo 110S Series II"
+    },
+    "1591": {
+      "year": 1984,
+      "make": "Peugeot",
+      "model": "205 Turbo 16",
+      "display_name": "1984 Peugeot 205 Turbo 16"
+    },
+    "1592": {
+      "year": 1974,
+      "make": "Toyota",
+      "model": "Celica GT",
+      "display_name": "1974 Toyota Celica GT"
+    },
+    "1598": {
+      "year": 2010,
+      "make": "BMW",
+      "model": "M3 GTS",
+      "display_name": "2010 BMW M3 GTS"
+    },
+    "1599": {
+      "year": 2012,
+      "make": "Ferrari",
+      "model": "599XX Evolution",
+      "display_name": "2012 Ferrari 599XX Evolution"
+    },
+    "1601": {
+      "year": 2012,
+      "make": "Lamborghini",
+      "model": "Gallardo LP570-4 Spyder Performante",
+      "display_name": "2012 Lamborghini Gallardo LP570-4 Spyder Performante"
+    },
+    "1607": {
+      "year": 2013,
+      "make": "Audi",
+      "model": "RS 4 Avant",
+      "display_name": "2013 Audi RS 4 Avant"
+    },
+    "1627": {
+      "year": 2013,
+      "make": "Mercedes-Benz",
+      "model": "G 65 AMG",
+      "display_name": "2013 Mercedes-Benz G 65 AMG"
+    },
+    "1650": {
+      "year": 1986,
+      "make": "Honda",
+      "model": "Civic Si",
+      "display_name": "1986 Honda Civic Si"
+    },
+    "1651": {
+      "year": 2013,
+      "make": "Ariel",
+      "model": "Atom 500 V8",
+      "display_name": "2013 Ariel Atom 500 V8"
+    },
+    "1654": {
+      "year": 2013,
+      "make": "Ford",
+      "model": "Mustang Shelby GT500",
+      "display_name": "2013 Ford Mustang Shelby GT500"
+    },
+    "1655": {
+      "year": 2013,
+      "make": "Subaru",
+      "model": "BRZ",
+      "display_name": "2013 Subaru BRZ"
+    },
+    "1658": {
+      "year": 2013,
+      "make": "Mercedes-Benz",
+      "model": "A 45 AMG",
+      "display_name": "2013 Mercedes-Benz A 45 AMG"
+    },
+    "1661": {
+      "year": 1986,
+      "make": "Lancia",
+      "model": "Delta S4",
+      "display_name": "1986 Lancia Delta S4"
+    },
+    "1662": {
+      "year": 1965,
+      "make": "MINI",
+      "model": "Cooper S",
+      "display_name": "1965 MINI Cooper S"
+    },
+    "1667": {
+      "year": 2013,
+      "make": "McLaren",
+      "model": "P1",
+      "display_name": "2013 McLaren P1"
+    },
+    "1668": {
+      "year": 1969,
+      "make": "Ford",
+      "model": "Mustang Boss 302",
+      "display_name": "1969 Ford Mustang Boss 302"
+    },
+    "2002": {
+      "year": 2012,
+      "make": "Nissan",
+      "model": "GT-R Black Edition (R35)",
+      "display_name": "2012 Nissan GT-R Black Edition (R35)"
+    },
+    "2003": {
+      "year": 2012,
+      "make": "MINI",
+      "model": "John Cooper Works GP",
+      "display_name": "2012 MINI John Cooper Works GP"
+    },
+    "2004": {
+      "year": 2013,
+      "make": "Mazda",
+      "model": "MX-5",
+      "display_name": "2013 Mazda MX-5"
+    },
+    "2006": {
+      "year": 1995,
+      "make": "Chevrolet",
+      "model": "Corvette ZR-1",
+      "display_name": "1995 Chevrolet Corvette ZR-1"
+    },
+    "2007": {
+      "year": 2013,
+      "make": "Toyota",
+      "model": "86",
+      "display_name": "2013 Toyota 86"
+    },
+    "2009": {
+      "year": 2013,
+      "make": "Audi",
+      "model": "RS 7 Sportback",
+      "display_name": "2013 Audi RS 7 Sportback"
+    },
+    "2010": {
+      "year": 2013,
+      "make": "Audi",
+      "model": "R8 Coupé V10 plus 5.2 FSI quattro",
+      "display_name": "2013 Audi R8 Coupé V10 plus 5.2 FSI quattro"
+    },
+    "2017": {
+      "year": 1968,
+      "make": "Abarth",
+      "model": "595 esseesse",
+      "display_name": "1968 Abarth 595 esseesse"
+    },
+    "2019": {
+      "year": 2003,
+      "make": "Ford",
+      "model": "Focus RS",
+      "display_name": "2003 Ford Focus RS"
+    },
+    "2034": {
+      "year": 2013,
+      "make": "Ferrari",
+      "model": "LaFerrari",
+      "display_name": "2013 Ferrari LaFerrari"
+    },
+    "2038": {
+      "year": 2014,
+      "make": "Alfa Romeo",
+      "model": "4C",
+      "display_name": "2014 Alfa Romeo 4C"
+    },
+    "2040": {
+      "year": 2014,
+      "make": "BAC",
+      "model": "Mono",
+      "display_name": "2014 BAC Mono"
+    },
+    "2042": {
+      "year": 2013,
+      "make": "Lamborghini",
+      "model": "Veneno",
+      "display_name": "2013 Lamborghini Veneno"
+    },
+    "2119": {
+      "year": 1984,
+      "make": "Honda",
+      "model": "Civic CRX Mugen",
+      "display_name": "1984 Honda Civic CRX Mugen"
+    },
+    "2121": {
+      "year": 1994,
+      "make": "Honda",
+      "model": "Prelude Si",
+      "display_name": "1994 Honda Prelude Si"
+    },
+    "2128": {
+      "year": 2013,
+      "make": "Cadillac",
+      "model": "XTS Limousine",
+      "display_name": "2013 Cadillac XTS Limousine"
+    },
+    "2131": {
+      "year": 2014,
+      "make": "HSV",
+      "model": "GEN-F GTS",
+      "display_name": "2014 HSV GEN-F GTS"
+    },
+    "2133": {
+      "year": 2015,
+      "make": "BMW",
+      "model": "i8",
+      "display_name": "2015 BMW i8"
+    },
+    "2140": {
+      "year": 1980,
+      "make": "Subaru",
+      "model": "BRAT GL",
+      "display_name": "1980 Subaru BRAT GL"
+    },
+    "2142": {
+      "year": 2014,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "display_name": "2014 Volkswagen Golf R"
+    },
+    "2145": {
+      "year": 2014,
+      "make": "Ford",
+      "model": "Ranger T6 Rally Raid",
+      "display_name": "2014 Ford Ranger T6 Rally Raid"
+    },
+    "2147": {
+      "year": 1986,
+      "make": "MG",
+      "model": "Metro 6R4",
+      "display_name": "1986 MG Metro 6R4"
+    },
+    "2148": {
+      "year": 2013,
+      "make": "MINI",
+      "model": "X-Raid All4 Racing Countryman",
+      "display_name": "2013 MINI X-Raid All4 Racing Countryman"
+    },
+    "2149": {
+      "year": 1993,
+      "make": "Renault",
+      "model": "Clio Williams",
+      "display_name": "1993 Renault Clio Williams"
+    },
+    "2151": {
+      "year": 1963,
+      "make": "Volkswagen",
+      "model": "Type 2 De Luxe",
+      "display_name": "1963 Volkswagen Type 2 De Luxe"
+    },
+    "2154": {
+      "year": 2014,
+      "make": "BMW",
+      "model": "M4 Coupé",
+      "display_name": "2014 BMW M4 Coupé"
+    },
+    "2161": {
+      "year": 1965,
+      "make": "Alfa Romeo",
+      "model": "Giulia TZ2",
+      "display_name": "1965 Alfa Romeo Giulia TZ2"
+    },
+    "2163": {
+      "year": 2015,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "display_name": "2015 Honda Civic Type R"
+    },
+    "2164": {
+      "year": 2014,
+      "make": "Lamborghini",
+      "model": "Huracán LP 610-4",
+      "display_name": "2014 Lamborghini Huracán LP 610-4"
+    },
+    "2168": {
+      "year": 2015,
+      "make": "Subaru",
+      "model": "WRX STI",
+      "display_name": "2015 Subaru WRX STI"
+    },
+    "2171": {
+      "year": 2005,
+      "make": "Mazda",
+      "model": "Mazdaspeed MX-5",
+      "display_name": "2005 Mazda Mazdaspeed MX-5"
+    },
+    "2175": {
+      "year": 2015,
+      "make": "Lexus",
+      "model": "RC F",
+      "display_name": "2015 Lexus RC F"
+    },
+    "2177": {
+      "year": 2015,
+      "make": "Chevrolet",
+      "model": "Corvette Z06",
+      "display_name": "2015 Chevrolet Corvette Z06"
+    },
+    "2178": {
+      "year": 2001,
+      "make": "Audi",
+      "model": "RS 4 Avant",
+      "display_name": "2001 Audi RS 4 Avant"
+    },
+    "2179": {
+      "year": 2015,
+      "make": "Audi",
+      "model": "S1",
+      "display_name": "2015 Audi S1"
+    },
+    "2180": {
+      "year": 2015,
+      "make": "Audi",
+      "model": "RS 6 Avant",
+      "display_name": "2015 Audi RS 6 Avant"
+    },
+    "2183": {
+      "year": 2015,
+      "make": "Chevrolet",
+      "model": "Camaro Z/28",
+      "display_name": "2015 Chevrolet Camaro Z/28"
+    },
+    "2184": {
+      "year": 2013,
+      "make": "Ferrari",
+      "model": "458 Speciale",
+      "display_name": "2013 Ferrari 458 Speciale"
+    },
+    "2188": {
+      "year": 2015,
+      "make": "Koenigsegg",
+      "model": "One:1",
+      "display_name": "2015 Koenigsegg One:1"
+    },
+    "2205": {
+      "year": 1970,
+      "make": "Honda",
+      "model": "S800",
+      "display_name": "1970 Honda S800"
+    },
+    "2216": {
+      "year": 1958,
+      "make": "Plymouth",
+      "model": "Fury",
+      "display_name": "1958 Plymouth Fury"
+    },
+    "2217": {
+      "year": 1996,
+      "make": "Subaru",
+      "model": "SVX",
+      "display_name": "1996 Subaru SVX"
+    },
+    "2242": {
+      "year": 2015,
+      "make": "Mercedes-AMG",
+      "model": "GT S",
+      "display_name": "2015 Mercedes-AMG GT S"
+    },
+    "2262": {
+      "year": 2016,
+      "make": "Cadillac",
+      "model": "ATS-V",
+      "display_name": "2016 Cadillac ATS-V"
+    },
+    "2263": {
+      "year": 2015,
+      "make": "Dodge",
+      "model": "Challenger SRT Hellcat",
+      "display_name": "2015 Dodge Challenger SRT Hellcat"
+    },
+    "2267": {
+      "year": 2016,
+      "make": "Mazda",
+      "model": "MX-5",
+      "display_name": "2016 Mazda MX-5"
+    },
+    "2270": {
+      "year": 1973,
+      "make": "Nissan",
+      "model": "Skyline H/T 2000GT-R",
+      "display_name": "1973 Nissan Skyline H/T 2000GT-R"
+    },
+    "2272": {
+      "year": 1969,
+      "make": "Datsun",
+      "model": "2000 Roadster",
+      "display_name": "1969 Datsun 2000 Roadster"
+    },
+    "2290": {
+      "year": 2014,
+      "make": "Porsche",
+      "model": "918 Spyder",
+      "display_name": "2014 Porsche 918 Spyder"
+    },
+    "2297": {
+      "year": 2012,
+      "make": "Porsche",
+      "model": "911 GT3 RS 4.0",
+      "display_name": "2012 Porsche 911 GT3 RS 4.0"
+    },
+    "2357": {
+      "year": 2017,
+      "make": "Ford",
+      "model": "Focus RS",
+      "display_name": "2017 Ford Focus RS"
+    },
+    "2363": {
+      "year": 2017,
+      "make": "Ford",
+      "model": "GT",
+      "display_name": "2017 Ford GT"
+    },
+    "2371": {
+      "year": 2014,
+      "make": "Ferrari",
+      "model": "FXX K",
+      "display_name": "2014 Ferrari FXX K"
+    },
+    "2372": {
+      "year": 1932,
+      "make": "Ford",
+      "model": "De Luxe Five-Window Coupe",
+      "display_name": "1932 Ford De Luxe Five-Window Coupe"
+    },
+    "2400": {
+      "year": 2016,
+      "make": "Ford",
+      "model": "Mustang Shelby GT350R",
+      "display_name": "2016 Ford Mustang Shelby GT350R"
+    },
+    "2412": {
+      "year": 1957,
+      "make": "BMW",
+      "model": "Isetta 300 Export",
+      "display_name": "1957 BMW Isetta 300 Export"
+    },
+    "2416": {
+      "year": 1971,
+      "make": "Meyers",
+      "model": "Manx",
+      "display_name": "1971 Meyers Manx"
+    },
+    "2420": {
+      "year": 1984,
+      "make": "Opel",
+      "model": "Manta 400",
+      "display_name": "1984 Opel Manta 400"
+    },
+    "2421": {
+      "year": 2016,
+      "make": "Cadillac",
+      "model": "CTS-V Sedan",
+      "display_name": "2016 Cadillac CTS-V Sedan"
+    },
+    "2422": {
+      "year": 2014,
+      "make": "HSV",
+      "model": "Limited Edition GEN-F GTS Maloo",
+      "display_name": "2014 HSV Limited Edition GEN-F GTS Maloo"
+    },
+    "2430": {
+      "year": 2016,
+      "make": "Ariel",
+      "model": "Nomad",
+      "display_name": "2016 Ariel Nomad"
+    },
+    "2467": {
+      "year": 2015,
+      "make": "Ferrari",
+      "model": "488 GTB",
+      "display_name": "2015 Ferrari 488 GTB"
+    },
+    "2468": {
+      "year": 2015,
+      "make": "Dodge",
+      "model": "Charger SRT Hellcat",
+      "display_name": "2015 Dodge Charger SRT Hellcat"
+    },
+    "2469": {
+      "year": 1965,
+      "make": "Toyota",
+      "model": "Sports 800",
+      "display_name": "1965 Toyota Sports 800"
+    },
+    "2470": {
+      "year": 2016,
+      "make": "Aston Martin",
+      "model": "Vulcan",
+      "display_name": "2016 Aston Martin Vulcan"
+    },
+    "2471": {
+      "year": 2016,
+      "make": "Mercedes-AMG",
+      "model": "C 63 S Coupé",
+      "display_name": "2016 Mercedes-AMG C 63 S Coupé"
+    },
+    "2472": {
+      "year": 2015,
+      "make": "McLaren",
+      "model": "570S Coupé",
+      "display_name": "2015 McLaren 570S Coupé"
+    },
+    "2473": {
+      "year": 2016,
+      "make": "Audi",
+      "model": "R8 V10 plus",
+      "display_name": "2016 Audi R8 V10 plus"
+    },
+    "2486": {
+      "year": 2015,
+      "make": "Radical",
+      "model": "RXC Turbo",
+      "display_name": "2015 Radical RXC Turbo"
+    },
+    "2489": {
+      "year": 2016,
+      "make": "Abarth",
+      "model": "695 Biposto",
+      "display_name": "2016 Abarth 695 Biposto"
+    },
+    "2494": {
+      "year": 2015,
+      "make": "Land Rover",
+      "model": "Range Rover Sport SVR",
+      "display_name": "2015 Land Rover Range Rover Sport SVR"
+    },
+    "2507": {
+      "year": 1955,
+      "make": "Chevrolet",
+      "model": "150 Utility Sedan",
+      "display_name": "1955 Chevrolet 150 Utility Sedan"
+    },
+    "2512": {
+      "year": 1987,
+      "make": "Nissan",
+      "model": "Skyline GTS-R",
+      "display_name": "1987 Nissan Skyline GTS-R"
+    },
+    "2515": {
+      "year": 2011,
+      "make": "Penhall",
+      "model": "The Cholla",
+      "display_name": "2011 Penhall The Cholla"
+    },
+    "2517": {
+      "year": 2014,
+      "make": "Ford",
+      "model": "#11 Rockstar F-150 Trophy Truck",
+      "display_name": "2014 Ford #11 Rockstar F-150 Trophy Truck"
+    },
+    "2526": {
+      "year": 2016,
+      "make": "Koenigsegg",
+      "model": "Regera",
+      "display_name": "2016 Koenigsegg Regera"
+    },
+    "2527": {
+      "year": 2017,
+      "make": "Aston Martin",
+      "model": "DB11",
+      "display_name": "2017 Aston Martin DB11"
+    },
+    "2534": {
+      "year": 1993,
+      "make": "Porsche",
+      "model": "968 Turbo S",
+      "display_name": "1993 Porsche 968 Turbo S"
+    },
+    "2535": {
+      "year": 1993,
+      "make": "Porsche",
+      "model": "928 GTS",
+      "display_name": "1993 Porsche 928 GTS"
+    },
+    "2542": {
+      "year": 2017,
+      "make": "Alfa Romeo",
+      "model": "Giulia Quadrifoglio",
+      "display_name": "2017 Alfa Romeo Giulia Quadrifoglio"
+    },
+    "2544": {
+      "year": 2016,
+      "make": "Dodge",
+      "model": "Viper ACR",
+      "display_name": "2016 Dodge Viper ACR"
+    },
+    "2549": {
+      "year": 1970,
+      "make": "Porsche",
+      "model": "#3 917 LH",
+      "display_name": "1970 Porsche #3 917 LH"
+    },
+    "2551": {
+      "year": 2014,
+      "make": "Ford",
+      "model": "FPV Limited Edition Pursuit Ute",
+      "display_name": "2014 Ford FPV Limited Edition Pursuit Ute"
+    },
+    "2552": {
+      "year": 2015,
+      "make": "Alumicraft",
+      "model": "Class 10 Race Car",
+      "display_name": "2015 Alumicraft Class 10 Race Car"
+    },
+    "2563": {
+      "year": 1972,
+      "make": "Reliant",
+      "model": "Supervan III",
+      "display_name": "1972 Reliant Supervan III"
+    },
+    "2566": {
+      "year": 1979,
+      "make": "Toyota",
+      "model": "FJ40",
+      "display_name": "1979 Toyota FJ40"
+    },
+    "2568": {
+      "year": 1969,
+      "make": "Volkswagen",
+      "model": "Class 5/1600 Baja Bug",
+      "display_name": "1969 Volkswagen Class 5/1600 Baja Bug"
+    },
+    "2569": {
+      "year": 2015,
+      "make": "Ultima",
+      "model": "Evolution Coupe 1020",
+      "display_name": "2015 Ultima Evolution Coupe 1020"
+    },
+    "2574": {
+      "year": 2554,
+      "make": "AMG Transport Dynamics",
+      "model": "M12S Warthog CST",
+      "display_name": "2554 AMG Transport Dynamics M12S Warthog CST"
+    },
+    "2577": {
+      "year": 2015,
+      "make": "Ferrari",
+      "model": "F12tdf",
+      "display_name": "2015 Ferrari F12tdf"
+    },
+    "2613": {
+      "year": 1970,
+      "make": "GMC",
+      "model": "Jimmy",
+      "display_name": "1970 GMC Jimmy"
+    },
+    "2614": {
+      "year": 1968,
+      "make": "Ford",
+      "model": "Mustang GT 2+2 Fastback",
+      "display_name": "1968 Ford Mustang GT 2+2 Fastback"
+    },
+    "2616": {
+      "year": 2016,
+      "make": "Lamborghini",
+      "model": "Centenario LP 770-4",
+      "display_name": "2016 Lamborghini Centenario LP 770-4"
+    },
+    "2618": {
+      "year": 2017,
+      "make": "Nissan",
+      "model": "GT-R (R35)",
+      "display_name": "2017 Nissan GT-R (R35)"
+    },
+    "2625": {
+      "year": 2016,
+      "make": "Bentley",
+      "model": "Bentayga",
+      "display_name": "2016 Bentley Bentayga"
+    },
+    "2628": {
+      "year": 2016,
+      "make": "BMW",
+      "model": "M4 GTS",
+      "display_name": "2016 BMW M4 GTS"
+    },
+    "2636": {
+      "year": 1993,
+      "make": "Toyota",
+      "model": "#1 T100 Baja Truck",
+      "display_name": "1993 Toyota #1 T100 Baja Truck"
+    },
+    "2647": {
+      "year": 2016,
+      "make": "Pagani",
+      "model": "Huayra BC Coupe",
+      "display_name": "2016 Pagani Huayra BC Coupe"
+    },
+    "2649": {
+      "year": 2010,
+      "make": "Ford",
+      "model": "Crown Victoria Police Interceptor",
+      "display_name": "2010 Ford Crown Victoria Police Interceptor"
+    },
+    "2652": {
+      "year": 1997,
+      "make": "Mitsubishi",
+      "model": "Montero Evolution",
+      "display_name": "1997 Mitsubishi Montero Evolution"
+    },
+    "2654": {
+      "year": 2017,
+      "make": "Mercedes-AMG",
+      "model": "GT R",
+      "display_name": "2017 Mercedes-AMG GT R"
+    },
+    "2659": {
+      "year": 1998,
+      "make": "Nissan",
+      "model": "Silvia K's Aero",
+      "display_name": "1998 Nissan Silvia K's Aero"
+    },
+    "2663": {
+      "year": 2016,
+      "make": "RJ Anderson",
+      "model": "#37 Polaris RZR Pro 2 Truck",
+      "display_name": "2016 RJ Anderson #37 Polaris RZR Pro 2 Truck"
+    },
+    "2738": {
+      "year": 1995,
+      "make": "Nissan",
+      "model": "NISMO GT-R LM",
+      "display_name": "1995 Nissan NISMO GT-R LM"
+    },
+    "2739": {
+      "year": 2017,
+      "make": "Chevrolet",
+      "model": "Camaro ZL1",
+      "display_name": "2017 Chevrolet Camaro ZL1"
+    },
+    "2740": {
+      "year": 2017,
+      "make": "Abarth",
+      "model": "124 Spider",
+      "display_name": "2017 Abarth 124 Spider"
+    },
+    "2742": {
+      "year": 2016,
+      "make": "Jeep",
+      "model": "Trailcat",
+      "display_name": "2016 Jeep Trailcat"
+    },
+    "2743": {
+      "year": 2016,
+      "make": "Toyota",
+      "model": "Land Cruiser Arctic Trucks AT37",
+      "display_name": "2016 Toyota Land Cruiser Arctic Trucks AT37"
+    },
+    "2745": {
+      "year": 2015,
+      "make": "Honda",
+      "model": "Ridgeline Baja Trophy Truck",
+      "display_name": "2015 Honda Ridgeline Baja Trophy Truck"
+    },
+    "2755": {
+      "year": 2018,
+      "make": "Porsche",
+      "model": "911 GT2 RS",
+      "display_name": "2018 Porsche 911 GT2 RS"
+    },
+    "2773": {
+      "year": 2018,
+      "make": "Porsche",
+      "model": "Cayenne Turbo",
+      "display_name": "2018 Porsche Cayenne Turbo"
+    },
+    "2792": {
+      "year": 1966,
+      "make": "Ford",
+      "model": "#2 GT40 Mk II",
+      "display_name": "1966 Ford #2 GT40 Mk II"
+    },
+    "2793": {
+      "year": 1967,
+      "make": "Ferrari",
+      "model": "#24 Ferrari Spa 330 P4",
+      "display_name": "1967 Ferrari #24 Ferrari Spa 330 P4"
+    },
+    "2794": {
+      "year": 1993,
+      "make": "Porsche",
+      "model": "911 Turbo S Leichtbau",
+      "display_name": "1993 Porsche 911 Turbo S Leichtbau"
+    },
+    "2801": {
+      "year": 1983,
+      "make": "Nissan",
+      "model": "#11 Tomica Skyline Turbo Super Silhouette",
+      "display_name": "1983 Nissan #11 Tomica Skyline Turbo Super Silhouette"
+    },
+    "2822": {
+      "year": 1985,
+      "make": "Nissan",
+      "model": "Safari Turbo",
+      "display_name": "1985 Nissan Safari Turbo"
+    },
+    "2825": {
+      "year": 1997,
+      "make": "Lotus",
+      "model": "Elise GT1",
+      "display_name": "1997 Lotus Elise GT1"
+    },
+    "2841": {
+      "year": 2018,
+      "make": "Jeep",
+      "model": "Grand Cherokee Trackhawk",
+      "display_name": "2018 Jeep Grand Cherokee Trackhawk"
+    },
+    "2866": {
+      "year": 2018,
+      "make": "Exomotive",
+      "model": "Exocet Sport V8 XP-5",
+      "display_name": "2018 Exomotive Exocet Sport V8 XP-5"
+    },
+    "2870": {
+      "year": 2018,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "display_name": "2018 Honda Civic Type R"
+    },
+    "2871": {
+      "year": 2018,
+      "make": "Can-Am",
+      "model": "Maverick X RS Turbo R",
+      "display_name": "2018 Can-Am Maverick X RS Turbo R"
+    },
+    "2872": {
+      "year": 2019,
+      "make": "Hyundai",
+      "model": "Veloster N",
+      "display_name": "2019 Hyundai Veloster N"
+    },
+    "2909": {
+      "year": 2018,
+      "make": "Dodge",
+      "model": "Challenger SRT Demon",
+      "display_name": "2018 Dodge Challenger SRT Demon"
+    },
+    "2910": {
+      "year": 2017,
+      "make": "Koenigsegg",
+      "model": "Agera RS",
+      "display_name": "2017 Koenigsegg Agera RS"
+    },
+    "2935": {
+      "year": 2018,
+      "make": "Funco Motorsports",
+      "model": "F9",
+      "display_name": "2018 Funco Motorsports F9"
+    },
+    "2937": {
+      "year": 2017,
+      "make": "Ford",
+      "model": "#14 Rahal Letterman Lanigan Racing Fiesta",
+      "display_name": "2017 Ford #14 Rahal Letterman Lanigan Racing Fiesta"
+    },
+    "2968": {
+      "year": 2023,
+      "make": "Aston Martin",
+      "model": "Valkyrie",
+      "display_name": "2023 Aston Martin Valkyrie"
+    },
+    "2974": {
+      "year": 2017,
+      "make": "Ferrari",
+      "model": "812 Superfast",
+      "display_name": "2017 Ferrari 812 Superfast"
+    },
+    "2986": {
+      "year": 2014,
+      "make": "Mercedes-Benz",
+      "model": "Unimog U5023",
+      "display_name": "2014 Mercedes-Benz Unimog U5023"
+    },
+    "2987": {
+      "year": 1962,
+      "make": "Peel",
+      "model": "P50",
+      "display_name": "1962 Peel P50"
+    },
+    "2992": {
+      "year": 1964,
+      "make": "Jaguar",
+      "model": "Lightweight E-Type",
+      "display_name": "1964 Jaguar Lightweight E-Type"
+    },
+    "2993": {
+      "year": 2018,
+      "make": "TVR",
+      "model": "Griffith",
+      "display_name": "2018 TVR Griffith"
+    },
+    "2995": {
+      "year": 1983,
+      "make": "Volkswagen",
+      "model": "Golf GTI",
+      "display_name": "1983 Volkswagen Golf GTI"
+    },
+    "2996": {
+      "year": 2015,
+      "make": "Formula Drift",
+      "model": "#13 Ford Mustang",
+      "display_name": "2015 Formula Drift #13 Ford Mustang"
+    },
+    "2997": {
+      "year": 2016,
+      "make": "Formula Drift",
+      "model": "#530 HSV Maloo GEN-F",
+      "display_name": "2016 Formula Drift #530 HSV Maloo GEN-F"
+    },
+    "3000": {
+      "year": 1997,
+      "make": "Formula Drift",
+      "model": "#777 Nissan 240SX",
+      "display_name": "1997 Formula Drift #777 Nissan 240SX"
+    },
+    "3003": {
+      "year": 2006,
+      "make": "Formula Drift",
+      "model": "#43 Dodge Viper SRT-10 ACR",
+      "display_name": "2006 Formula Drift #43 Dodge Viper SRT-10 ACR"
+    },
+    "3007": {
+      "year": 2017,
+      "make": "Volkswagen",
+      "model": "#34 Andretti Rally Cross Beetle",
+      "display_name": "2017 Volkswagen #34 Andretti Rally Cross Beetle"
+    },
+    "3031": {
+      "year": 1985,
+      "make": "Porsche",
+      "model": "#185 959 Prodrive Rally Raid",
+      "display_name": "1985 Porsche #185 959 Prodrive Rally Raid"
+    },
+    "3035": {
+      "year": 2018,
+      "make": "KTM",
+      "model": "X-Bow GT4",
+      "display_name": "2018 KTM X-Bow GT4"
+    },
+    "3037": {
+      "year": 1989,
+      "make": "Formula Drift",
+      "model": "#98 BMW 325i",
+      "display_name": "1989 Formula Drift #98 BMW 325i"
+    },
+    "3051": {
+      "year": 2017,
+      "make": "Ford",
+      "model": "M-Sport Fiesta RS",
+      "display_name": "2017 Ford M-Sport Fiesta RS"
+    },
+    "3055": {
+      "year": 2010,
+      "make": "Jaguar",
+      "model": "C-X75",
+      "display_name": "2010 Jaguar C-X75"
+    },
+    "3062": {
+      "year": 1970,
+      "make": "Ferrari",
+      "model": "512 S",
+      "display_name": "1970 Ferrari 512 S"
+    },
+    "3063": {
+      "year": 2018,
+      "make": "Mercedes-Benz",
+      "model": "X-Class",
+      "display_name": "2018 Mercedes-Benz X-Class"
+    },
+    "3064": {
+      "year": 2018,
+      "make": "Mercedes-AMG",
+      "model": "GT 4-Door Coupé",
+      "display_name": "2018 Mercedes-AMG GT 4-Door Coupé"
+    },
+    "3072": {
+      "year": 2019,
+      "make": "Porsche",
+      "model": "911 GT3 RS",
+      "display_name": "2019 Porsche 911 GT3 RS"
+    },
+    "3082": {
+      "year": 2008,
+      "make": "Maserati",
+      "model": "MC12 Versione Corsa",
+      "display_name": "2008 Maserati MC12 Versione Corsa"
+    },
+    "3087": {
+      "year": 2014,
+      "make": "McLaren",
+      "model": "650S Spider",
+      "display_name": "2014 McLaren 650S Spider"
+    },
+    "3088": {
+      "year": 2018,
+      "make": "DeBerti",
+      "model": "Chevrolet Silverado 1500 Drift Truck",
+      "display_name": "2018 DeBerti Chevrolet Silverado 1500 Drift Truck"
+    },
+    "3091": {
+      "year": 2019,
+      "make": "Aston Martin",
+      "model": "Vantage",
+      "display_name": "2019 Aston Martin Vantage"
+    },
+    "3107": {
+      "year": 2014,
+      "make": "Mercedes-Benz",
+      "model": "G 63 AMG 6x6",
+      "display_name": "2014 Mercedes-Benz G 63 AMG 6x6"
+    },
+    "3108": {
+      "year": 2018,
+      "make": "Ford",
+      "model": "Mustang RTR Spec 5",
+      "display_name": "2018 Ford Mustang RTR Spec 5"
+    },
+    "3110": {
+      "year": 2013,
+      "make": "DeBerti",
+      "model": "Jeep Wrangler Unlimited",
+      "display_name": "2013 DeBerti Jeep Wrangler Unlimited"
+    },
+    "3117": {
+      "year": 2018,
+      "make": "Porsche",
+      "model": "718 Cayman GTS",
+      "display_name": "2018 Porsche 718 Cayman GTS"
+    },
+    "3118": {
+      "year": 2019,
+      "make": "Chevrolet",
+      "model": "Corvette ZR1",
+      "display_name": "2019 Chevrolet Corvette ZR1"
+    },
+    "3120": {
+      "year": 2019,
+      "make": "Lamborghini",
+      "model": "Urus",
+      "display_name": "2019 Lamborghini Urus"
+    },
+    "3123": {
+      "year": 2019,
+      "make": "Porsche",
+      "model": "911 Carrera S",
+      "display_name": "2019 Porsche 911 Carrera S"
+    },
+    "3128": {
+      "year": 2017,
+      "make": "Ford",
+      "model": "#25 'Brocky' Ultra4 Bronco RTR",
+      "display_name": "2017 Ford #25 'Brocky' Ultra4 Bronco RTR"
+    },
+    "3129": {
+      "year": 2008,
+      "make": "Renault",
+      "model": "Mégane R26.R",
+      "display_name": "2008 Renault Mégane R26.R"
+    },
+    "3132": {
+      "year": 2018,
+      "make": "MINI",
+      "model": "X-raid John Cooper Works Buggy",
+      "display_name": "2018 MINI X-raid John Cooper Works Buggy"
+    },
+    "3134": {
+      "year": 2018,
+      "make": "Renault",
+      "model": "Megane R.S.",
+      "display_name": "2018 Renault Megane R.S."
+    },
+    "3141": {
+      "year": 2019,
+      "make": "Apollo",
+      "model": "Intensa Emozione",
+      "display_name": "2019 Apollo Intensa Emozione"
+    },
+    "3149": {
+      "year": 2018,
+      "make": "Chevrolet",
+      "model": "Camaro ZL1 1LE",
+      "display_name": "2018 Chevrolet Camaro ZL1 1LE"
+    },
+    "3153": {
+      "year": 2018,
+      "make": "McLaren",
+      "model": "600LT Coupé",
+      "display_name": "2018 McLaren 600LT Coupé"
+    },
+    "3156": {
+      "year": 2019,
+      "make": "McLaren",
+      "model": "Speedtail",
+      "display_name": "2019 McLaren Speedtail"
+    },
+    "3170": {
+      "year": 1994,
+      "make": "Ford",
+      "model": "Supervan 3",
+      "display_name": "1994 Ford Supervan 3"
+    },
+    "3173": {
+      "year": 2019,
+      "make": "BMW",
+      "model": "Z4 Roadster",
+      "display_name": "2019 BMW Z4 Roadster"
+    },
+    "3176": {
+      "year": 1987,
+      "make": "Mercedes-Benz",
+      "model": "AMG Hammer Coupe",
+      "display_name": "1987 Mercedes-Benz AMG Hammer Coupe"
+    },
+    "3180": {
+      "year": 1991,
+      "make": "Peugeot",
+      "model": "205 Rallye",
+      "display_name": "1991 Peugeot 205 Rallye"
+    },
+    "3184": {
+      "year": 1977,
+      "make": "Ford",
+      "model": "#5 Escort RS1800 MkII",
+      "display_name": "1977 Ford #5 Escort RS1800 MkII"
+    },
+    "3185": {
+      "year": 2019,
+      "make": "Aston Martin",
+      "model": "DBS Superleggera",
+      "display_name": "2019 Aston Martin DBS Superleggera"
+    },
+    "3187": {
+      "year": 2018,
+      "make": "Porsche",
+      "model": "Macan LPR Rally Raid",
+      "display_name": "2018 Porsche Macan LPR Rally Raid"
+    },
+    "3189": {
+      "year": 2019,
+      "make": "Hennessey",
+      "model": "Ford F-150 VelociRaptor 6X6",
+      "display_name": "2019 Hennessey Ford F-150 VelociRaptor 6X6"
+    },
+    "3190": {
+      "year": 2003,
+      "make": "Ford",
+      "model": "F-150 SVT Lightning",
+      "display_name": "2003 Ford F-150 SVT Lightning"
+    },
+    "3198": {
+      "year": 1984,
+      "make": "De Tomaso",
+      "model": "Pantera GT5",
+      "display_name": "1984 De Tomaso Pantera GT5"
+    },
+    "3211": {
+      "year": 2017,
+      "make": "Aston Martin",
+      "model": "Vulcan AMR Pro",
+      "display_name": "2017 Aston Martin Vulcan AMR Pro"
+    },
+    "3212": {
+      "year": 2019,
+      "make": "Zenvo",
+      "model": "TSR-S",
+      "display_name": "2019 Zenvo TSR-S"
+    },
+    "3214": {
+      "year": 2019,
+      "make": "Porsche",
+      "model": "#70 Porsche Motorsport 935",
+      "display_name": "2019 Porsche #70 Porsche Motorsport 935"
+    },
+    "3225": {
+      "year": 2018,
+      "make": "Ferrari",
+      "model": "Portofino",
+      "display_name": "2018 Ferrari Portofino"
+    },
+    "3226": {
+      "year": 2017,
+      "make": "Ferrari",
+      "model": "J50 Preorder Car",
+      "display_name": "2017 Ferrari J50 Preorder Car"
+    },
+    "3227": {
+      "year": 2019,
+      "make": "Ferrari",
+      "model": "488 Pista",
+      "display_name": "2019 Ferrari 488 Pista"
+    },
+    "3228": {
+      "year": 1999,
+      "make": "Ford",
+      "model": "Racing Puma",
+      "display_name": "1999 Ford Racing Puma"
+    },
+    "3232": {
+      "year": 2013,
+      "make": "Formula Drift",
+      "model": "#777 Chevrolet Corvette",
+      "display_name": "2013 Formula Drift #777 Chevrolet Corvette"
+    },
+    "3235": {
+      "year": 1982,
+      "make": "Volkswagen",
+      "model": "Pickup LX",
+      "display_name": "1982 Volkswagen Pickup LX"
+    },
+    "3241": {
+      "year": 2018,
+      "make": "Subaru",
+      "model": "WRX STI ARX Supercar",
+      "display_name": "2018 Subaru WRX STI ARX Supercar"
+    },
+    "3249": {
+      "year": 2007,
+      "make": "Formula Drift",
+      "model": "#117 599 GTB Fiorano",
+      "display_name": "2007 Formula Drift #117 599 GTB Fiorano"
+    },
+    "3250": {
+      "year": 2018,
+      "make": "Mercedes-AMG",
+      "model": "E 63 S",
+      "display_name": "2018 Mercedes-AMG E 63 S"
+    },
+    "3255": {
+      "year": 2020,
+      "make": "Jeep",
+      "model": "JT",
+      "display_name": "2020 Jeep JT"
+    },
+    "3257": {
+      "year": 1990,
+      "make": "Nissan",
+      "model": "Pulsar GTI-R",
+      "display_name": "1990 Nissan Pulsar GTI-R"
+    },
+    "3277": {
+      "year": 2020,
+      "make": "Ford",
+      "model": "Mustang Shelby GT500",
+      "display_name": "2020 Ford Mustang Shelby GT500"
+    },
+    "3282": {
+      "year": 1987,
+      "make": "Porsche",
+      "model": "#203 Porsche AG 961",
+      "display_name": "1987 Porsche #203 Porsche AG 961"
+    },
+    "3287": {
+      "year": 1991,
+      "make": "Jaguar",
+      "model": "Sport XJR-15",
+      "display_name": "1991 Jaguar Sport XJR-15"
+    },
+    "3288": {
+      "year": 1993,
+      "make": "Schuppan",
+      "model": "962CR",
+      "display_name": "1993 Schuppan 962CR"
+    },
+    "3289": {
+      "year": 2018,
+      "make": "Lamborghini",
+      "model": "Aventador SVJ",
+      "display_name": "2018 Lamborghini Aventador SVJ"
+    },
+    "3293": {
+      "year": 1993,
+      "make": "Jaguar",
+      "model": "XJ220S TWR",
+      "display_name": "1993 Jaguar XJ220S TWR"
+    },
+    "3304": {
+      "year": 1990,
+      "make": "Alfa Romeo",
+      "model": "SE 048SP",
+      "display_name": "1990 Alfa Romeo SE 048SP"
+    },
+    "3307": {
+      "year": 2019,
+      "make": "Nissan",
+      "model": "370Z Nismo",
+      "display_name": "2019 Nissan 370Z Nismo"
+    },
+    "3311": {
+      "year": 2018,
+      "make": "Ferrari",
+      "model": "FXX-K Evo",
+      "display_name": "2018 Ferrari FXX-K Evo"
+    },
+    "3312": {
+      "year": 2019,
+      "make": "Ferrari",
+      "model": "Monza SP2",
+      "display_name": "2019 Ferrari Monza SP2"
+    },
+    "3315": {
+      "year": 2020,
+      "make": "Koenigsegg",
+      "model": "Jesko",
+      "display_name": "2020 Koenigsegg Jesko"
+    },
+    "3318": {
+      "year": 2018,
+      "make": "Audi",
+      "model": "RS 4 Avant",
+      "display_name": "2018 Audi RS 4 Avant"
+    },
+    "3325": {
+      "year": 2003,
+      "make": "Aston Martin",
+      "model": "DB7 GT",
+      "display_name": "2003 Aston Martin DB7 GT"
+    },
+    "3359": {
+      "year": 2021,
+      "make": "Audi",
+      "model": "RS e-tron GT",
+      "display_name": "2021 Audi RS e-tron GT"
+    },
+    "3363": {
+      "year": 1998,
+      "make": "Nissan",
+      "model": "#23 Pennzoil NISMO Skyline GT-R",
+      "display_name": "1998 Nissan #23 Pennzoil NISMO Skyline GT-R"
+    },
+    "3364": {
+      "year": 2019,
+      "make": "Aston Martin",
+      "model": "Valhalla Concept Car",
+      "display_name": "2019 Aston Martin Valhalla Concept Car"
+    },
+    "3367": {
+      "year": 2019,
+      "make": "Ferrari",
+      "model": "F8 Tributo",
+      "display_name": "2019 Ferrari F8 Tributo"
+    },
+    "3369": {
+      "year": 2020,
+      "make": "Chevrolet",
+      "model": "Corvette Stingray Coupe",
+      "display_name": "2020 Chevrolet Corvette Stingray Coupe"
+    },
+    "3371": {
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Huracán EVO",
+      "display_name": "2020 Lamborghini Huracán EVO"
+    },
+    "3373": {
+      "year": 2019,
+      "make": "Toyota",
+      "model": "4Runner TRD Pro",
+      "display_name": "2019 Toyota 4Runner TRD Pro"
+    },
+    "3374": {
+      "year": 2019,
+      "make": "Toyota",
+      "model": "Tacoma TRD Pro",
+      "display_name": "2019 Toyota Tacoma TRD Pro"
+    },
+    "3395": {
+      "year": 1967,
+      "make": "Renault",
+      "model": "8 Gordini",
+      "display_name": "1967 Renault 8 Gordini"
+    },
+    "3400": {
+      "year": 2009,
+      "make": "Formula Drift",
+      "model": "#99 Mazda RX-8",
+      "display_name": "2009 Formula Drift #99 Mazda RX-8"
+    },
+    "3402": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "GR Supra",
+      "display_name": "2020 Toyota GR Supra"
+    },
+    "3404": {
+      "year": 2020,
+      "make": "Ford",
+      "model": "#2069 Ford Performance Bronco R",
+      "display_name": "2020 Ford #2069 Ford Performance Bronco R"
+    },
+    "3411": {
+      "year": 1995,
+      "make": "Formula Drift",
+      "model": "#34 Toyota Supra MkIV",
+      "display_name": "1995 Formula Drift #34 Toyota Supra MkIV"
+    },
+    "3412": {
+      "year": 2019,
+      "make": "Subaru",
+      "model": "STI S209",
+      "display_name": "2019 Subaru STI S209"
+    },
+    "3413": {
+      "year": 2021,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "display_name": "2021 Volkswagen Golf R"
+    },
+    "3414": {
+      "year": 2020,
+      "make": "Land Rover",
+      "model": "Defender 110 X",
+      "display_name": "2020 Land Rover Defender 110 X"
+    },
+    "3434": {
+      "year": 2020,
+      "make": "BMW",
+      "model": "M2 Competition Coupé",
+      "display_name": "2020 BMW M2 Competition Coupé"
+    },
+    "3439": {
+      "year": 2019,
+      "make": "DeBerti",
+      "model": "Ford Super Duty F-250 Lariat 'Transformer'",
+      "display_name": "2019 DeBerti Ford Super Duty F-250 Lariat 'Transformer'"
+    },
+    "3441": {
+      "year": 2019,
+      "make": "DeBerti",
+      "model": "Toyota Tacoma TRD ‘The Performance Truck’",
+      "display_name": "2019 DeBerti Toyota Tacoma TRD ‘The Performance Truck’"
+    },
+    "3445": {
+      "year": 2020,
+      "make": "Porsche",
+      "model": "Taycan Turbo S",
+      "display_name": "2020 Porsche Taycan Turbo S"
+    },
+    "3449": {
+      "year": 2020,
+      "make": "Lotus",
+      "model": "Evija",
+      "display_name": "2020 Lotus Evija"
+    },
+    "3454": {
+      "year": 2020,
+      "make": "Audi",
+      "model": "RS 3 Sedan",
+      "display_name": "2020 Audi RS 3 Sedan"
+    },
+    "3476": {
+      "year": 2020,
+      "make": "Ford",
+      "model": "Super Duty F-450 DRW PLATINUM",
+      "display_name": "2020 Ford Super Duty F-450 DRW PLATINUM"
+    },
+    "3477": {
+      "year": 2020,
+      "make": "Chevrolet",
+      "model": "Silverado LT Trail Boss",
+      "display_name": "2020 Chevrolet Silverado LT Trail Boss"
+    },
+    "3482": {
+      "year": 2021,
+      "make": "McLaren",
+      "model": "765LT Coupé",
+      "display_name": "2021 McLaren 765LT Coupé"
+    },
+    "3494": {
+      "year": 1968,
+      "make": "Alfa Romeo",
+      "model": "Autodelta Tipo 33/2 Daytona",
+      "display_name": "1968 Alfa Romeo Autodelta Tipo 33/2 Daytona"
+    },
+    "3498": {
+      "year": 2017,
+      "make": "Saleen",
+      "model": "S7 LM",
+      "display_name": "2017 Saleen S7 LM"
+    },
+    "3518": {
+      "year": 2020,
+      "make": "BMW",
+      "model": "M8 Competition Coupé",
+      "display_name": "2020 BMW M8 Competition Coupé"
+    },
+    "3520": {
+      "year": 2021,
+      "make": "Lexus",
+      "model": "LC 500",
+      "display_name": "2021 Lexus LC 500"
+    },
+    "3523": {
+      "year": 2020,
+      "make": "Formula Drift",
+      "model": "#151 Toyota GR Supra",
+      "display_name": "2020 Formula Drift #151 Toyota GR Supra"
+    },
+    "3524": {
+      "year": 2019,
+      "make": "Formula Drift",
+      "model": "#411 Toyota Corolla Hatchback",
+      "display_name": "2019 Formula Drift #411 Toyota Corolla Hatchback"
+    },
+    "3533": {
+      "year": 2022,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "display_name": "2022 Volkswagen Golf R"
+    },
+    "3534": {
+      "year": 2021,
+      "make": "MINI",
+      "model": "John Cooper Works GP",
+      "display_name": "2021 MINI John Cooper Works GP"
+    },
+    "3539": {
+      "year": 2020,
+      "make": "SIERRA Cars",
+      "model": "#23 Yokohama ALPHA",
+      "display_name": "2020 SIERRA Cars #23 Yokohama ALPHA"
+    },
+    "3540": {
+      "year": 2021,
+      "make": "SIERRA Cars",
+      "model": "RX3",
+      "display_name": "2021 SIERRA Cars RX3"
+    },
+    "3543": {
+      "year": 2021,
+      "make": "Pagani",
+      "model": "Huayra R",
+      "display_name": "2021 Pagani Huayra R"
+    },
+    "3548": {
+      "year": 2013,
+      "make": "Wuling",
+      "model": "Sunshine S",
+      "display_name": "2013 Wuling Sunshine S"
+    },
+    "3549": {
+      "year": 2021,
+      "make": "Alumicraft",
+      "model": "#122 Class 1 Buggy",
+      "display_name": "2021 Alumicraft #122 Class 1 Buggy"
+    },
+    "3551": {
+      "year": 2020,
+      "make": "Formula Drift",
+      "model": "#91 BMW M2",
+      "display_name": "2020 Formula Drift #91 BMW M2"
+    },
+    "3554": {
+      "year": 2005,
+      "make": "Mitsubishi",
+      "model": "#1 Sierra Sierra Enterprises Lancer Evolution Time Attack",
+      "display_name": "2005 Mitsubishi #1 Sierra Sierra Enterprises Lancer Evolution Time Attack"
+    },
+    "3580": {
+      "year": 2021,
+      "make": "Aston Martin",
+      "model": "DBX",
+      "display_name": "2021 Aston Martin DBX"
+    },
+    "3583": {
+      "year": 2021,
+      "make": "Audi",
+      "model": "RS 6 Avant",
+      "display_name": "2021 Audi RS 6 Avant"
+    },
+    "3584": {
+      "year": 2021,
+      "make": "Audi",
+      "model": "RS 7 Sportback",
+      "display_name": "2021 Audi RS 7 Sportback"
+    },
+    "3590": {
+      "year": 1972,
+      "make": "Chevrolet",
+      "model": "K-10 Custom",
+      "display_name": "1972 Chevrolet K-10 Custom"
+    },
+    "3594": {
+      "year": 2020,
+      "make": "Ferrari",
+      "model": "Roma",
+      "display_name": "2020 Ferrari Roma"
+    },
+    "3595": {
+      "year": 2020,
+      "make": "Ferrari",
+      "model": "SF90 Stradale",
+      "display_name": "2020 Ferrari SF90 Stradale"
+    },
+    "3597": {
+      "year": 1986,
+      "make": "Ford",
+      "model": "F-150 XLT Lariat",
+      "display_name": "1986 Ford F-150 XLT Lariat"
+    },
+    "3599": {
+      "year": 2020,
+      "make": "Gordon Murray Automotive",
+      "model": "T.50",
+      "display_name": "2020 Gordon Murray Automotive T.50"
+    },
+    "3600": {
+      "year": 2021,
+      "make": "Hennessey",
+      "model": "Venom F5",
+      "display_name": "2021 Hennessey Venom F5"
+    },
+    "3603": {
+      "year": 2019,
+      "make": "Casey Currie Motorsports",
+      "model": "#4402 Ultra 4 'Trophy Jeep'",
+      "display_name": "2019 Casey Currie Motorsports #4402 Ultra 4 'Trophy Jeep'"
+    },
+    "3604": {
+      "year": 2020,
+      "make": "Jimco",
+      "model": "#179 Hammerhead Class 1",
+      "display_name": "2020 Jimco #179 Hammerhead Class 1"
+    },
+    "3605": {
+      "year": 2019,
+      "make": "Jimco",
+      "model": "#240 Fastball Racing Class 6100 Spec Trophy Truck",
+      "display_name": "2019 Jimco #240 Fastball Racing Class 6100 Spec Trophy Truck"
+    },
+    "3606": {
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Essenza SCV12",
+      "display_name": "2020 Lamborghini Essenza SCV12"
+    },
+    "3608": {
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Sián Roadster",
+      "display_name": "2020 Lamborghini Sián Roadster"
+    },
+    "3611": {
+      "year": 2022,
+      "make": "Maserati",
+      "model": "MC20",
+      "display_name": "2022 Maserati MC20"
+    },
+    "3616": {
+      "year": 2020,
+      "make": "Mercedes-AMG",
+      "model": "GT Black Series",
+      "display_name": "2020 Mercedes-AMG GT Black Series"
+    },
+    "3617": {
+      "year": 2021,
+      "make": "Mercedes-AMG",
+      "model": "SL 63",
+      "display_name": "2021 Mercedes-AMG SL 63"
+    },
+    "3622": {
+      "year": 2020,
+      "make": "Nissan",
+      "model": "GT-R NISMO (R35)",
+      "display_name": "2020 Nissan GT-R NISMO (R35)"
+    },
+    "3625": {
+      "year": 2021,
+      "make": "Rimac",
+      "model": "Nevera",
+      "display_name": "2021 Rimac Nevera"
+    },
+    "3629": {
+      "year": 2021,
+      "make": "Toyota",
+      "model": "GR Yaris",
+      "display_name": "2021 Toyota GR Yaris"
+    },
+    "3631": {
+      "year": 2022,
+      "make": "Aston Martin",
+      "model": "Valkyrie AMR Pro",
+      "display_name": "2022 Aston Martin Valkyrie AMR Pro"
+    },
+    "3645": {
+      "year": 2021,
+      "make": "BMW",
+      "model": "M4 Competition Coupé",
+      "display_name": "2021 BMW M4 Competition Coupé"
+    },
+    "3650": {
+      "year": 2021,
+      "make": "Mercedes-AMG",
+      "model": "Mercedes-AMG ONE",
+      "display_name": "2021 Mercedes-AMG Mercedes-AMG ONE"
+    },
+    "3655": {
+      "year": 2021,
+      "make": "McLaren",
+      "model": "620R",
+      "display_name": "2021 McLaren 620R"
+    },
+    "3657": {
+      "year": 2022,
+      "make": "Rivian",
+      "model": "R1T",
+      "display_name": "2022 Rivian R1T"
+    },
+    "3661": {
+      "year": 2018,
+      "make": "Lotus",
+      "model": "Exige Cup 430",
+      "display_name": "2018 Lotus Exige Cup 430"
+    },
+    "3662": {
+      "year": 2021,
+      "make": "RJ Anderson",
+      "model": "#37 Polaris RZR Pro 4 Truck",
+      "display_name": "2021 RJ Anderson #37 Polaris RZR Pro 4 Truck"
+    },
+    "3665": {
+      "year": 2021,
+      "make": "SIERRA Cars",
+      "model": "700R",
+      "display_name": "2021 SIERRA Cars 700R"
+    },
+    "3667": {
+      "year": 2021,
+      "make": "Porsche",
+      "model": "911 GT3",
+      "display_name": "2021 Porsche 911 GT3"
+    },
+    "3668": {
+      "year": 2023,
+      "make": "McLaren",
+      "model": "Artura",
+      "display_name": "2023 McLaren Artura"
+    },
+    "3670": {
+      "year": 2001,
+      "make": "Ford",
+      "model": "#4 Ford Focus RS",
+      "display_name": "2001 Ford #4 Ford Focus RS"
+    },
+    "3672": {
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Huracán STO",
+      "display_name": "2020 Lamborghini Huracán STO"
+    },
+    "3678": {
+      "year": 2020,
+      "make": "Hyundai",
+      "model": "i30 N",
+      "display_name": "2020 Hyundai i30 N"
+    },
+    "3686": {
+      "year": 2021,
+      "make": "Polaris",
+      "model": "RZR Pro XP Factory Racing Limited Edition",
+      "display_name": "2021 Polaris RZR Pro XP Factory Racing Limited Edition"
+    },
+    "3687": {
+      "year": 2021,
+      "make": "Polaris",
+      "model": "RZR Pro XP Ultimate",
+      "display_name": "2021 Polaris RZR Pro XP Ultimate"
+    },
+    "3692": {
+      "year": 2022,
+      "make": "Ford",
+      "model": "F-150 Lightning",
+      "display_name": "2022 Ford F-150 Lightning"
+    },
+    "3693": {
+      "year": 2022,
+      "make": "Alumicraft",
+      "model": "#6165 Trick Truck",
+      "display_name": "2022 Alumicraft #6165 Trick Truck"
+    },
+    "3698": {
+      "year": 2021,
+      "make": "Porsche",
+      "model": "Mission R",
+      "display_name": "2021 Porsche Mission R"
+    },
+    "3700": {
+      "year": 2021,
+      "make": "McLaren",
+      "model": "Sabre",
+      "display_name": "2021 McLaren Sabre"
+    },
+    "3716": {
+      "year": 2023,
+      "make": "Lotus",
+      "model": "Emira",
+      "display_name": "2023 Lotus Emira"
+    },
+    "3719": {
+      "year": 2022,
+      "make": "Cadillac",
+      "model": "CT4-V Blackwing",
+      "display_name": "2022 Cadillac CT4-V Blackwing"
+    },
+    "3720": {
+      "year": 2022,
+      "make": "Cadillac",
+      "model": "CT5-V Blackwing",
+      "display_name": "2022 Cadillac CT5-V Blackwing"
+    },
+    "3722": {
+      "year": 2022,
+      "make": "GMC",
+      "model": "HUMMER EV Pickup",
+      "display_name": "2022 GMC HUMMER EV Pickup"
+    },
+    "3724": {
+      "year": 2022,
+      "make": "Ferrari",
+      "model": "296 GTB",
+      "display_name": "2022 Ferrari 296 GTB"
+    },
+    "3726": {
+      "year": 2023,
+      "make": "Acura",
+      "model": "Integra A-Spec",
+      "display_name": "2023 Acura Integra A-Spec"
+    },
+    "3728": {
+      "year": 2021,
+      "make": "Bentley",
+      "model": "Continental GT Convertible",
+      "display_name": "2021 Bentley Continental GT Convertible"
+    },
+    "3735": {
+      "year": 2022,
+      "make": "Subaru",
+      "model": "BRZ",
+      "display_name": "2022 Subaru BRZ"
+    },
+    "3736": {
+      "year": 2022,
+      "make": "Ford",
+      "model": "Bronco Raptor",
+      "display_name": "2022 Ford Bronco Raptor"
+    },
+    "3737": {
+      "year": 2022,
+      "make": "BMW",
+      "model": "iX xDrive50",
+      "display_name": "2022 BMW iX xDrive50"
+    },
+    "3744": {
+      "year": 2023,
+      "make": "Formula Drift",
+      "model": "#64 Forsberg Racing Nissan Z",
+      "display_name": "2023 Formula Drift #64 Forsberg Racing Nissan Z"
+    },
+    "3745": {
+      "year": 2020,
+      "make": "Audi",
+      "model": "R8 V10 performance",
+      "display_name": "2020 Audi R8 V10 performance"
+    },
+    "3750": {
+      "year": 1995,
+      "make": "Mitsubishi",
+      "model": "Montero Exceed 2800 TD",
+      "display_name": "1995 Mitsubishi Montero Exceed 2800 TD"
+    },
+    "3753": {
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Huracán Tecnica",
+      "display_name": "2022 Lamborghini Huracán Tecnica"
+    },
+    "3755": {
+      "year": 2022,
+      "make": "Ford",
+      "model": "Supervan 4",
+      "display_name": "2022 Ford Supervan 4"
+    },
+    "3759": {
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Huracán EVO Spyder",
+      "display_name": "2022 Lamborghini Huracán EVO Spyder"
+    },
+    "3760": {
+      "year": 2022,
+      "make": "Porsche",
+      "model": "718 Cayman GT4 RS",
+      "display_name": "2022 Porsche 718 Cayman GT4 RS"
+    },
+    "3761": {
+      "year": 2022,
+      "make": "Toyota",
+      "model": "GR86",
+      "display_name": "2022 Toyota GR86"
+    },
+    "3763": {
+      "year": 2023,
+      "make": "BMW",
+      "model": "M2",
+      "display_name": "2023 BMW M2"
+    },
+    "3764": {
+      "year": 2022,
+      "make": "BMW",
+      "model": "M5 CS",
+      "display_name": "2022 BMW M5 CS"
+    },
+    "3766": {
+      "year": 2023,
+      "make": "Chevrolet",
+      "model": "Corvette Z06",
+      "display_name": "2023 Chevrolet Corvette Z06"
+    },
+    "3767": {
+      "year": 2022,
+      "make": "Acura",
+      "model": "NSX Type S",
+      "display_name": "2022 Acura NSX Type S"
+    },
+    "3771": {
+      "year": 2024,
+      "make": "Chevrolet",
+      "model": "Corvette E-Ray",
+      "display_name": "2024 Chevrolet Corvette E-Ray"
+    },
+    "3773": {
+      "year": 2023,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "display_name": "2023 Honda Civic Type R"
+    },
+    "3774": {
+      "year": 2021,
+      "make": "Lamborghini",
+      "model": "Countach LPI 800-4",
+      "display_name": "2021 Lamborghini Countach LPI 800-4"
+    },
+    "3775": {
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Aventador LP 780-4 Ultimae",
+      "display_name": "2022 Lamborghini Aventador LP 780-4 Ultimae"
+    },
+    "3781": {
+      "year": 2023,
+      "make": "Porsche",
+      "model": "911 GT3 RS",
+      "display_name": "2023 Porsche 911 GT3 RS"
+    },
+    "3783": {
+      "year": 1989,
+      "make": "Volkswagen",
+      "model": "Rallye Golf",
+      "display_name": "1989 Volkswagen Rallye Golf"
+    },
+    "3785": {
+      "year": 1997,
+      "make": "Toyota",
+      "model": "Soarer 2.5 GT-T",
+      "display_name": "1997 Toyota Soarer 2.5 GT-T"
+    },
+    "3789": {
+      "year": 2022,
+      "make": "Wuling",
+      "model": "Hongguang Mini EV",
+      "display_name": "2022 Wuling Hongguang Mini EV"
+    },
+    "3795": {
+      "year": 2023,
+      "make": "Meyers",
+      "model": "Manx 2.0",
+      "display_name": "2023 Meyers Manx 2.0"
+    },
+    "3798": {
+      "year": 2017,
+      "make": "Mazda",
+      "model": "MX-5 Cup",
+      "display_name": "2017 Mazda MX-5 Cup"
+    },
+    "3811": {
+      "year": 2024,
+      "make": "Lucid",
+      "model": "Air Sapphire",
+      "display_name": "2024 Lucid Air Sapphire"
+    },
+    "3819": {
+      "year": 2022,
+      "make": "Subaru",
+      "model": "WRX",
+      "display_name": "2022 Subaru WRX"
+    },
+    "3823": {
+      "year": 2022,
+      "make": "Mazda",
+      "model": "MX-5 Miata RF",
+      "display_name": "2022 Mazda MX-5 Miata RF"
+    },
+    "3827": {
+      "year": 2023,
+      "make": "Hyundai",
+      "model": "IONIQ 5 N",
+      "display_name": "2023 Hyundai IONIQ 5 N"
+    },
+    "3829": {
+      "year": 2022,
+      "make": "Hyundai",
+      "model": "N Vision 74",
+      "display_name": "2022 Hyundai N Vision 74"
+    },
+    "3840": {
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Huracán Sterrato",
+      "display_name": "2022 Lamborghini Huracán Sterrato"
+    },
+    "3846": {
+      "year": 2024,
+      "make": "Ford",
+      "model": "Mustang GT",
+      "display_name": "2024 Ford Mustang GT"
+    },
+    "3847": {
+      "year": 2024,
+      "make": "Ford",
+      "model": "Mustang Dark Horse",
+      "display_name": "2024 Ford Mustang Dark Horse"
+    },
+    "3848": {
+      "year": 2023,
+      "make": "Toyota",
+      "model": "Camry TRD",
+      "display_name": "2023 Toyota Camry TRD"
+    },
+    "3849": {
+      "year": 2023,
+      "make": "Ford",
+      "model": "F-150 Raptor R",
+      "display_name": "2023 Ford F-150 Raptor R"
+    },
+    "3850": {
+      "year": 2021,
+      "make": "Dodge",
+      "model": "Durango SRT Hellcat",
+      "display_name": "2021 Dodge Durango SRT Hellcat"
+    },
+    "3851": {
+      "year": 1991,
+      "make": "Toyota",
+      "model": "Sera",
+      "display_name": "1991 Toyota Sera"
+    },
+    "3852": {
+      "year": 1991,
+      "make": "Honda",
+      "model": "Beat",
+      "display_name": "1991 Honda Beat"
+    },
+    "3854": {
+      "year": 1993,
+      "make": "Autozam",
+      "model": "AZ-1",
+      "display_name": "1993 Autozam AZ-1"
+    },
+    "3855": {
+      "year": 1991,
+      "make": "Nissan",
+      "model": "Figaro",
+      "display_name": "1991 Nissan Figaro"
+    },
+    "3856": {
+      "year": 1987,
+      "make": "Nissan",
+      "model": "Be-1",
+      "display_name": "1987 Nissan Be-1"
+    },
+    "3858": {
+      "year": 1997,
+      "make": "Nissan",
+      "model": "Stagea RS Four V",
+      "display_name": "1997 Nissan Stagea RS Four V"
+    },
+    "3859": {
+      "year": 1984,
+      "make": "Honda",
+      "model": "City E II",
+      "display_name": "1984 Honda City E II"
+    },
+    "3860": {
+      "year": 1989,
+      "make": "Nissan",
+      "model": "S-Cargo",
+      "display_name": "1989 Nissan S-Cargo"
+    },
+    "3865": {
+      "year": 1994,
+      "make": "Honda",
+      "model": "Acty",
+      "display_name": "1994 Honda Acty"
+    },
+    "3880": {
+      "year": 2023,
+      "make": "Toyota",
+      "model": "GR Corolla",
+      "display_name": "2023 Toyota GR Corolla"
+    },
+    "3886": {
+      "year": 1995,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution III GSR",
+      "display_name": "1995 Mitsubishi Lancer Evolution III GSR"
+    },
+    "3891": {
+      "year": 2024,
+      "make": "Lamborghini",
+      "model": "Revuelto",
+      "display_name": "2024 Lamborghini Revuelto"
+    },
+    "3895": {
+      "year": 2020,
+      "make": "Mercedes-AMG",
+      "model": "SLC 43 Final Edition",
+      "display_name": "2020 Mercedes-AMG SLC 43 Final Edition"
+    },
+    "3903": {
+      "year": 2023,
+      "make": "Ford",
+      "model": "Fiesta ST",
+      "display_name": "2023 Ford Fiesta ST"
+    },
+    "3904": {
+      "year": 2022,
+      "make": "Ford",
+      "model": "Focus ST",
+      "display_name": "2022 Ford Focus ST"
+    },
+    "3908": {
+      "year": 2022,
+      "make": "Honda",
+      "model": "e",
+      "display_name": "2022 Honda e"
+    },
+    "3910": {
+      "year": 2023,
+      "make": "Porsche",
+      "model": "911 Rallye",
+      "display_name": "2023 Porsche 911 Rallye"
+    },
+    "3914": {
+      "year": 1991,
+      "make": "Toyota",
+      "model": "Chaser GT Twin Turbo",
+      "display_name": "1991 Toyota Chaser GT Twin Turbo"
+    },
+    "3917": {
+      "year": 2023,
+      "make": "Audi",
+      "model": "R8 Coupé V10 GT RWD",
+      "display_name": "2023 Audi R8 Coupé V10 GT RWD"
+    },
+    "3918": {
+      "year": 1995,
+      "make": "Nissan",
+      "model": "Gloria Gran Turismo",
+      "display_name": "1995 Nissan Gloria Gran Turismo"
+    },
+    "3921": {
+      "year": 2024,
+      "make": "Nissan",
+      "model": "Z NISMO",
+      "display_name": "2024 Nissan Z NISMO"
+    },
+    "3928": {
+      "year": 2021,
+      "make": "Hyundai",
+      "model": "i20 N",
+      "display_name": "2021 Hyundai i20 N"
+    },
+    "3929": {
+      "year": 1989,
+      "make": "Nissan",
+      "model": "PAO",
+      "display_name": "1989 Nissan PAO"
+    },
+    "3933": {
+      "year": 1997,
+      "make": "Toyota",
+      "model": "Chaser 2.5 Tourer V",
+      "display_name": "1997 Toyota Chaser 2.5 Tourer V"
+    },
+    "3937": {
+      "year": 1970,
+      "make": "Honda",
+      "model": "N600",
+      "display_name": "1970 Honda N600"
+    },
+    "3950": {
+      "year": 1967,
+      "make": "Ferrari",
+      "model": "275 GTB4 Spider",
+      "display_name": "1967 Ferrari 275 GTB4 Spider"
+    },
+    "3953": {
+      "year": 2023,
+      "make": "Porsche",
+      "model": "911 Turbo S",
+      "display_name": "2023 Porsche 911 Turbo S"
+    },
+    "3954": {
+      "year": 2024,
+      "make": "Chevrolet",
+      "model": "Camaro ZL1",
+      "display_name": "2024 Chevrolet Camaro ZL1"
+    },
+    "3955": {
+      "year": 2024,
+      "make": "Ram",
+      "model": "1500 TRX",
+      "display_name": "2024 Ram 1500 TRX"
+    },
+    "3959": {
+      "year": 2022,
+      "make": "Dodge",
+      "model": "Challenger SRT Super Stock",
+      "display_name": "2022 Dodge Challenger SRT Super Stock"
+    },
+    "3960": {
+      "year": 1994,
+      "make": "Subaru",
+      "model": "Vivio RX-R",
+      "display_name": "1994 Subaru Vivio RX-R"
+    },
+    "3964": {
+      "year": 2024,
+      "make": "Toyota",
+      "model": "Prius Prime XSE Premium",
+      "display_name": "2024 Toyota Prius Prime XSE Premium"
+    },
+    "3983": {
+      "year": 2024,
+      "make": "BMW",
+      "model": "X6 M Competition",
+      "display_name": "2024 BMW X6 M Competition"
+    },
+    "3999": {
+      "year": 2002,
+      "make": "Nissan",
+      "model": "Silvia Spec-R",
+      "display_name": "2002 Nissan Silvia Spec-R"
+    },
+    "4002": {
+      "year": 2024,
+      "make": "Lamborghini",
+      "model": "Temerario",
+      "display_name": "2024 Lamborghini Temerario"
+    },
+    "4034": {
+      "year": 1972,
+      "make": "Honda",
+      "model": "Z GT",
+      "display_name": "1972 Honda Z GT"
+    },
+    "4038": {
+      "year": 1999,
+      "make": "Toyota",
+      "model": "Altezza RS200 Z EDITION",
+      "display_name": "1999 Toyota Altezza RS200 Z EDITION"
+    },
+    "4055": {
+      "year": 1996,
+      "make": "Toyota",
+      "model": "Starlet Glanza V",
+      "display_name": "1996 Toyota Starlet Glanza V"
+    },
+    "4057": {
+      "year": 1997,
+      "make": "Nissan",
+      "model": "Skyline GT-R V-Spec",
+      "display_name": "1997 Nissan Skyline GT-R V-Spec"
+    },
+    "4069": {
+      "year": 1988,
+      "make": "BMW",
+      "model": "M3",
+      "display_name": "1988 BMW M3"
+    },
+    "4081": {
+      "year": 2024,
+      "make": "Koenigsegg",
+      "model": "Gemera",
+      "display_name": "2024 Koenigsegg Gemera"
+    },
+    "4084": {
+      "year": 1972,
+      "make": "Datsun",
+      "model": "#269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'",
+      "display_name": "1972 Datsun #269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'"
+    },
+    "4085": {
+      "year": 1990,
+      "make": "Mitsubishi",
+      "model": "#269 Attacking the Clock Racing Minicab Time Attack",
+      "display_name": "1990 Mitsubishi #269 Attacking the Clock Racing Minicab Time Attack"
+    },
+    "4090": {
+      "year": 2001,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution VI GSR TM Edition",
+      "display_name": "2001 Mitsubishi Lancer Evolution VI GSR TM Edition"
+    },
+    "4094": {
+      "year": 2024,
+      "make": "Nissan",
+      "model": "GT-R Nismo",
+      "display_name": "2024 Nissan GT-R Nismo"
+    },
+    "4114": {
+      "year": 1992,
+      "make": "Nissan",
+      "model": "Skyline GT-R",
+      "display_name": "1992 Nissan Skyline GT-R"
+    },
+    "4119": {
+      "year": 1998,
+      "make": "Nissan",
+      "model": "Skyline GT-R 40th Anniversary",
+      "display_name": "1998 Nissan Skyline GT-R 40th Anniversary"
+    },
+    "4144": {
+      "year": 1992,
+      "make": "Mazda",
+      "model": "RX-7 Type R",
+      "display_name": "1992 Mazda RX-7 Type R"
+    },
+    "4145": {
+      "year": 1974,
+      "make": "Mazda",
+      "model": "#123 Mad Mike 808 Wagon 'FURSTY'",
+      "display_name": "1974 Mazda #123 Mad Mike 808 Wagon 'FURSTY'"
+    },
+    "4147": {
+      "year": 2021,
+      "make": "Alfa Romeo",
+      "model": "Giulia GTAm",
+      "display_name": "2021 Alfa Romeo Giulia GTAm"
+    },
+    "4156": {
+      "year": 2025,
+      "make": "Ferrari",
+      "model": "F80",
+      "display_name": "2025 Ferrari F80"
+    },
+    "4158": {
+      "year": 2010,
+      "make": "Lexus",
+      "model": "LFA Forza Edition",
+      "display_name": "2010 Lexus LFA Forza Edition"
+    },
+    "4160": {
+      "year": 1989,
+      "make": "Nissan",
+      "model": "S-Cargo Forza Edition",
+      "display_name": "1989 Nissan S-Cargo Forza Edition"
+    },
+    "4162": {
+      "year": 1985,
+      "make": "Toyota",
+      "model": "Sprinter Trueno GT Apex Forza Edition",
+      "display_name": "1985 Toyota Sprinter Trueno GT Apex Forza Edition"
+    },
+    "4163": {
+      "year": 2013,
+      "make": "Wuling",
+      "model": "Sunshine S Forza Edition",
+      "display_name": "2013 Wuling Sunshine S Forza Edition"
+    },
+    "4164": {
+      "year": 2022,
+      "make": "Subaru",
+      "model": "BRZ Forza Edition",
+      "display_name": "2022 Subaru BRZ Forza Edition"
+    },
+    "4165": {
+      "year": 1973,
+      "make": "Mazda",
+      "model": "RX-3 Forza Edition",
+      "display_name": "1973 Mazda RX-3 Forza Edition"
+    },
+    "4166": {
+      "year": 2023,
+      "make": "BMW",
+      "model": "M2 Forza Edition",
+      "display_name": "2023 BMW M2 Forza Edition"
+    },
+    "4167": {
+      "year": 2012,
+      "make": "Nissan",
+      "model": "GT-R Black Edition (R35) Forza Edition",
+      "display_name": "2012 Nissan GT-R Black Edition (R35) Forza Edition"
+    },
+    "4168": {
+      "year": 1968,
+      "make": "Ford",
+      "model": "Mustang GT 2+2 Fastback Forza Edition",
+      "display_name": "1968 Ford Mustang GT 2+2 Fastback Forza Edition"
+    },
+    "4169": {
+      "year": 1990,
+      "make": "Mercedes-Benz",
+      "model": "190 E 2.5-16 Evolution II Forza Edition",
+      "display_name": "1990 Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition"
+    },
+    "4171": {
+      "year": 1986,
+      "make": "Ford",
+      "model": "F-150 XLT Lariat Forza Edition",
+      "display_name": "1986 Ford F-150 XLT Lariat Forza Edition"
+    },
+    "4175": {
+      "year": 2020,
+      "make": "Ford",
+      "model": "Super Duty F-450 DRW PLATINUM Forza Edition",
+      "display_name": "2020 Ford Super Duty F-450 DRW PLATINUM Forza Edition"
+    },
+    "4179": {
+      "year": 1990,
+      "make": "Nissan",
+      "model": "#12 Skyline GT-R (BNR32 Gr.A) JTC",
+      "display_name": "1990 Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC"
+    },
+    "4197": {
+      "year": 1994,
+      "make": "Mazda",
+      "model": "MX-5 Miata Forza Edition",
+      "display_name": "1994 Mazda MX-5 Miata Forza Edition"
+    },
+    "4198": {
+      "year": 1999,
+      "make": "Dodge",
+      "model": "Viper GTS ACR Forza Edition",
+      "display_name": "1999 Dodge Viper GTS ACR Forza Edition"
+    },
+    "4199": {
+      "year": 2019,
+      "make": "Toyota",
+      "model": "Tacoma TRD Pro Forza Edition",
+      "display_name": "2019 Toyota Tacoma TRD Pro Forza Edition"
+    },
+    "4200": {
+      "year": 2020,
+      "make": "Lotus",
+      "model": "Evija Forza Edition",
+      "display_name": "2020 Lotus Evija Forza Edition"
+    },
+    "4205": {
+      "year": 1972,
+      "make": "Nissan",
+      "model": "Patrol",
+      "display_name": "1972 Nissan Patrol"
+    },
+    "4210": {
+      "year": 2018,
+      "make": "Lotus",
+      "model": "Scura Motorsports Exige WTAC",
+      "display_name": "2018 Lotus Scura Motorsports Exige WTAC"
+    },
+    "4211": {
+      "year": 1990,
+      "make": "Honda",
+      "model": "#19 101 Motorsport CRX WTAC",
+      "display_name": "1990 Honda #19 101 Motorsport CRX WTAC"
+    },
+    "4212": {
+      "year": 1993,
+      "make": "Nissan",
+      "model": "#32 Skyline WTAC 'Xtreme GTR'",
+      "display_name": "1993 Nissan #32 Skyline WTAC 'Xtreme GTR'"
+    },
+    "4213": {
+      "year": 2000,
+      "make": "Nissan",
+      "model": "#36 Dream Project S15 Silvia WTAC",
+      "display_name": "2000 Nissan #36 Dream Project S15 Silvia WTAC"
+    },
+    "4214": {
+      "year": 1995,
+      "make": "Toyota",
+      "model": "J&J Motorsport Supra WTAC",
+      "display_name": "1995 Toyota J&J Motorsport Supra WTAC"
+    },
+    "4221": {
+      "year": 2025,
+      "make": "GR",
+      "model": "GT Prototype",
+      "display_name": "2025 GR GT Prototype"
+    },
+    "4222": {
+      "year": 1989,
+      "make": "Nissan",
+      "model": "Silvia K's",
+      "display_name": "1989 Nissan Silvia K's"
+    },
+    "4223": {
+      "year": 2000,
+      "make": "Nissan",
+      "model": "Skyline GT-R V Spec II",
+      "display_name": "2000 Nissan Skyline GT-R V Spec II"
+    },
+    "4231": {
+      "year": 2004,
+      "make": "Honda",
+      "model": "#52 Evasive Motorsports S2000 WTAC",
+      "display_name": "2004 Honda #52 Evasive Motorsports S2000 WTAC"
+    },
+    "4232": {
+      "year": 2005,
+      "make": "Porsche",
+      "model": "Cayman GT3 WTAC",
+      "display_name": "2005 Porsche Cayman GT3 WTAC"
+    },
+    "4234": {
+      "year": 2008,
+      "make": "Honda",
+      "model": "Civic Type R (FD2)",
+      "display_name": "2008 Honda Civic Type R (FD2)"
+    },
+    "4238": {
+      "year": 1983,
+      "make": "Nissan",
+      "model": "Skyline 2000 Turbo RS",
+      "display_name": "1983 Nissan Skyline 2000 Turbo RS"
+    },
+    "4254": {
+      "year": 2001,
+      "make": "Honda",
+      "model": "#33 Integra WTAC",
+      "display_name": "2001 Honda #33 Integra WTAC"
+    },
+    "4255": {
+      "year": 2005,
+      "make": "Toyota",
+      "model": "Crown Super Deluxe Taxi",
+      "display_name": "2005 Toyota Crown Super Deluxe Taxi"
+    },
+    "4257": {
+      "year": 2017,
+      "make": "Toyota",
+      "model": "JPN Taxi",
+      "display_name": "2017 Toyota JPN Taxi"
+    },
+    "4259": {
+      "year": 2013,
+      "make": "Toyota",
+      "model": "86 Stories",
+      "display_name": "2013 Toyota 86 Stories"
+    },
+    "4264": {
+      "year": 2018,
+      "make": "Ferrari",
+      "model": "FXX-K Evo Welcome Pack",
+      "display_name": "2018 Ferrari FXX-K Evo Welcome Pack"
+    },
+    "4265": {
+      "year": 2020,
+      "make": "Mercedes-AMG",
+      "model": "GT Black Series Welcome Pack",
+      "display_name": "2020 Mercedes-AMG GT Black Series Welcome Pack"
+    },
+    "4266": {
+      "year": 2021,
+      "make": "BMW",
+      "model": "M4 Competition Coupé Welcome Pack",
+      "display_name": "2021 BMW M4 Competition Coupé Welcome Pack"
+    },
+    "4267": {
+      "year": 2004,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution VIII MR Welcome Pack",
+      "display_name": "2004 Mitsubishi Lancer Evolution VIII MR Welcome Pack"
+    },
+    "4268": {
+      "year": 2023,
+      "make": "Ford",
+      "model": "F-150 Raptor R Welcome Pack",
+      "display_name": "2023 Ford F-150 Raptor R Welcome Pack"
+    },
+    "4277": {
+      "year": 1992,
+      "make": "Honda",
+      "model": "#21 Hardrace/JDMYard Civic WTAC",
+      "display_name": "1992 Honda #21 Hardrace/JDMYard Civic WTAC"
+    },
+    "4278": {
+      "year": 2025,
+      "make": "Toyota",
+      "model": "Land Cruiser",
+      "display_name": "2025 Toyota Land Cruiser"
+    },
+    "4287": {
+      "year": 1994,
+      "make": "Subaru",
+      "model": "Vivio RX-R Forza Edition",
+      "display_name": "1994 Subaru Vivio RX-R Forza Edition"
+    },
+    "4313": {
+      "year": 1970,
+      "make": "Porsche",
+      "model": "#3 917 LH Forza Edition",
+      "display_name": "1970 Porsche #3 917 LH Forza Edition"
+    },
+    "4315": {
+      "year": 1962,
+      "make": "Peel",
+      "model": "P50 Trolli Edition",
+      "display_name": "1962 Peel P50 Trolli Edition"
+    },
+    "4341": {
+      "year": 2017,
+      "make": "Ferrari",
+      "model": "J50",
+      "display_name": "2017 Ferrari J50"
+    },
+    "4342": {
+      "year": 1965,
+      "make": "Toyota",
+      "model": "Sports 800 Fanta Edition",
+      "display_name": "1965 Toyota Sports 800 Fanta Edition"
+    }
+  }
+}
