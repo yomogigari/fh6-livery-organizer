@@ -8,6 +8,7 @@ import sys
 import tempfile
 
 
+
 HERE = Path(__file__).resolve().parents[1]
 MODULE_PATH = HERE / "src" / "organizer" / "vehicle_metadata_update.py"
 
@@ -107,6 +108,8 @@ def manifest_for(data: bytes, value: dict) -> bytes:
             "mode": "optional",
         },
     }
+    if value.get("curation") is not None:
+        manifest["metadata"]["curation"] = value["curation"]
     return (
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
     ).encode("utf-8")
@@ -232,6 +235,46 @@ def test_download_and_cache_persists_manifest_receipt():
         assert cache.read_bytes() == data
         assert receipt.read_bytes() == manifest
         assert state["file_sha256"] == hashlib.sha256(data).hexdigest()
+
+
+def test_curated_cache_manifest_curation_must_match_metadata():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        bundled = root / "bundled.json"
+        cache = root / "cache" / "fh6-vehicle-metadata.json"
+
+        write_payload(bundled, payload("2026-08-13"))
+
+        value = payload("2026-09-01", extra=True)
+        value["curation"] = {
+            "in_game_vehicle_name_overrides": {
+                "record_count": 1,
+                "records_sha256": "1" * 64,
+                "scope": "display_name",
+                "basis": "FH6 in-game vehicle UI",
+            }
+        }
+        data = (
+            json.dumps(value, ensure_ascii=False, indent=2) + "\n"
+        ).encode("utf-8")
+        manifest = manifest_for(data, value)
+
+        mod.cache_validated_metadata_package(cache, data, manifest)
+        receipt = mod.cached_vehicle_metadata_manifest_path(cache)
+        receipt_payload = json.loads(receipt.read_text(encoding="utf-8"))
+        receipt_payload["metadata"]["curation"][
+            "in_game_vehicle_name_overrides"
+        ]["records_sha256"] = "2" * 64
+        receipt.write_text(
+            json.dumps(receipt_payload, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        selected = mod.select_runtime_vehicle_metadata_path(
+            cache,
+            bundled_path=bundled,
+        )
+        assert selected == bundled
 
 
 def test_invalid_receipt_falls_back_to_bundled():

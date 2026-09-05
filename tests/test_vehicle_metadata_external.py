@@ -13,7 +13,7 @@ METADATA_PATH = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata.json"
 ORGANIZER_PATH = REPO_ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
 
 EXPECTED_RECORD_COUNT = 636
-EXPECTED_MAPPING_SHA256 = "cdd6e4ca8115f6a12ec82974dbc6b65dec2675f3f3029d4fc9a34bc116b876e9"
+EXPECTED_MAPPING_SHA256 = "2cc931208e7bbcdf5764f0d80793a3c5dc6647328272203e6345eba9acc7e528"
 EXPECTED_SOURCE_URL = 'https://forza.net/fh6cars'
 EXPECTED_SOURCE_UPDATED = '2026-08-13'
 
@@ -49,6 +49,23 @@ def test_vehicle_metadata_baseline_equivalence():
     assert payload["source"]["updated"] == EXPECTED_SOURCE_UPDATED
     assert len(payload["records"]) == EXPECTED_RECORD_COUNT
     assert _fingerprint(payload) == EXPECTED_MAPPING_SHA256
+    assert payload["records"]["3735"] == {
+        "year": 2022,
+        "make": "Subaru",
+        "model": "BRZ",
+        "display_name": "2022 Subaru BRZS",
+    }
+    assert payload["curation"] == {
+        "in_game_vehicle_name_overrides": {
+            "record_count": 1,
+            "records_sha256": (
+                "37b01e0da16e3ef88188e01f4cceb634"
+                "eede87ad35afe444f703de6aad9e64be"
+            ),
+            "scope": "display_name",
+            "basis": "FH6 in-game vehicle UI",
+        }
+    }
 
 
 def test_embedded_vehicle_metadata_was_removed():
@@ -57,6 +74,6 @@ def test_embedded_vehicle_metadata_was_removed():
     assert 'VEHICLE_METADATA_FILENAME = "fh6-vehicle-metadata.json"' in source
     assert "vehicle_metadata_runtime_path()" in source
     assert "select_runtime_vehicle_metadata_path(" in source
-    assert 'VERSION = "0.4.59-r11"' in source
+    assert 'VERSION = "0.4.59-r12"' in source
     assert "body.compact.fh6-my-design-view-mode .fh6-my-design-column" in source
     assert "clamp(150px,12vw,180px)" in source

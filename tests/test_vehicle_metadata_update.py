@@ -68,7 +68,7 @@ def write_json(path: Path, payload: dict) -> bytes:
 
 def manifest_for_metadata(path: Path, *, policy: str = "optional") -> dict:
     local = mod.inspect_local_metadata(path)
-    return {
+    manifest = {
         "schema_version": 1,
         "dataset": "fh6-vehicle-metadata-manifest",
         "metadata": {
@@ -87,6 +87,9 @@ def manifest_for_metadata(path: Path, *, policy: str = "optional") -> dict:
             "mode": policy,
         },
     }
+    if local["curation"] is not None:
+        manifest["metadata"]["curation"] = local["curation"]
+    return manifest
 
 
 def manifest_bytes(payload: dict) -> bytes:
@@ -335,6 +338,58 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
             body,
         )
 
+    def test_curation_validation_and_manifest_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            local = root / "metadata.json"
+            value = metadata_payload(updated="2026-09-01")
+            value["curation"] = {
+                "in_game_vehicle_name_overrides": {
+                    "record_count": 1,
+                    "records_sha256": "1" * 64,
+                    "scope": "display_name",
+                    "basis": "FH6 in-game vehicle UI",
+                }
+            }
+            data = write_json(local, value)
+
+            state = mod.inspect_metadata_bytes(data)
+            self.assertEqual(
+                state["curation"],
+                value["curation"],
+            )
+
+            manifest = manifest_for_metadata(local)
+            manifest_state = mod.validate_manifest_bytes(
+                manifest_bytes(manifest)
+            )
+            self.assertEqual(
+                manifest_state["curation"],
+                value["curation"],
+            )
+
+            tampered = json.loads(json.dumps(manifest))
+            tampered["metadata"]["curation"][
+                "in_game_vehicle_name_overrides"
+            ]["records_sha256"] = "2" * 64
+            with self.assertRaises(mod.VehicleMetadataUpdateError):
+                mod.validate_metadata_bytes_against_manifest(
+                    data,
+                    mod.validate_manifest_bytes(
+                        manifest_bytes(tampered)
+                    ),
+                )
+
+            invalid = json.loads(json.dumps(value))
+            invalid["curation"]["in_game_vehicle_name_overrides"][
+                "scope"
+            ] = "model"
+            invalid_data = (
+                json.dumps(invalid, ensure_ascii=False, indent=2) + "\n"
+            ).encode("utf-8")
+            with self.assertRaises(mod.VehicleMetadataUpdateError):
+                mod.inspect_metadata_bytes(invalid_data)
+
     def test_repository_manifest_matches_local_metadata(self) -> None:
         metadata_path = HERE / "src" / "organizer" / "fh6-vehicle-metadata.json"
         manifest_path = (
@@ -350,6 +405,21 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
         self.assertEqual(state["file_sha256"], local["file_sha256"])
         self.assertEqual(state["file_size"], local["file_size"])
         self.assertEqual(state["metadata_url"], mod.DEFAULT_METADATA_URL)
+        self.assertEqual(state["curation"], local["curation"])
+        self.assertEqual(
+            state["curation"],
+            {
+                "in_game_vehicle_name_overrides": {
+                    "record_count": 1,
+                    "records_sha256": (
+                        "37b01e0da16e3ef88188e01f4cceb634"
+                        "eede87ad35afe444f703de6aad9e64be"
+                    ),
+                    "scope": "display_name",
+                    "basis": "FH6 in-game vehicle UI",
+                }
+            },
+        )
 
         result = mod.check_vehicle_metadata_update_from_bytes(
             metadata_path,

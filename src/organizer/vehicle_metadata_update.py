@@ -3,11 +3,11 @@
 """
 Livery Organizer for FH6 - optional vehicle metadata update checker.
 
-v0.4.59-r06:
-- Explicit/manual check only.
-- The local fh6-vehicle-metadata.json always remains the runtime source.
-- No metadata download or replacement is performed.
-- Network/manifest errors never modify local metadata.
+v0.4.59-r12:
+- Explicit/manual check and optional verified cache download remain unchanged.
+- Public vehicle metadata may include audited FH6 in-game display-name curation.
+- Metadata and manifest curation provenance must agree exactly.
+- Network/manifest errors never modify bundled metadata.
 """
 
 from __future__ import annotations
@@ -30,6 +30,10 @@ MANIFEST_DATASET = "fh6-vehicle-metadata-manifest"
 METADATA_SCHEMA_VERSION = 1
 METADATA_DATASET = "fh6-official-vehicle-metadata"
 SUPPORTED_UPDATE_POLICY = "optional"
+
+CURATION_OVERRIDE_KEY = "in_game_vehicle_name_overrides"
+CURATION_OVERRIDE_SCOPE = "display_name"
+CURATION_OVERRIDE_BASIS = "FH6 in-game vehicle UI"
 
 DEFAULT_METADATA_URL = (
     "https://raw.githubusercontent.com/yomogigari/"
@@ -109,6 +113,78 @@ def _require_sha256(value: object, *, label: str) -> str:
     return value
 
 
+
+def validate_vehicle_metadata_curation(
+    curation: object,
+    *,
+    label: str,
+) -> dict[str, Any] | None:
+    """
+    Validate optional public-safe FH6 in-game vehicle-name curation provenance.
+
+    Older metadata/manifest files without curation remain compatible.
+    """
+    if curation is None:
+        return None
+    if not isinstance(curation, dict):
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation must be an object"
+        )
+    if set(curation) != {CURATION_OVERRIDE_KEY}:
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation has unsupported keys"
+        )
+
+    override = curation.get(CURATION_OVERRIDE_KEY)
+    if not isinstance(override, dict):
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation.{CURATION_OVERRIDE_KEY} must be an object"
+        )
+
+    expected_fields = {"record_count", "records_sha256", "scope", "basis"}
+    if set(override) != expected_fields:
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation.{CURATION_OVERRIDE_KEY} has invalid fields"
+        )
+
+    record_count = override.get("record_count")
+    if (
+        isinstance(record_count, bool)
+        or not isinstance(record_count, int)
+        or record_count < 1
+    ):
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation.{CURATION_OVERRIDE_KEY}.record_count "
+            "must be a positive integer"
+        )
+
+    records_sha256 = _require_sha256(
+        override.get("records_sha256"),
+        label=(
+            f"{label}: curation.{CURATION_OVERRIDE_KEY}.records_sha256"
+        ),
+    )
+    if override.get("scope") != CURATION_OVERRIDE_SCOPE:
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation.{CURATION_OVERRIDE_KEY}.scope "
+            f"must be {CURATION_OVERRIDE_SCOPE!r}"
+        )
+    if override.get("basis") != CURATION_OVERRIDE_BASIS:
+        raise VehicleMetadataUpdateError(
+            f"{label}: curation.{CURATION_OVERRIDE_KEY}.basis "
+            f"must be {CURATION_OVERRIDE_BASIS!r}"
+        )
+
+    return {
+        CURATION_OVERRIDE_KEY: {
+            "record_count": record_count,
+            "records_sha256": records_sha256,
+            "scope": CURATION_OVERRIDE_SCOPE,
+            "basis": CURATION_OVERRIDE_BASIS,
+        }
+    }
+
+
 def _require_iso_date(value: object, *, label: str) -> str:
     if not isinstance(value, str):
         raise VehicleMetadataUpdateError(f"{label}: expected YYYY-MM-DD")
@@ -164,6 +240,10 @@ def inspect_local_metadata(path: Path) -> dict[str, Any]:
 
     source = payload.get("source")
     records = payload.get("records")
+    curation = validate_vehicle_metadata_curation(
+        payload.get("curation"),
+        label="local metadata",
+    )
     if not isinstance(source, dict):
         raise VehicleMetadataUpdateError(
             "local metadata source must be an object"
@@ -211,6 +291,7 @@ def inspect_local_metadata(path: Path) -> dict[str, Any]:
         "records_sha256": _metadata_records_fingerprint(records),
         "file_sha256": _sha256_bytes(data),
         "file_size": len(data),
+        "curation": curation,
     }
 
 
@@ -311,6 +392,11 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
                 "manifest metadata.url must use https://"
             )
 
+    curation = validate_vehicle_metadata_curation(
+        metadata.get("curation"),
+        label="manifest metadata",
+    )
+
     return {
         "source_updated": source_updated,
         "record_count": record_count,
@@ -318,6 +404,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
         "file_sha256": file_sha256,
         "file_size": file_size,
         "metadata_url": metadata_url,
+        "curation": curation,
     }
 
 
@@ -380,6 +467,10 @@ def inspect_metadata_bytes(data: bytes, *, label: str = "metadata") -> dict[str,
 
     source = payload.get("source")
     records = payload.get("records")
+    curation = validate_vehicle_metadata_curation(
+        payload.get("curation"),
+        label=label,
+    )
     if not isinstance(source, dict):
         raise VehicleMetadataUpdateError(
             f"{label}: source must be an object"
@@ -429,6 +520,7 @@ def inspect_metadata_bytes(data: bytes, *, label: str = "metadata") -> dict[str,
         "records_sha256": _metadata_records_fingerprint(records),
         "file_sha256": _sha256_bytes(data),
         "file_size": len(data),
+        "curation": curation,
     }
 
 
@@ -447,6 +539,7 @@ def validate_metadata_bytes_against_manifest(
         "records_sha256": manifest_state["records_sha256"],
         "file_sha256": manifest_state["file_sha256"],
         "file_size": manifest_state["file_size"],
+        "curation": manifest_state.get("curation"),
     }
     for key, expected_value in expected.items():
         if state[key] != expected_value:

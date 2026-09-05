@@ -6,10 +6,18 @@
     "schema_version": 1,
     "source_updated": "2026-08-13",
     "record_count": 636,
-    "records_sha256": "cdd6e4ca8115f6a12ec82974dbc6b65dec2675f3f3029d4fc9a34bc116b876e9",
-    "file_sha256": "2d3d017920b2a0ef02049434e19f62c0ca0cd07f2dae0e7730b48e9e42f5b348",
-    "file_size": 95942,
-    "generated_from": "Livery Organizer for FH6 v0.4.59",
+    "records_sha256": "2cc931208e7bbcdf5764f0d80793a3c5dc6647328272203e6345eba9acc7e528",
+    "file_sha256": "49f8c77876c6608944770389ba586fb50934872f80cb7432e2a58049ffb4abe8",
+    "file_size": 96201,
+    "generated_from": "Vehicle DB Generator for FH6 v0.6.1",
+    "curation": {
+      "in_game_vehicle_name_overrides": {
+        "record_count": 1,
+        "records_sha256": "37b01e0da16e3ef88188e01f4cceb634eede87ad35afe444f703de6aad9e64be",
+        "scope": "display_name",
+        "basis": "FH6 in-game vehicle UI"
+      }
+    },
     "url": "https://raw.githubusercontent.com/yomogigari/fh6-livery-organizer/main/src/organizer/fh6-vehicle-metadata.json"
   },
   "compatibility": {

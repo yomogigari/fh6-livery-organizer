@@ -6,7 +6,7 @@
     "url": "https://forza.net/fh6cars",
     "updated": "2026-08-13"
   },
-  "generated_from": "Livery Organizer for FH6 v0.4.59",
+  "generated_from": "Vehicle DB Generator for FH6 v0.6.1",
   "records": {
     "247": {
       "year": 1969,
@@ -3030,7 +3030,7 @@
       "year": 2022,
       "make": "Subaru",
       "model": "BRZ",
-      "display_name": "2022 Subaru BRZ"
+      "display_name": "2022 Subaru BRZS"
     },
     "3736": {
       "year": 2022,
@@ -3823,6 +3823,14 @@
       "make": "Toyota",
       "model": "Sports 800 Fanta Edition",
       "display_name": "1965 Toyota Sports 800 Fanta Edition"
+    }
+  },
+  "curation": {
+    "in_game_vehicle_name_overrides": {
+      "record_count": 1,
+      "records_sha256": "37b01e0da16e3ef88188e01f4cceb634eede87ad35afe444f703de6aad9e64be",
+      "scope": "display_name",
+      "basis": "FH6 in-game vehicle UI"
     }
   }
 }

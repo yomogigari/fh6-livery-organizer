@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r11
+Livery Organizer for FH6 v0.4.59-r12
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -105,6 +105,7 @@ try:
         format_update_check_result,
         gui_update_presentation,
         select_runtime_vehicle_metadata_path,
+        validate_vehicle_metadata_curation,
         update_cli_text,
         update_gui_text,
     )
@@ -121,6 +122,7 @@ except ImportError:
         format_update_check_result,
         gui_update_presentation,
         select_runtime_vehicle_metadata_path,
+        validate_vehicle_metadata_curation,
         update_cli_text,
         update_gui_text,
     )
@@ -136,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r11"
+VERSION = "0.4.59-r12"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -1365,6 +1367,15 @@ def load_official_vehicle_metadata(
 
     source = payload.get("source")
     records = payload.get("records")
+    try:
+        validate_vehicle_metadata_curation(
+            payload.get("curation"),
+            label="vehicle metadata",
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"vehicle metadata curation is invalid: {metadata_path}: {exc}"
+        ) from exc
     if not isinstance(source, dict):
         raise RuntimeError("vehicle metadata source must be a JSON object")
     if not isinstance(records, dict):
