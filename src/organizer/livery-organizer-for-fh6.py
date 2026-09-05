@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r06
+Livery Organizer for FH6 v0.4.59-r07
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -136,7 +136,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r06"
+VERSION = "0.4.59-r07"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4266,15 +4266,15 @@ def write_report(
   {image_html}
   <div class="body">
     <div class="topline">
-      <label class="select-box" title="一括操作の対象"><input class="card-select" type="checkbox"></label>
+      <label class="select-box compact-optional-selection" title="一括操作の対象"><input class="card-select" type="checkbox"></label>
       <span class="fh6-move-target-group" role="group" aria-label="FH6移動位置">
         <span class="fh6-move-target-caption">FH6移動:</span>
         <button class="pill my-design-index fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{my_design_index_label}</button>
         <button class="pill fh6-my-design-position fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{fh6_my_design_position_label}</button>
       </span>
       <span class="pill new-badge hidden">新規</span>
-      <button class="pill flag-toggle favorite-toggle" type="button">☆ お気に入り</button>
-      <button class="pill flag-toggle review-toggle" type="button">後で確認</button>
+      <button class="pill flag-toggle favorite-toggle compact-optional-flags" type="button">☆ お気に入り</button>
+      <button class="pill flag-toggle review-toggle compact-optional-flags" type="button">後で確認</button>
       {f'<button class="pill exact-duplicate open-exact-duplicate" type="button" title="再DL重複グループを比較して残す1件を選択">再DL重複 {exact_duplicate_count}件</button>' if exact_duplicate_count >= 2 else ''}
       {f'<button class="pill similar compare-similar" type="button" title="類似候補: {html.escape(similar_reason)}">{html.escape(similar_badge_label)} {similar_count}件</button>' if similar_count >= 2 else ''}
       {dup}
@@ -4283,16 +4283,16 @@ def write_report(
     <h3 class="vehicle quick-filter card-vehicle-sort-only"
         data-filter-type="car" data-filter-value="{r.car_id}"
         title="クリックしてこの車種だけ表示">{html.escape(r.vehicle_display_name or f"Car ID {r.car_id:04d}")}</h3>
-    <div class="vehicle-meta">{
+    <div class="vehicle-meta compact-optional-make-year">{
       (f'<button class="link-filter" type="button" data-filter-type="make" data-filter-value="{html.escape((r.vehicle_make or "").lower())}">{html.escape(r.vehicle_make)}</button>' if r.vehicle_make else html.escape(report_fallback_manufacturer))
       + (" / " + str(r.vehicle_year) if r.vehicle_year else "")
     }</div>
-    <div class="asset">{html.escape(r.vehicle_asset or report_fallback_asset)}</div>
+    <div class="asset compact-optional-asset">{html.escape(r.vehicle_asset or report_fallback_asset)}</div>
     <h4>{
       f'<button class="link-filter title-filter" type="button" data-filter-type="title" data-filter-value="{html.escape(r.title)}" title="クリックしてこのタイトルで検索">{html.escape(r.title)}</button>'
       if r.title else html.escape(report_fallback_title)
     }</h4>
-    <p class="desc">{html.escape(r.description or "—")}</p>
+    <p class="desc compact-optional-description">{html.escape(r.description or "—")}</p>
 
     <div class="fh6-creator-display" title="FH6画面の作成者">{
       f'<button class="link-filter" type="button" data-filter-type="creator" data-filter-value="{html.escape((r.creator or "").lower())}">{html.escape(r.creator)}</button>'
@@ -4305,11 +4305,11 @@ def write_report(
         f'<button class="link-filter" type="button" data-filter-type="creator" data-filter-value="{html.escape((r.creator or "").lower())}">{html.escape(r.creator)}</button>'
         if r.creator else "—"
       }</dd>
-      <dt>取得日時</dt><dd>{html.escape(r.timestamp_local_guess)}</dd>
-      <dt>バイナル数</dt><dd>{f"{r.vinyl_count:,}" if r.vinyl_count is not None else "—"}</dd>
+      <dt class="compact-optional-acquired compact-detail-label">取得日時</dt><dd class="compact-optional-acquired compact-detail-value" title="{html.escape(r.timestamp_local_guess)}">{html.escape(r.timestamp_local_guess)}</dd>
+      <dt class="compact-optional-vinyl compact-detail-label">バイナル数</dt><dd class="compact-optional-vinyl compact-detail-value">{f"{r.vinyl_count:,}" if r.vinyl_count is not None else "—"}</dd>
     </dl>
 
-    <details class="personal-meta">
+    <details class="personal-meta compact-optional-personal">
       <summary>タグ・メモ</summary>
       <label>タグ<input class="tag-input" type="text" placeholder="例: 痛車, レーシング"></label>
       <label>メモ<textarea class="note-input" rows="2" placeholder="このペイントについてのメモ"></textarea></label>
@@ -9292,6 +9292,174 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
   .fh6-temp-delete-row button {{ width:100%; }}
 }}
 
+
+/* =======================================================================
+   v0.4.59-r07 — 高密度コンパクト表示 + 表示項目選択
+   ======================================================================= */
+.compact-display-settings {{
+  margin-top:8px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+}}
+.compact-display-settings > summary {{
+  min-height:32px;
+  padding:7px 9px;
+  cursor:pointer;
+  font-size:11px;
+  font-weight:800;
+}}
+.compact-display-settings-body {{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px 8px;
+  padding:0 9px 9px;
+}}
+.compact-display-settings-body label {{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  font-size:10.5px;
+}}
+.compact-display-settings-body input {{
+  flex:0 0 auto;
+}}
+.compact-display-required {{
+  grid-column:1 / -1;
+  line-height:1.45;
+}}
+body.compact .compact-display-settings {{
+  display:block !important;
+}}
+
+body.compact:not(.fh6-my-design-view-mode) .grid {{
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:6px;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card {{
+  border-radius:12px;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card img,
+body.compact:not(.fh6-my-design-view-mode) .card img.livery-image,
+body.compact:not(.fh6-my-design-view-mode) .noimg {{
+  aspect-ratio:2.7 / 1;
+  border-radius:11px 11px 0 0;
+}}
+body.compact:not(.fh6-my-design-view-mode) .body {{
+  padding:4px 5px 5px;
+}}
+body.compact:not(.fh6-my-design-view-mode) .topline {{
+  gap:3px;
+  margin-bottom:2px;
+}}
+body.compact:not(.fh6-my-design-view-mode) .topline .pill {{
+  min-height:22px;
+  padding:2px 5px;
+  font-size:9px;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card-vehicle-sort-only {{
+  margin:2px 0 1px;
+  font-size:10.5px;
+  line-height:1.15;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card h4 {{
+  margin:2px 0 1px;
+  font-size:11.5px;
+  line-height:1.15;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card h4 .title-filter {{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card dl {{
+  display:block;
+  margin:2px 0 1px;
+  font-size:9.5px;
+  line-height:1.2;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card dl dt {{
+  display:none;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card dl dd {{
+  display:block;
+  min-height:0;
+  margin:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card dl dd.fh6-normal-creator-row::before {{
+  content:"@ ";
+  opacity:.6;
+}}
+body.compact:not(.fh6-my-design-view-mode) .compact-detail-value.compact-optional-acquired::before {{
+  content:"取得 ";
+  opacity:.6;
+}}
+body.compact:not(.fh6-my-design-view-mode) .compact-detail-value.compact-optional-vinyl::before {{
+  content:"バイナル ";
+  opacity:.6;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card .decision {{
+  gap:3px;
+  margin-top:3px;
+}}
+body.compact:not(.fh6-my-design-view-mode) .card .decision button {{
+  min-height:25px;
+  padding:2px 1px;
+  border-radius:7px;
+  font-size:9.5px;
+  line-height:1.05;
+}}
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-selection,
+body.compact:not(.fh6-my-design-view-mode) .fh6-move-target-group,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-make-year,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-asset,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-description,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-acquired,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-vinyl,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-personal,
+body.compact:not(.fh6-my-design-view-mode) .compact-optional-flags {{
+  display:none !important;
+}}
+body.compact.compact-show-selection:not(.fh6-my-design-view-mode) .compact-optional-selection {{
+  display:inline-flex !important;
+}}
+body.compact.compact-show-fh6:not(.fh6-my-design-view-mode) .fh6-move-target-group {{
+  display:inline-flex !important;
+}}
+body.compact.compact-show-make-year:not(.fh6-my-design-view-mode) .compact-optional-make-year,
+body.compact.compact-show-asset:not(.fh6-my-design-view-mode) .compact-optional-asset,
+body.compact.compact-show-description:not(.fh6-my-design-view-mode) .compact-optional-description {{
+  display:block !important;
+}}
+body.compact.compact-show-acquired:not(.fh6-my-design-view-mode) .compact-optional-acquired.compact-detail-value,
+body.compact.compact-show-vinyl:not(.fh6-my-design-view-mode) .compact-optional-vinyl.compact-detail-value {{
+  display:block !important;
+}}
+body.compact.compact-show-personal:not(.fh6-my-design-view-mode) .compact-optional-personal {{
+  display:block !important;
+}}
+body.compact.compact-show-flags:not(.fh6-my-design-view-mode) .compact-optional-flags {{
+  display:inline-flex !important;
+}}
+@media (max-width:600px) {{
+  body.compact:not(.fh6-my-design-view-mode) .grid {{
+    grid-template-columns:1fr;
+    gap:8px;
+  }}
+  .compact-display-settings-body {{
+    grid-template-columns:1fr;
+  }}
+  .compact-display-required {{
+    grid-column:auto;
+  }}
+}}
+
 </style>
 </head>
 <body>
@@ -9713,6 +9881,21 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
           <button id="themeToggle" type="button">ダークテーマ</button>
           <button id="compactToggle" type="button">コンパクト表示</button>
         </div>
+        <details id="compactDisplaySettings" class="compact-display-settings">
+          <summary>コンパクト表示項目</summary>
+          <div class="compact-display-settings-body">
+            <span class="small compact-display-required">常に表示: サムネイル・車種・タイトル・作成者・整理状態</span>
+            <label><input type="checkbox" data-compact-field="selection"> 一括選択</label>
+            <label><input type="checkbox" data-compact-field="fh6"> FH6移動位置</label>
+            <label><input type="checkbox" data-compact-field="make-year"> メーカー・年式</label>
+            <label><input type="checkbox" data-compact-field="asset"> 内部アセット名</label>
+            <label><input type="checkbox" data-compact-field="description"> 説明</label>
+            <label><input type="checkbox" data-compact-field="acquired"> 取得日時</label>
+            <label><input type="checkbox" data-compact-field="vinyl"> バイナル数</label>
+            <label><input type="checkbox" data-compact-field="personal"> タグ・メモ</label>
+            <label><input type="checkbox" data-compact-field="flags"> お気に入り・後で確認</label>
+          </div>
+        </details>
       </section>
 
       <section class="secondary-action-group" aria-labelledby="secondaryReviewTitle">
@@ -10289,7 +10472,7 @@ body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !impo
         <p><span class="help-path">上部ツールバー → その他の操作</span></p>
         <table class="help-mini-table">
           <tbody>
-            <tr><th>表示</th><td>ダーク / ライトテーマ、コンパクト表示。</td></tr>
+            <tr><th>表示</th><td>ダーク / ライトテーマ、約150px幅のコンパクト表示。コンパクト表示では追加表示する項目を選択できます。</td></tr>
             <tr><th>連続整理</th><td>次の未決定、未完了車種の最初 / 前 / 次、K/D後の自動移動。</td></tr>
             <tr><th>エクスポート</th><td>全件CSV、表示中CSV、Excel。</td></tr>
             <tr><th>バックアップ・復元</th><td>ユーザーデータ保存 / 復元、判定バックアップ / 復元。</td></tr>
@@ -16176,6 +16359,41 @@ document.getElementById("clearFilters").addEventListener("click", () => {{
   applyAndPersist();
 }});
 
+const COMPACT_FIELD_NAMES = [
+  "selection", "fh6", "make-year", "asset", "description",
+  "acquired", "vinyl", "personal", "flags"
+];
+const DEFAULT_COMPACT_FIELDS = [];
+
+function normalizeCompactFields(value) {{
+  if (!Array.isArray(value)) return [...DEFAULT_COMPACT_FIELDS];
+  return value.filter(name => COMPACT_FIELD_NAMES.includes(String(name)));
+}}
+
+function selectedCompactFields() {{
+  return [...document.querySelectorAll("[data-compact-field]")]
+    .filter(input => input.checked)
+    .map(input => input.dataset.compactField)
+    .filter(name => COMPACT_FIELD_NAMES.includes(name));
+}}
+
+function applyCompactFields(value) {{
+  const selected = new Set(normalizeCompactFields(value));
+  COMPACT_FIELD_NAMES.forEach(name => {{
+    document.body.classList.toggle(`compact-show-${{name}}`, selected.has(name));
+  }});
+  document.querySelectorAll("[data-compact-field]").forEach(input => {{
+    input.checked = selected.has(input.dataset.compactField);
+  }});
+}}
+
+document.querySelectorAll("[data-compact-field]").forEach(input => {{
+  input.addEventListener("change", () => {{
+    applyCompactFields(selectedCompactFields());
+    saveUiState();
+  }});
+}});
+
 document.getElementById("compactToggle").addEventListener("click", () => {{
   document.body.classList.toggle("compact");
   document.getElementById("compactToggle").textContent =
@@ -16751,9 +16969,9 @@ function downloadExcelReport() {{
 }}
 document.getElementById("downloadExcel").addEventListener("click", downloadExcelReport);
 
-const UI_STATE_KEY = "livery-organizer-for-fh6-ui-v3";
-const LEGACY_UI_STATE_KEYS = ["fh6-livery-organizer-ui-v3", "fh6-livery-organizer-ui-v2"];
-const UI_STATE_VERSION = 3;
+const UI_STATE_KEY = "livery-organizer-for-fh6-ui-v4";
+const LEGACY_UI_STATE_KEYS = ["livery-organizer-for-fh6-ui-v3", "fh6-livery-organizer-ui-v3", "fh6-livery-organizer-ui-v2"];
+const UI_STATE_VERSION = 4;
 const FILTER_PRESETS_KEY = "livery-organizer-for-fh6-filter-presets-v1";
 const LEGACY_FILTER_PRESETS_KEYS = ["fh6-livery-filter-presets-v1"];
 
@@ -16772,6 +16990,7 @@ function currentUiState() {{
     vinylMax: vinylMaxInput?.value || "",
     sort: sortOrder.value,
     compact: document.body.classList.contains("compact"),
+    compactFields: selectedCompactFields(),
     similarOnly: similarOnlyMode,
     similarKind: similarKindMode,
     exactDuplicateOnly: exactDuplicateOnlyMode,
@@ -16869,6 +17088,7 @@ function restoreUiState() {{
       creatorMoreToggle.textContent = open ? "作成者を折りたたむ" : creatorMoreToggle.dataset.closedLabel;
     }}
     document.body.classList.toggle("compact", Boolean(state.compact));
+    applyCompactFields(state.compactFields);
     document.getElementById("compactToggle").textContent = document.body.classList.contains("compact") ? "通常表示" : "コンパクト表示";
     sequentialReviewMode = Boolean(state.sequentialReview);
     updateSequentialReviewUi();
@@ -17068,6 +17288,7 @@ document.addEventListener("keydown", e => {{
 }});
 
 multiFilterSelects.forEach(normalizeNativeMultiSelection);
+applyCompactFields(DEFAULT_COMPACT_FIELDS);
 applyScanDiff();
 renderAllDetailFilterChoices();
 updateTagModeUi();

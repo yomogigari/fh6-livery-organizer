@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_v0459_r06(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.59-r06")
+    def test_version_is_v0459_r07(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.59-r07")
 
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
@@ -588,6 +588,29 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn('"クリックしてFH6移動対象に設定":"Click to set as the FH6 move target"', text)
         self.assertIn('"クリックしてFH6移動対象の選択を解除":"Click to clear the FH6 move target selection"', text)
 
+
+    def test_r07_compact_view_is_dense_and_field_selectable(self) -> None:
+        self.organizer.set_language("ja")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn("v0.4.59-r07 — 高密度コンパクト表示 + 表示項目選択", text)
+        self.assertIn("minmax(150px,1fr)", text)
+        self.assertIn('id="compactDisplaySettings"', text)
+        self.assertIn('data-compact-field="acquired"', text)
+        self.assertIn('data-compact-field="vinyl"', text)
+        self.assertIn("compactFields: selectedCompactFields()", text)
+        self.assertIn('const UI_STATE_KEY = "livery-organizer-for-fh6-ui-v4";', text)
+        self.assertIn("applyCompactFields(state.compactFields);", text)
+        self.assertIn("常に表示: サムネイル・車種・タイトル・作成者・整理状態", text)
+
+
 class ExcelLocalizationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -845,7 +868,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 705)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 712)
         self.assertEqual(len(en_locale.REPORT_ATTR), 99)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
