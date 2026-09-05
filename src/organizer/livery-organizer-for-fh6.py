@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r08
+Livery Organizer for FH6 v0.4.59-r09
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -136,7 +136,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r08"
+VERSION = "0.4.59-r09"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4430,7 +4430,7 @@ select, .toolbar button {{
 #secondaryActionsToggle[aria-expanded="true"] {{
   font-weight:700;
 }}
-main {{ padding:20px; max-width:1800px; margin:auto; }}
+main {{ padding:20px; width:100%; max-width:none; margin:0; }}
 .summary {{
   padding:12px 14px; border:1px solid color-mix(in srgb, CanvasText 25%, transparent);
   border-radius:10px; margin-bottom:18px;
@@ -9457,6 +9457,22 @@ body.compact.compact-show-flags:not(.fh6-my-design-view-mode) .compact-optional-
   }}
   .compact-display-required {{
     grid-column:auto;
+  }}
+}}
+
+
+/* =======================================================================
+   v0.4.59-r09 — デスクトップ横幅をカード領域へ最大活用
+   ======================================================================= */
+/* 1800pxの上限を撤廃し、横長・高解像度ディスプレイでもブラウザの利用可能幅を
+   カード一覧へそのまま割り当てます。カード幅やモバイル時の1列表示は既存ルールを維持し、
+   広い画面では列数だけを自然に増やします。 */
+@media (min-width:901px) {{
+  main {{
+    width:100%;
+    max-width:none;
+    margin-left:0;
+    margin-right:0;
   }}
 }}
 
