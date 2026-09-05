@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r07
+Livery Organizer for FH6 v0.4.59-r08
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -136,7 +136,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r07"
+VERSION = "0.4.59-r08"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9457,6 +9457,76 @@ body.compact.compact-show-flags:not(.fh6-my-design-view-mode) .compact-optional-
   }}
   .compact-display-required {{
     grid-column:auto;
+  }}
+}}
+
+/* =======================================================================
+   v0.4.59-r08 — FH6マイデザイン順のコンパクト幅対応
+   ======================================================================= */
+/* FH6との目視照合に必要な実スロット / U・D位置 / 車種 / タイトル / 作成者 /
+   FH6日付は残しつつ、コンパクト表示では専用列をおおむね従来の2/3へ縮小します。
+   150px固定にはせず、タイトルと2つの位置番号の可読性を守るため180–230pxとします。 */
+body.compact.fh6-my-design-view-mode .fh6-my-design-column {{
+  flex-basis:clamp(180px,15vw,230px);
+  width:clamp(180px,15vw,230px);
+  gap:6px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-empty-slot {{
+  min-height:125px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .card {{
+  border-radius:12px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .card img,
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .card img.livery-image,
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .noimg {{
+  aspect-ratio:2.55 / 1;
+  border-radius:11px 11px 0 0;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .body {{
+  padding:4px 5px 5px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .topline {{
+  gap:2px;
+  margin-bottom:1px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-move-target-caption {{
+  display:none;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-move-target-group {{
+  min-height:22px;
+  border-radius:7px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .topline .pill.fh6-move-target-trigger {{
+  min-width:0;
+  min-height:22px;
+  padding:2px 5px;
+  font-size:8.5px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .card-vehicle-sort-only {{
+  margin:1px 0;
+  font-size:9.5px;
+  line-height:1.1;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column h4 {{
+  margin:3px 0 1px;
+  height:2.2em;
+  font-size:10.5px;
+  line-height:1.1;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-creator-display,
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-display-date {{
+  margin:1px 0 2px;
+  font-size:9.5px;
+  line-height:1.1;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .vehicle-meta {{
+  font-size:9px;
+}}
+@media (max-width:760px) {{
+  body.compact.fh6-my-design-view-mode .fh6-my-design-column {{
+    flex-basis:min(68vw,230px);
+    width:min(68vw,230px);
   }}
 }}
 
