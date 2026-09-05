@@ -57,6 +57,6 @@ def test_embedded_vehicle_metadata_was_removed():
     assert 'VEHICLE_METADATA_FILENAME = "fh6-vehicle-metadata.json"' in source
     assert "vehicle_metadata_runtime_path()" in source
     assert "select_runtime_vehicle_metadata_path(" in source
-    assert 'VERSION = "0.4.59-r09"' in source
+    assert 'VERSION = "0.4.59-r10"' in source
     assert "body.compact.fh6-my-design-view-mode .fh6-my-design-column" in source
     assert "clamp(180px,15vw,230px)" in source

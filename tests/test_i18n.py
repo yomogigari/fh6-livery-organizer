@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_v0459_r09(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.59-r09")
+    def test_version_is_v0459_r10(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.59-r10")
 
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
@@ -1113,6 +1113,20 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         self.assertIn("一致した各車種を1車種1位置ずつ巡回します", source)
         self.assertIn("その1車種に属する実スロットを巡回します", source)
         self.assertIn("末尾では先頭へ循環します", source)
+
+
+    def test_r10_navigator_settings_are_shared_across_sort_modes(self) -> None:
+        source_path = ORGANIZER_SOURCE
+        source = source_path.read_text(encoding="utf-8")
+        self.assertEqual(source.count('id="fh6NavigatorSettings"'), 1)
+        self.assertIn('id="fh6NavigatorSettingsGlobalHost"', source)
+        self.assertIn('id="fh6NavigatorSettingsMyDesignHost"', source)
+        self.assertIn('function placeFh6NavigatorSettings()', source)
+        self.assertIn('placeFh6NavigatorSettings();', source)
+        self.assertIn('body.compact #fh6NavigatorSettings', source)
+        self.assertIn('"fh6NavigatorSettingsMyDesignHost"', source)
+        self.assertIn('"fh6NavigatorSettingsGlobalHost"', source)
+        self.assertIn('カーソル移動回数をプレビュー', source)
 
 if __name__ == "__main__":
     unittest.main()

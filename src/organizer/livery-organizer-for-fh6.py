@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r09
+Livery Organizer for FH6 v0.4.59-r10
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -136,7 +136,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r09"
+VERSION = "0.4.59-r10"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -8754,6 +8754,27 @@ body.dark-theme .fh6-my-design-section {{
    折りたたみ見出しもクリック可能と分かる表示へ変更します。 */
 
 /* =======================================================================
+   v0.4.59-r10 — FH6移動設定を全ソート共通表示
+   ======================================================================= */
+/* 設定UIは1個だけ保持し、ソート順に応じて表示先hostへDOM移動します。
+   これによりFH6マイデザイン順とその他のソートで設定内容・移動計画が分岐しません。 */
+.fh6-navigator-settings-host {{
+  width:100%;
+  min-width:0;
+}}
+.fh6-navigator-settings-my-design-host {{
+  grid-area:settings;
+}}
+.fh6-navigator-settings-global-host {{
+  margin:4px 1px 0;
+}}
+/* 旧compactルール body.compact details {{ display:none; }} の対象から、
+   FH6移動設定だけを明示的に戻します。 */
+body.compact #fh6NavigatorSettings {{
+  display:block;
+}}
+
+/* =======================================================================
    v0.4.57-r10 — Navigator設定をHTMLへ統合
    ======================================================================= */
 .fh6-navigator-settings {{
@@ -10054,6 +10075,55 @@ body.compact.fh6-my-design-view-mode .fh6-my-design-column .vehicle-meta {{
     <span class="fh6-global-move-target">FH6移動対象: <b id="fh6GlobalMoveTarget">未選択</b></span>
     <button id="fh6GlobalMoveButton" type="button" disabled aria-keyshortcuts="F" title="Fキーでも実行できます">FH6で選択デザインへ移動</button>
   </div>
+  <div id="fh6NavigatorSettingsGlobalHost"
+    class="fh6-navigator-settings-host fh6-navigator-settings-global-host">
+    <details id="fh6NavigatorSettings" class="fh6-navigator-settings">
+    <summary>
+    <span class="fh6-navigator-settings-title">FH6移動設定</span>
+    <span id="fh6NavigatorPlan" class="fh6-navigator-plan-summary">カードを選択すると移動計画を表示します。</span>
+    </summary>
+    <div class="fh6-navigator-settings-body">
+    <label class="fh6-navigator-setting">
+    <span>キー間隔</span>
+    <input id="fh6NavigatorInterval" type="number" min="10" max="2000" step="1" value="{nav_interval_ms:g}" inputmode="decimal">
+    <span class="unit">ms</span>
+    </label>
+    <label class="fh6-navigator-setting">
+    <span>FH6切替後</span>
+    <input id="fh6NavigatorSwitchDelay" type="number" min="0" max="5000" step="10" value="{nav_switch_delay_ms:g}" inputmode="decimal">
+    <span class="unit">ms</span>
+    </label>
+    <label class="fh6-navigator-setting">
+    <span>横→上下</span>
+    <input id="fh6NavigatorTurnDelay" type="number" min="0" max="5000" step="10" value="{nav_turn_delay_ms:g}" inputmode="decimal">
+    <span class="unit">ms</span>
+    </label>
+    <label class="fh6-navigator-setting">
+    <span>左循環後の追加待ち</span>
+    <input id="fh6NavigatorWrapDelay" type="number" min="0" max="5000" step="10" value="{nav_wrap_delay_ms:g}" inputmode="decimal">
+    <span class="unit">ms</span>
+    </label>
+    <div class="fh6-navigator-settings-actions">
+    <button id="fh6NavigatorSettingsSync" type="button" title="現在のFH6移動設定をNavigator Bridgeの共通設定ファイルへ保存します">共通設定を保存</button>
+    <button id="fh6NavigatorSettingsReset" type="button">初期値</button>
+    </div>
+    <label class="fh6-navigator-reset-option">
+    <input id="fh6NavigatorResetOrigin" type="checkbox" {"checked" if nav_reset_origin else ""}>
+    <span>移動前にマイデザインを開き直して <b>#001U</b> へ戻す（固定操作: ESC → RET）</span>
+    </label>
+    <label class="fh6-navigator-setting">
+    <span>ESC後の待ち時間</span>
+    <input id="fh6NavigatorResetEscDelay" type="number" min="0" max="5000" step="10" value="{nav_reset_esc_delay_ms:g}" inputmode="decimal">
+    <span class="unit">ms</span>
+    </label>
+    <label class="fh6-navigator-setting">
+    <span>RET後の待ち時間</span>
+    <input id="fh6NavigatorResetRetDelay" type="number" min="0" max="5000" step="10" value="{nav_reset_ret_delay_ms:g}" inputmode="decimal">
+    <span class="unit">ms</span>
+    </label>
+    </div>
+    </details>
+  </div>
 </header>
 
 <main>
@@ -10096,52 +10166,8 @@ body.compact.fh6-my-design-view-mode .fh6-my-design-column .vehicle-meta {{
           <span id="fh6VehicleMatchState" class="small" aria-live="polite"></span>
           <button id="fh6VehicleMatchNext" type="button" aria-keyshortcuts="Shift+ArrowRight" title="検索一致の次へ移動します（Shift+→）" hidden>次の一致 →</button>
         </span>
-        <details id="fh6NavigatorSettings" class="fh6-navigator-settings">
-          <summary>
-            <span class="fh6-navigator-settings-title">FH6移動設定</span>
-            <span id="fh6NavigatorPlan" class="fh6-navigator-plan-summary">カードを選択すると移動計画を表示します。</span>
-          </summary>
-          <div class="fh6-navigator-settings-body">
-            <label class="fh6-navigator-setting">
-              <span>キー間隔</span>
-              <input id="fh6NavigatorInterval" type="number" min="10" max="2000" step="1" value="{nav_interval_ms:g}" inputmode="decimal">
-              <span class="unit">ms</span>
-            </label>
-            <label class="fh6-navigator-setting">
-              <span>FH6切替後</span>
-              <input id="fh6NavigatorSwitchDelay" type="number" min="0" max="5000" step="10" value="{nav_switch_delay_ms:g}" inputmode="decimal">
-              <span class="unit">ms</span>
-            </label>
-            <label class="fh6-navigator-setting">
-              <span>横→上下</span>
-              <input id="fh6NavigatorTurnDelay" type="number" min="0" max="5000" step="10" value="{nav_turn_delay_ms:g}" inputmode="decimal">
-              <span class="unit">ms</span>
-            </label>
-            <label class="fh6-navigator-setting">
-              <span>左循環後の追加待ち</span>
-              <input id="fh6NavigatorWrapDelay" type="number" min="0" max="5000" step="10" value="{nav_wrap_delay_ms:g}" inputmode="decimal">
-              <span class="unit">ms</span>
-            </label>
-            <div class="fh6-navigator-settings-actions">
-              <button id="fh6NavigatorSettingsSync" type="button" title="現在のFH6移動設定をNavigator Bridgeの共通設定ファイルへ保存します">共通設定を保存</button>
-              <button id="fh6NavigatorSettingsReset" type="button">初期値</button>
-            </div>
-            <label class="fh6-navigator-reset-option">
-              <input id="fh6NavigatorResetOrigin" type="checkbox" {"checked" if nav_reset_origin else ""}>
-              <span>移動前にマイデザインを開き直して <b>#001U</b> へ戻す（固定操作: ESC → RET）</span>
-            </label>
-            <label class="fh6-navigator-setting">
-              <span>ESC後の待ち時間</span>
-              <input id="fh6NavigatorResetEscDelay" type="number" min="0" max="5000" step="10" value="{nav_reset_esc_delay_ms:g}" inputmode="decimal">
-              <span class="unit">ms</span>
-            </label>
-            <label class="fh6-navigator-setting">
-              <span>RET後の待ち時間</span>
-              <input id="fh6NavigatorResetRetDelay" type="number" min="0" max="5000" step="10" value="{nav_reset_ret_delay_ms:g}" inputmode="decimal">
-              <span class="unit">ms</span>
-            </label>
-          </div>
-        </details>
+        <div id="fh6NavigatorSettingsMyDesignHost"
+          class="fh6-navigator-settings-host fh6-navigator-settings-my-design-host"></div>
       </div>
       <div class="fh6-my-design-nav" aria-label="FH6マイデザイン横移動">
         <button id="fh6MyDesignPrev" type="button" title="前の列へ。先頭では最後の列へ移動します">← 前へ</button>
@@ -12746,6 +12772,15 @@ function updateFh6NavigatorResetControls() {{
   }});
 }}
 
+function placeFh6NavigatorSettings() {{
+  const settings = document.getElementById("fh6NavigatorSettings");
+  const hostId = document.body.classList.contains("fh6-my-design-view-mode")
+    ? "fh6NavigatorSettingsMyDesignHost"
+    : "fh6NavigatorSettingsGlobalHost";
+  const host = document.getElementById(hostId);
+  if (settings && host && settings.parentElement !== host) host.appendChild(settings);
+}}
+
 function resetFh6NavigatorSettings() {{
   storageRemove(FH6_NAVIGATOR_SETTINGS_KEY);
   [["fh6NavigatorInterval",FH6_NAVIGATOR_DEFAULTS.intervalMs],["fh6NavigatorSwitchDelay",FH6_NAVIGATOR_DEFAULTS.switchDelayMs],["fh6NavigatorTurnDelay",FH6_NAVIGATOR_DEFAULTS.turnDelayMs],["fh6NavigatorWrapDelay",FH6_NAVIGATOR_DEFAULTS.wrapDelayMs],["fh6NavigatorResetEscDelay",FH6_NAVIGATOR_DEFAULTS.resetEscDelayMs],["fh6NavigatorResetRetDelay",FH6_NAVIGATOR_DEFAULTS.resetRetDelayMs]]
@@ -13188,6 +13223,7 @@ function applySort() {{
   // 通常の「マイデザイン順」は実スロット通し番号、FH6マイデザイン順は通し番号＋列U/D位置を表示します。
   document.body.classList.toggle("my-design-sort-mode", mode === "my-designs");
   document.body.classList.toggle("fh6-my-design-view-mode", mode === "fh6-my-designs");
+  placeFh6NavigatorSettings();
   const fh6Section = document.getElementById("fh6MyDesignSection");
   const grouped = document.getElementById("groupedSections");
   const flatGrid = document.getElementById("flatSortGrid");
@@ -15641,12 +15677,15 @@ async function runSelfDiagnostics() {{
         `全ソート・比較画面の#実スロット/#列U/Dから移動対象を選択 + 仮削除反映後の最終実スロット ${{FH6_CURRENT_MY_DESIGN_INSTANCES.length}}件 + navigatorbridgeforfh6:// で受け渡し`],
       ["Navigator Bridge移動設定", typeof currentFh6NavigatorSettings === "function"
         && typeof fh6NavigatorMovePlan === "function"
+        && typeof placeFh6NavigatorSettings === "function"
         && Boolean(document.getElementById("fh6NavigatorSettings"))
+        && Boolean(document.getElementById("fh6NavigatorSettingsGlobalHost"))
+        && Boolean(document.getElementById("fh6NavigatorSettingsMyDesignHost"))
         && Boolean(document.getElementById("fh6NavigatorPlan"))
         && Boolean(document.getElementById("fh6NavigatorResetOrigin"))
         && Boolean(document.getElementById("fh6NavigatorResetEscDelay"))
         && Boolean(document.getElementById("fh6NavigatorResetRetDelay")),
-        "キー間隔 / FH6切替後 / 横→上下 / 左循環後 / 任意の#001Uリセット（ESC→RET）をHTMLで設定・保存し、操作をプレビュー"],
+        "全ソート共通でキー間隔 / FH6切替後 / 横→上下 / 左循環後 / 任意の#001Uリセット（ESC→RET）を設定・保存し、カーソル移動回数をプレビュー"],
       ["選択ペイント比較", typeof renderSelectedCompareModal === "function"
         && Boolean(document.getElementById("compareSelected"))
         && Boolean(document.getElementById("compareModalTitle")),
