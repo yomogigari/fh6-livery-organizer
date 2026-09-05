@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r12
+Livery Organizer for FH6 v0.4.59-r13
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r12"
+VERSION = "0.4.59-r13"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9632,6 +9632,21 @@ body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-creator-display 
     flex-basis:min(62vw,180px);
     width:min(62vw,180px);
   }}
+}}
+
+
+/* =======================================================================
+   v0.4.59-r13 — ダークテーマのアクセント文字可読性
+   ======================================================================= */
+/* ライトテーマや選択中のアクセント背景は従来どおりに保ち、
+   ダークテーマ上で文字として使う青だけを明るくして判読性を上げます。 */
+body.dark-theme {{
+  --accent-text:#b7c5ff;
+}}
+body.dark-theme .stat-filter-hint,
+body.dark-theme .fh6-move-target-caption,
+body.dark-theme .fh6-location-caption {{
+  color:var(--accent-text);
 }}
 
 </style>

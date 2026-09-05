@@ -107,7 +107,7 @@ class LocalizationTests(unittest.TestCase):
 class OrganizerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_r12", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_r13", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_v0459_r12(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.59-r12")
+    def test_version_is_v0459_r13(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.59-r13")
 
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
@@ -373,6 +373,34 @@ class ReportLocalizationTests(unittest.TestCase):
         self.assertIn("fh6NavigatorTargetInstanceId = loadFh6NavigatorTargetInstanceId();", text)
         self.assertIn("fh6NavigatorTargetInstanceId = location.instanceId;\n  saveFh6NavigatorTargetInstanceId();", text)
         self.assertIn('fh6NavigatorTargetInstanceId = "";\n  saveFh6NavigatorTargetInstanceId();', text)
+
+    def test_r13_dark_theme_uses_lighter_accent_text_for_labels(self) -> None:
+        self.organizer.set_language("ja")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            out = Path(tmp) / "out"
+            root.mkdir()
+            record = self._record()
+            html_path = self.organizer.write_report(
+                root, [record], self._stats(), out, embed_images=True, fh6_records=[record]
+            )
+            text = html_path.read_text(encoding="utf-8")
+        self.assertIn("body.dark-theme {\n  --accent-text:#b7c5ff;\n}", text)
+        self.assertIn(
+            "body.dark-theme .stat-filter-hint,\n"
+            "body.dark-theme .fh6-move-target-caption,\n"
+            "body.dark-theme .fh6-location-caption {\n"
+            "  color:var(--accent-text);\n}",
+            text,
+        )
+        self.assertIn("--accent:#5873f6;", text)
+        self.assertIn(
+            ".stat-filter-card.active .stat-filter-hint {\n"
+            "  border-color:var(--accent);\n"
+            "  background:var(--accent);\n"
+            "  color:white;\n}",
+            text,
+        )
 
     def test_report_groups_fh6_move_target_controls(self) -> None:
         self.organizer.set_language("ja")
