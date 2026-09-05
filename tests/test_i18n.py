@@ -107,7 +107,7 @@ class LocalizationTests(unittest.TestCase):
 class OrganizerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_r10", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_r11", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -116,8 +116,8 @@ class OrganizerIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
-    def test_version_is_v0459_r10(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.59-r10")
+    def test_version_is_v0459_r11(self) -> None:
+        self.assertEqual(self.organizer.VERSION, "0.4.59-r11")
 
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
@@ -1127,6 +1127,17 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         self.assertIn('"fh6NavigatorSettingsMyDesignHost"', source)
         self.assertIn('"fh6NavigatorSettingsGlobalHost"', source)
         self.assertIn('カーソル移動回数をプレビュー', source)
+
+    def test_r11_fh6_compact_moves_status_badges_to_second_row(self) -> None:
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertEqual(source.count('class="fh6-secondary-badges"'), 1)
+        self.assertIn('.fh6-secondary-badges {{\n  display:contents;', source)
+        self.assertIn('flex-basis:clamp(150px,12vw,180px);', source)
+        self.assertIn('width:clamp(150px,12vw,180px);', source)
+        self.assertIn('flex:1 0 100%;', source)
+        self.assertIn('body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-secondary-badges', source)
+        self.assertIn('☆ お気に入り', source)
+        self.assertIn('新規', source)
 
 if __name__ == "__main__":
     unittest.main()

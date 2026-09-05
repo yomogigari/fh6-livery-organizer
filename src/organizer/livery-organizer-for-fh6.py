@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.59-r10
+Livery Organizer for FH6 v0.4.59-r11
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -136,7 +136,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.59-r10"
+VERSION = "0.4.59-r11"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4272,12 +4272,14 @@ def write_report(
         <button class="pill my-design-index fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{my_design_index_label}</button>
         <button class="pill fh6-my-design-position fh6-move-target-trigger" type="button" title="クリックしてFH6移動対象に設定">{fh6_my_design_position_label}</button>
       </span>
-      <span class="pill new-badge hidden">新規</span>
-      <button class="pill flag-toggle favorite-toggle compact-optional-flags" type="button">☆ お気に入り</button>
-      <button class="pill flag-toggle review-toggle compact-optional-flags" type="button">後で確認</button>
-      {f'<button class="pill exact-duplicate open-exact-duplicate" type="button" title="再DL重複グループを比較して残す1件を選択">再DL重複 {exact_duplicate_count}件</button>' if exact_duplicate_count >= 2 else ''}
-      {f'<button class="pill similar compare-similar" type="button" title="類似候補: {html.escape(similar_reason)}">{html.escape(similar_badge_label)} {similar_count}件</button>' if similar_count >= 2 else ''}
-      {dup}
+      <span class="fh6-secondary-badges">
+        <span class="pill new-badge hidden">新規</span>
+        <button class="pill flag-toggle favorite-toggle compact-optional-flags" type="button">☆ お気に入り</button>
+        <button class="pill flag-toggle review-toggle compact-optional-flags" type="button">後で確認</button>
+        {f'<button class="pill exact-duplicate open-exact-duplicate" type="button" title="再DL重複グループを比較して残す1件を選択">再DL重複 {exact_duplicate_count}件</button>' if exact_duplicate_count >= 2 else ''}
+        {f'<button class="pill similar compare-similar" type="button" title="類似候補: {html.escape(similar_reason)}">{html.escape(similar_badge_label)} {similar_count}件</button>' if similar_count >= 2 else ''}
+        {dup}
+      </span>
     </div>
 
     <h3 class="vehicle quick-filter card-vehicle-sort-only"
@@ -9564,6 +9566,60 @@ body.compact.fh6-my-design-view-mode .fh6-my-design-column .vehicle-meta {{
   body.compact.fh6-my-design-view-mode .fh6-my-design-column {{
     flex-basis:min(68vw,230px);
     width:min(68vw,230px);
+  }}
+}}
+
+/* =======================================================================
+   v0.4.59-r11 — FH6マイデザイン順を通常コンパクト相当まで高密度化
+   ======================================================================= */
+/* 状態バッジをFH6位置番号とは別行へ移し、番号行の幅に引きずられず150px級まで縮小します。
+   通常表示ではwrapperをdisplay:contentsにして従来のtopline配置を維持します。 */
+.fh6-secondary-badges {{
+  display:contents;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column {{
+  flex-basis:clamp(150px,12vw,180px);
+  width:clamp(150px,12vw,180px);
+  gap:5px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .topline {{
+  align-items:flex-start;
+  gap:2px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-move-target-group {{
+  order:1;
+  flex:0 0 auto;
+  max-width:100%;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .compact-optional-selection {{
+  order:2;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-secondary-badges {{
+  order:3;
+  flex:1 0 100%;
+  min-width:0;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:2px;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-secondary-badges > .pill {{
+  min-width:0;
+  max-width:100%;
+  min-height:19px;
+  padding:1px 4px;
+  font-size:8px;
+  line-height:1.05;
+}}
+body.compact.fh6-my-design-view-mode .fh6-my-design-column .fh6-creator-display {{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}}
+@media (max-width:760px) {{
+  body.compact.fh6-my-design-view-mode .fh6-my-design-column {{
+    flex-basis:min(62vw,180px);
+    width:min(62vw,180px);
   }}
 }}
 
