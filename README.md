@@ -6,10 +6,18 @@
 
 GameSaveから取得した情報をもとに、サムネイル付きのHTMLレポートとExcelを生成します。生成されたHTMLでは、検索・絞り込み・並び替え・整理状態・タグ・メモ・バックアップなどを利用できます。
 
-**v0.4.59 Preview**（2026-09-04公開）では、OrganizerのデスクトップGUI・生成HTML・Excelを日本語 / 英語で利用できる多言語基盤を追加し、大規模レポートのライブ検索も軽量化しました。あわせて、任意の補助ツール **Navigator Bridge for FH6 v0.0.27** ではFH6ウィンドウ判定を厳格化し、別ウィンドウへの誤送信を防ぎやすくしています。
+**v0.4.60 Preview**（2026-09-04公開）では、OrganizerのデスクトップGUI・生成HTML・Excelを日本語 / 英語で利用できる多言語基盤を追加し、大規模レポートのライブ検索も軽量化しました。あわせて、任意の補助ツール **Navigator Bridge for FH6 v0.0.27** ではFH6ウィンドウ判定を厳格化し、別ウィンドウへの誤送信を防ぎやすくしています。
 
 > [!IMPORTANT]
 > 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。
+
+## v0.4.60 Previewの主な更新
+
+v0.4.60 Previewでは、車両メタデータをOrganizer本体から分離し、利用者が必要なときだけ更新確認できる仕組みを追加しました。起動時の自動通信や強制更新は行いません。検証済みの更新データがある場合は次回起動時から利用し、問題がある場合は同梱データを使用します。
+
+また、FH6マイデザイン順のカードをよりコンパクトにし、FH6移動設定を全ソートで共通化しました。ダークテーマでは「絞り込み」「FH6移動」などの青い文字を明るくして視認性を改善しています。
+
+Python版では、Organizer本体に加えて `i18n.py`、`vehicle_metadata_update.py`、`fh6-vehicle-metadata.json`、`fh6-vehicle-metadata-manifest.json`、`locales/` を同じ `python/` フォルダー内に保持してください。
 
 ## 特徴
 
@@ -124,8 +132,11 @@ NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 python/
-  livery-organizer-for-fh6-v0459.py
+  livery-organizer-for-fh6-v0460.py
   i18n.py
+  vehicle_metadata_update.py
+  fh6-vehicle-metadata.json
+  fh6-vehicle-metadata-manifest.json
   navigator-bridge-for-fh6-v027.py
   locales/
     __init__.py
@@ -188,13 +199,13 @@ Livery-Organizer-for-FH6.exe
 配布ZIPを展開したフォルダーで、次のように実行します。
 
 ```powershell
-python python\livery-organizer-for-fh6-v0459.py
+python python\livery-organizer-for-fh6-v0460.py
 ```
 
 uvを使用する場合:
 
 ```powershell
-uv run python\livery-organizer-for-fh6-v0459.py
+uv run python\livery-organizer-for-fh6-v0460.py
 ```
 
 `python` フォルダー内の `i18n.py` と `locales` フォルダーはOrganizerの日本語/英語表示に必要です。

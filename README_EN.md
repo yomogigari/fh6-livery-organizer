@@ -6,10 +6,18 @@
 
 It reads information from the local FH6 GameSave and game assets and generates an HTML report with thumbnails, plus an Excel report. The generated HTML provides search, filtering, sorting, organization states, tags, notes, backups, FH6 My Designs ordering, and optional integration with **Navigator Bridge for FH6**.
 
-**v0.4.59 Preview** (released 2026-09-04) adds Japanese/English localization for the Organizer desktop UI, generated HTML, and Excel output. It also reduces live-search work in large HTML reports. The bundled **Navigator Bridge for FH6 v0.0.27** tightens FH6 window detection so that unrelated windows containing the game name are not treated as FH6.
+**v0.4.60 Preview** (released 2026-09-04) adds Japanese/English localization for the Organizer desktop UI, generated HTML, and Excel output. It also reduces live-search work in large HTML reports. The bundled **Navigator Bridge for FH6 v0.0.27** tightens FH6 window detection so that unrelated windows containing the game name are not treated as FH6.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data.
+
+## What's new in v0.4.60 Preview
+
+v0.4.60 Preview moves vehicle metadata out of the Organizer source and adds an optional update check. The Organizer does not contact the network or force an update at startup. A verified cached update can be used from the next launch, while the bundled metadata remains available if the cached data cannot be used.
+
+The compact FH6 My Designs layout has also been tightened, FH6 movement settings are now shared across all sort modes, and dark-theme accent text is easier to read.
+
+For the Python version, keep `i18n.py`, `vehicle_metadata_update.py`, `fh6-vehicle-metadata.json`, `fh6-vehicle-metadata-manifest.json`, and `locales/` together with the Organizer script in the `python/` folder.
 
 ## Main features
 
@@ -119,7 +127,7 @@ See [docs/I18N_EN.md](docs/I18N_EN.md) for the translation and internationalizat
 
 ## Release package
 
-GitHub Releases for v0.4.59 Preview contain the EXE versions, Python versions, and Japanese/English documentation in one ZIP:
+GitHub Releases for v0.4.60 Preview contain the EXE versions, Python versions, and Japanese/English documentation in one ZIP:
 
 ```text
 Livery-Organizer-for-FH6.exe
@@ -130,8 +138,11 @@ NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 python/
-  livery-organizer-for-fh6-v0459.py
+  livery-organizer-for-fh6-v0460.py
   i18n.py
+  vehicle_metadata_update.py
+  fh6-vehicle-metadata.json
+  fh6-vehicle-metadata-manifest.json
   navigator-bridge-for-fh6-v027.py
   locales/
     __init__.py
@@ -182,13 +193,13 @@ Run:
 From the folder where you extracted the release ZIP, run:
 
 ```powershell
-python python\livery-organizer-for-fh6-v0459.py
+python python\livery-organizer-for-fh6-v0460.py
 ```
 
 With `uv`:
 
 ```powershell
-uv run python\livery-organizer-for-fh6-v0459.py
+uv run python\livery-organizer-for-fh6-v0460.py
 ```
 
 Keep `python\i18n.py` and the `python\locales` folder in place; they contain the Japanese/English UI resources used by the Python Organizer.

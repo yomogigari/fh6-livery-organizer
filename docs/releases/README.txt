@@ -1,4 +1,4 @@
-Livery Organizer for FH6 v0.4.59 Preview
+Livery Organizer for FH6 v0.4.60 Preview
 =========================================
 
 公開日: 2026-09-04
@@ -26,7 +26,7 @@ README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0459.py
+python\livery-organizer-for-fh6-v0460.py
 python\i18n.py
 python\navigator-bridge-for-fh6-v027.py
 python\locales\__init__.py
@@ -117,13 +117,13 @@ EXE版:
 Livery-Organizer-for-FH6.exe を起動してください。
 
 Python版:
-配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0459.py を実行してください。
+配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0460.py を実行してください。
 
 例:
-python python\livery-organizer-for-fh6-v0459.py
+python python\livery-organizer-for-fh6-v0460.py
 
 uvを利用している場合:
-uv run python\livery-organizer-for-fh6-v0459.py
+uv run python\livery-organizer-for-fh6-v0460.py
 
 python\i18n.py と python\locales フォルダーは多言語表示に必要です。
 Organizer本体と同じpythonフォルダー構成のまま使用してください。

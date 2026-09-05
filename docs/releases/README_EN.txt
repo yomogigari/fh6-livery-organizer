@@ -1,4 +1,4 @@
-Livery Organizer for FH6 v0.4.59 Preview
+Livery Organizer for FH6 v0.4.60 Preview
 ========================================
 
 Release date: 2026-09-04
@@ -25,7 +25,7 @@ README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0459.py
+python\livery-organizer-for-fh6-v0460.py
 python\i18n.py
 python\navigator-bridge-for-fh6-v027.py
 python\locales\__init__.py
@@ -107,10 +107,10 @@ Livery-Organizer-for-FH6.exe
 
 Python:
 From the folder where you extracted the release ZIP, run:
-python python\livery-organizer-for-fh6-v0459.py
+python python\livery-organizer-for-fh6-v0460.py
 
 With uv:
-uv run python\livery-organizer-for-fh6-v0459.py
+uv run python\livery-organizer-for-fh6-v0460.py
 
 Keep python\i18n.py and the python\locales folder in place. They contain the
 Japanese/English UI resources required by the Python Organizer.
