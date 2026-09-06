@@ -6,7 +6,7 @@
 
 It reads information from the local FH6 GameSave and game assets and generates an HTML report with thumbnails, plus an Excel report. The generated HTML provides search, filtering, sorting, organization states, tags, notes, backups, FH6 My Designs ordering, and optional integration with **Navigator Bridge for FH6**.
 
-**v0.4.60 Preview** (released 2026-09-04) adds Japanese/English localization for the Organizer desktop UI, generated HTML, and Excel output. It also reduces live-search work in large HTML reports. The bundled **Navigator Bridge for FH6 v0.0.27** tightens FH6 window detection so that unrelated windows containing the game name are not treated as FH6.
+**v0.4.60 Preview** (released 2026-09-06) adds Japanese/English localization for the Organizer desktop UI, generated HTML, and Excel output. It also reduces live-search work in large HTML reports. The bundled **Navigator Bridge for FH6 v0.0.27** tightens FH6 window detection so that unrelated windows containing the game name are not treated as FH6.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data.
