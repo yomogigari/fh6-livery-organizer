@@ -1,5 +1,7 @@
 # Livery Organizer for FH6 v0.4.60 Preview — Release Notes
 
+公開日: 2026-09-06
+
 **公開日はGitHub Release作成時に確定します。**
 
 **English documentation:** [README_EN.md](https://github.com/yomogigari/fh6-livery-organizer/blob/main/README_EN.md)
