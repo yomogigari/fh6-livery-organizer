@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60
+Livery Organizer for FH6 v0.4.60-r02
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60"
+VERSION = "0.4.60-r02"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9270,6 +9270,20 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
   flex-wrap:wrap;
 }}
 .fh6-my-design-heading-line h2 {{ margin:0; }}
+.fh6-temp-delete-review-host {{
+  min-width:0;
+}}
+.fh6-temp-delete-review-global-host {{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  min-height:0;
+  margin:4px 1px 0;
+}}
+.fh6-temp-delete-review-global-host:empty,
+.fh6-temp-delete-review-global-host:has(> #fh6TempDeletedReview.hidden) {{
+  display:none;
+}}
 #fh6TempDeletedReview {{
   border:1px solid color-mix(in srgb, #b42318 35%, var(--line));
   background:color-mix(in srgb, #b42318 8%, var(--surface));
@@ -9282,7 +9296,6 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
   background:color-mix(in srgb, #b42318 6%, var(--surface)) !important;
   color:color-mix(in srgb, #b42318 82%, var(--text)) !important;
 }}
-body:not(.fh6-my-design-view-mode) .fh6-temp-delete-action {{ display:none !important; }}
 .fh6-temp-delete-list {{
   display:grid;
   gap:8px;
@@ -10153,6 +10166,13 @@ body.dark-theme .fh6-location-caption {{
     <span id="organizationCompletionBackup" class="organization-completion-backup" data-state="none">バックアップ 未保存</span>
   </div>
   <div id="activeFilterChips" class="active-filter-chips" aria-label="現在の絞り込み条件" aria-live="polite"></div>
+  <div id="fh6TempDeletedReviewGlobalHost"
+    class="fh6-temp-delete-review-host fh6-temp-delete-review-global-host">
+    <button id="fh6TempDeletedReview" class="pill hidden" type="button"
+      title="FH6で削除済みとして一時的に非表示にしたデザインを確認・復元します">
+      FH6削除済み（仮） <b id="fh6TempDeletedCount">0</b>件
+    </button>
+  </div>
   <div id="fh6GlobalMoveBar" class="fh6-global-move-bar hidden" aria-live="polite">
     <span class="fh6-global-move-target">FH6移動対象: <b id="fh6GlobalMoveTarget">未選択</b></span>
     <button id="fh6GlobalMoveButton" type="button" disabled aria-keyshortcuts="F" title="Fキーでも実行できます">FH6で選択デザインへ移動</button>
@@ -10224,10 +10244,7 @@ body.dark-theme .fh6-location-caption {{
       <div>
         <div class="fh6-my-design-heading-line">
           <h2>FH6マイデザイン順</h2>
-          <button id="fh6TempDeletedReview" class="pill hidden" type="button"
-            title="FH6で削除済みとして一時的に非表示にしたデザインを確認・復元します">
-            FH6削除済み（仮） <b id="fh6TempDeletedCount">0</b>件
-          </button>
+          <span id="fh6TempDeletedReviewMyDesignHost" class="fh6-temp-delete-review-host"></span>
         </div>
         <span id="fh6MyDesignCount" class="small">0件</span>
       </div>
@@ -11862,6 +11879,18 @@ function updateFh6TempDeletedUi() {{
   if (restoreAll) restoreAll.disabled = count === 0;
 }}
 
+// v0.4.60-r02: 「FH6削除済み（仮）」は全ソート共通の操作です。
+// FH6マイデザイン順では従来どおり見出し横、それ以外では共通操作領域へ同じボタンを移動します。
+function placeFh6TempDeletedReview() {{
+  const button = document.getElementById("fh6TempDeletedReview");
+  if (!button) return;
+  const useMyDesignHost = sortOrder?.value === "fh6-my-designs";
+  const host = document.getElementById(
+    useMyDesignHost ? "fh6TempDeletedReviewMyDesignHost" : "fh6TempDeletedReviewGlobalHost"
+  );
+  if (host && button.parentElement !== host) host.appendChild(button);
+}}
+
 function renderFh6TempDeletedModal() {{
   const body = document.getElementById("fh6TempDeletedBody");
   if (!body) return;
@@ -11913,11 +11942,12 @@ function refreshFh6AfterTempDelete(message = "") {{
   clearFh6VehicleMatchSelection();
   hideFh6VehicleSuggestions();
   updateFh6TempDeletedUi();
-  // 通常一覧・絞り込み側でも仮削除カードを表示対象から外します。
-  refreshFilteredView();
-  if (sortOrder?.value === "fh6-my-designs") {{
-    renderFh6MyDesignView();
-    if (message) setFh6MyDesignJumpStatus(message);
+  // v0.4.60-r02: refreshFilteredView() 単独では、作成者順やカード単位の
+  // フラットソートからカードを元グループへ戻した後に現在レイアウトを再構築しません。
+  // 通常の全UI更新経路を通し、どのソート順でも仮削除後の表示を保ちます。
+  refreshOrganizerUi({{backup:false, mobile:false, persist:false}});
+  if (sortOrder?.value === "fh6-my-designs" && message) {{
+    setFh6MyDesignJumpStatus(message);
   }}
   renderFh6TempDeletedModal();
 }}
@@ -12658,6 +12688,7 @@ function syncFh6CardPositionLabels(card) {{
     card.dataset.fh6CurrentInstanceId = "";
     card.dataset.fh6CurrentSlot = "";
     card.dataset.fh6CurrentPosition = "";
+    card.querySelector(".fh6-temp-delete-action")?.remove();
     if (slotButton) {{
       slotButton.textContent = "FH6位置なし";
       slotButton.disabled = true;
@@ -12677,6 +12708,9 @@ function syncFh6CardPositionLabels(card) {{
   card.dataset.fh6CurrentInstanceId = location.instanceId;
   card.dataset.fh6CurrentSlot = String(location.slotNumber);
   card.dataset.fh6CurrentPosition = location.position;
+  // v0.4.60-r01: FH6移動対象と同じ現在instanceを使い、すべてのソート順で
+  // 「FH6で削除済み」を利用できるようにします。
+  ensureFh6TempDeleteButton(card, location.instance);
   const selected = location.instanceId === fh6NavigatorTargetInstanceId;
   [slotButton, positionButton].forEach(button => {{
     if (!button) return;
@@ -13109,7 +13143,7 @@ function wireFh6DuplicateCard(clone, original) {{
     }});
   }}
 
-  [".favorite-toggle", ".review-toggle", ".compare-similar", ".open-exact-duplicate"].forEach(selector => {{
+  [".favorite-toggle", ".review-toggle", ".compare-similar", ".open-exact-duplicate", ".fh6-temp-delete-action"].forEach(selector => {{
     const cloneButton = clone.querySelector(selector);
     const originalButton = original.querySelector(selector);
     if (cloneButton && originalButton) {{
@@ -13305,6 +13339,7 @@ function applySort() {{
   // 通常の「マイデザイン順」は実スロット通し番号、FH6マイデザイン順は通し番号＋列U/D位置を表示します。
   document.body.classList.toggle("my-design-sort-mode", mode === "my-designs");
   document.body.classList.toggle("fh6-my-design-view-mode", mode === "fh6-my-designs");
+  placeFh6TempDeletedReview();
   placeFh6NavigatorSettings();
   const fh6Section = document.getElementById("fh6MyDesignSection");
   const grouped = document.getElementById("groupedSections");
@@ -15744,9 +15779,12 @@ async function runSelfDiagnostics() {{
       ["FH6削除済み（仮）", typeof markFh6InstanceTempDeleted === "function"
         && typeof restoreFh6TempDeletedInstance === "function"
         && typeof rebuildCurrentFh6MyDesignInstances === "function"
+        && typeof placeFh6TempDeletedReview === "function"
         && Boolean(document.getElementById("fh6TempDeletedReview"))
+        && Boolean(document.getElementById("fh6TempDeletedReviewGlobalHost"))
+        && Boolean(document.getElementById("fh6TempDeletedReviewMyDesignHost"))
         && Boolean(document.getElementById("fh6TempDeletedModal")),
-        `一時非表示 ${{fh6TempDeletedInstanceIds.size}}件 / 現在実スロット ${{FH6_CURRENT_MY_DESIGN_INSTANCES.length}}件 / 位置再計算`],
+        `全ソート共通 / 一時非表示 ${{fh6TempDeletedInstanceIds.size}}件 / 現在実スロット ${{FH6_CURRENT_MY_DESIGN_INSTANCES.length}}件 / 位置再計算`],
       ["Navigator Bridge連携", typeof currentFh6NavigatorInstance === "function"
         && typeof launchFh6NavigatorForCurrent === "function"
         && typeof updateFh6NavigatorUi === "function"
