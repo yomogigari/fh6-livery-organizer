@@ -3,11 +3,11 @@
 """
 Livery Organizer for FH6 - optional vehicle metadata update checker.
 
-v0.4.59-r12:
-- Explicit/manual check and optional verified cache download remain unchanged.
-- Public vehicle metadata may include audited FH6 in-game display-name curation.
-- Metadata and manifest curation provenance must agree exactly.
-- Network/manifest errors never modify bundled metadata.
+v0.4.60-r03:
+- Package revision is independent from the official source update date.
+- Same-date FH6 display-name curation updates can be delivered safely.
+- Metadata/manifest cache installation stages both files and rolls back as a pair.
+- Legacy revision-less metadata remains readable as package revision 0.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ MANIFEST_DATASET = "fh6-vehicle-metadata-manifest"
 METADATA_SCHEMA_VERSION = 1
 METADATA_DATASET = "fh6-official-vehicle-metadata"
 SUPPORTED_UPDATE_POLICY = "optional"
+USER_AGENT = "Livery-Organizer-for-FH6/vehicle-metadata-updater"
 
 CURATION_OVERRIDE_KEY = "in_game_vehicle_name_overrides"
 CURATION_OVERRIDE_SCOPE = "display_name"
@@ -69,6 +70,8 @@ class VehicleMetadataUpdateResult:
     remote_file_sha256: str | None = None
     local_record_count: int | None = None
     remote_record_count: int | None = None
+    local_package_revision: int | None = None
+    remote_package_revision: int | None = None
     manifest_url: str | None = None
     detail: str | None = None
 
@@ -109,6 +112,17 @@ def _require_sha256(value: object, *, label: str) -> str:
     if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
         raise VehicleMetadataUpdateError(
             f"{label}: expected lowercase SHA-256"
+        )
+    return value
+
+
+def _package_revision(value: object, *, label: str) -> int:
+    """Return an explicit positive package revision or legacy revision 0."""
+    if value is None:
+        return 0
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise VehicleMetadataUpdateError(
+            f"{label}: package_revision must be a positive integer"
         )
     return value
 
@@ -253,6 +267,10 @@ def inspect_local_metadata(path: Path) -> dict[str, Any]:
             "local metadata records must be a non-empty object"
         )
 
+    package_revision = _package_revision(
+        payload.get("package_revision"),
+        label="local metadata",
+    )
     source_updated = _require_iso_date(
         source.get("updated"),
         label="local metadata source.updated",
@@ -286,6 +304,7 @@ def inspect_local_metadata(path: Path) -> dict[str, Any]:
                 )
 
     return {
+        "package_revision": package_revision,
         "source_updated": source_updated,
         "record_count": len(records),
         "records_sha256": _metadata_records_fingerprint(records),
@@ -350,9 +369,13 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     if policy.get("mode") != SUPPORTED_UPDATE_POLICY:
         raise VehicleMetadataUpdateError(
             "manifest update_policy.mode is unsupported; "
-            "r06 accepts optional only"
+            "only optional is supported"
         )
 
+    package_revision = _package_revision(
+        metadata.get("package_revision"),
+        label="manifest metadata",
+    )
     source_updated = _require_iso_date(
         metadata.get("source_updated"),
         label="manifest metadata.source_updated",
@@ -398,6 +421,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
     )
 
     return {
+        "package_revision": package_revision,
         "source_updated": source_updated,
         "record_count": record_count,
         "records_sha256": records_sha256,
@@ -480,6 +504,10 @@ def inspect_metadata_bytes(data: bytes, *, label: str = "metadata") -> dict[str,
             f"{label}: records must be a non-empty object"
         )
 
+    package_revision = _package_revision(
+        payload.get("package_revision"),
+        label=label,
+    )
     source_updated = _require_iso_date(
         source.get("updated"),
         label=f"{label} source.updated",
@@ -515,6 +543,7 @@ def inspect_metadata_bytes(data: bytes, *, label: str = "metadata") -> dict[str,
                 )
 
     return {
+        "package_revision": package_revision,
         "source_updated": source_updated,
         "record_count": len(records),
         "records_sha256": _metadata_records_fingerprint(records),
@@ -534,6 +563,7 @@ def validate_metadata_bytes_against_manifest(
     )
 
     expected = {
+        "package_revision": manifest_state["package_revision"],
         "source_updated": manifest_state["source_updated"],
         "record_count": manifest_state["record_count"],
         "records_sha256": manifest_state["records_sha256"],
@@ -569,7 +599,7 @@ def fetch_metadata_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r06",
+            "User-Agent": USER_AGENT,
             "Accept": "application/json",
         },
         method="GET",
@@ -737,41 +767,247 @@ def _cache_manifest_bytes(
             pass
 
 
+def _write_fsynced_temp_file(path: Path, data: bytes, *, label: str) -> None:
+    try:
+        with path.open("xb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except OSError as exc:
+        raise VehicleMetadataUpdateError(
+            f"{label} temporary write failed: {exc}"
+        ) from exc
+
+
+def _restore_cache_member(path: Path, data: bytes | None, *, label: str) -> None:
+    """Restore one cache member without using an injected failing replace hook."""
+    if data is None:
+        try:
+            if path.exists():
+                path.unlink()
+        except OSError as exc:
+            raise VehicleMetadataUpdateError(
+                f"{label} rollback delete failed: {exc}"
+            ) from exc
+        return
+
+    temp_path = path.with_name(path.name + f".rollback-{os.getpid()}")
+    try:
+        if temp_path.exists():
+            temp_path.unlink()
+        _write_fsynced_temp_file(temp_path, data, label=f"{label} rollback")
+        os.replace(temp_path, path)
+        if path.read_bytes() != data:
+            raise VehicleMetadataUpdateError(
+                f"{label} rollback verification failed"
+            )
+    except VehicleMetadataUpdateError:
+        raise
+    except OSError as exc:
+        raise VehicleMetadataUpdateError(
+            f"{label} rollback failed: {exc}"
+        ) from exc
+    finally:
+        try:
+            if temp_path.exists():
+                temp_path.unlink()
+        except OSError:
+            pass
+
+
+def _read_valid_cached_pair(
+    metadata_path: Path,
+    manifest_path: Path,
+) -> tuple[bytes, bytes] | None:
+    """Return the exact existing valid pair, otherwise None."""
+    try:
+        if not metadata_path.is_file() or not manifest_path.is_file():
+            return None
+        if metadata_path.is_symlink() or manifest_path.is_symlink():
+            return None
+        metadata_bytes = metadata_path.read_bytes()
+        manifest_bytes = manifest_path.read_bytes()
+        if len(metadata_bytes) > MAX_METADATA_BYTES:
+            return None
+        if len(manifest_bytes) > MAX_MANIFEST_BYTES:
+            return None
+        manifest_state = validate_manifest_bytes(manifest_bytes)
+        if not manifest_state.get("metadata_url"):
+            return None
+        validate_metadata_bytes_against_manifest(
+            metadata_bytes,
+            manifest_state,
+        )
+        return metadata_bytes, manifest_bytes
+    except (OSError, VehicleMetadataUpdateError):
+        return None
+
+
 def cache_validated_metadata_package(
     destination: Path,
     metadata_bytes: bytes,
     manifest_bytes: bytes,
+    *,
+    replace_func: Callable[[str | bytes | Path, str | bytes | Path], None] = os.replace,
 ) -> dict[str, Any]:
+    """
+    Install metadata + manifest as one validated cache package.
+
+    Both new files are fully staged and validated before either live cache member
+    is replaced. If installation fails after replacement starts, an existing
+    valid pair is restored byte-for-byte; otherwise both live cache members are
+    removed so an incomplete pair is not left behind.
+    """
+    if len(metadata_bytes) > MAX_METADATA_BYTES:
+        raise VehicleMetadataUpdateError(
+            f"metadata exceeds {MAX_METADATA_BYTES} bytes"
+        )
+    if len(manifest_bytes) > MAX_MANIFEST_BYTES:
+        raise VehicleMetadataUpdateError(
+            f"manifest exceeds {MAX_MANIFEST_BYTES} bytes"
+        )
+
     manifest_state = validate_manifest_bytes(manifest_bytes)
     metadata_url = manifest_state.get("metadata_url")
     if not isinstance(metadata_url, str) or not metadata_url:
         raise VehicleMetadataUpdateError(
             "manifest metadata.url is required for a cached metadata package"
         )
-
-    state = cache_validated_metadata_bytes(
-        destination,
+    state = validate_metadata_bytes_against_manifest(
         metadata_bytes,
         manifest_state,
     )
 
+    destination = Path(destination)
     manifest_path = cached_vehicle_metadata_manifest_path(destination)
-    _cache_manifest_bytes(
-        manifest_path,
-        manifest_bytes,
-    )
+    for path, label in (
+        (destination, "metadata cache destination"),
+        (manifest_path, "metadata cache manifest destination"),
+    ):
+        if path.exists() and path.is_symlink():
+            raise VehicleMetadataUpdateError(
+                f"{label} must not be a symbolic link"
+            )
 
-    selected = select_runtime_vehicle_metadata_path(
-        destination,
-        bundled_path=None,
-        require_newer_than_bundled=False,
-    )
-    if selected != Path(destination):
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
         raise VehicleMetadataUpdateError(
-            "cached metadata package could not be revalidated after installation"
+            f"metadata cache directory cannot be created: {exc}"
+        ) from exc
+
+    previous_pair = _read_valid_cached_pair(destination, manifest_path)
+    previous_metadata = previous_pair[0] if previous_pair is not None else None
+    previous_manifest = previous_pair[1] if previous_pair is not None else None
+
+    metadata_stage = destination.with_name(
+        destination.name + f".stage-{os.getpid()}"
+    )
+    manifest_stage = manifest_path.with_name(
+        manifest_path.name + f".stage-{os.getpid()}"
+    )
+    stages = (metadata_stage, manifest_stage)
+    for stage in stages:
+        if stage.exists():
+            try:
+                stage.unlink()
+            except OSError as exc:
+                raise VehicleMetadataUpdateError(
+                    f"stale cache stage file cannot be removed: {stage}: {exc}"
+                ) from exc
+
+    install_started = False
+    try:
+        _write_fsynced_temp_file(
+            metadata_stage,
+            metadata_bytes,
+            label="metadata cache",
+        )
+        _write_fsynced_temp_file(
+            manifest_stage,
+            manifest_bytes,
+            label="metadata cache manifest",
         )
 
-    return state
+        staged_manifest_state = validate_manifest_bytes(
+            manifest_stage.read_bytes()
+        )
+        validate_metadata_bytes_against_manifest(
+            metadata_stage.read_bytes(),
+            staged_manifest_state,
+        )
+
+        install_started = True
+        replace_func(metadata_stage, destination)
+        replace_func(manifest_stage, manifest_path)
+
+        installed_manifest_state = validate_manifest_bytes(
+            manifest_path.read_bytes()
+        )
+        installed_state = validate_metadata_bytes_against_manifest(
+            destination.read_bytes(),
+            installed_manifest_state,
+        )
+        if installed_state != state:
+            raise VehicleMetadataUpdateError(
+                "cached metadata package changed during installation"
+            )
+
+        selected = select_runtime_vehicle_metadata_path(
+            destination,
+            bundled_path=None,
+            require_newer_than_bundled=False,
+        )
+        if selected != destination:
+            raise VehicleMetadataUpdateError(
+                "cached metadata package could not be revalidated after installation"
+            )
+        return state
+    except Exception as exc:
+        if install_started:
+            rollback_errors: list[str] = []
+            for path, old_data, label in (
+                (destination, previous_metadata, "metadata cache"),
+                (manifest_path, previous_manifest, "metadata cache manifest"),
+            ):
+                try:
+                    _restore_cache_member(path, old_data, label=label)
+                except VehicleMetadataUpdateError as rollback_exc:
+                    rollback_errors.append(str(rollback_exc))
+
+            if rollback_errors:
+                raise VehicleMetadataUpdateError(
+                    "metadata cache package installation failed and rollback "
+                    "was incomplete: " + "; ".join(rollback_errors)
+                ) from exc
+
+            if previous_pair is not None:
+                restored = _read_valid_cached_pair(destination, manifest_path)
+                if restored != previous_pair:
+                    raise VehicleMetadataUpdateError(
+                        "metadata cache package installation failed and the "
+                        "previous cache pair could not be verified after rollback"
+                    ) from exc
+            elif destination.exists() or manifest_path.exists():
+                raise VehicleMetadataUpdateError(
+                    "metadata cache package installation failed and incomplete "
+                    "cache files remain after rollback"
+                ) from exc
+
+        if isinstance(exc, VehicleMetadataUpdateError):
+            raise
+        if isinstance(exc, OSError):
+            raise VehicleMetadataUpdateError(
+                f"metadata cache package installation failed: {exc}"
+            ) from exc
+        raise
+    finally:
+        for stage in stages:
+            try:
+                if stage.exists():
+                    stage.unlink()
+            except OSError:
+                pass
 
 
 def select_runtime_vehicle_metadata_path(
@@ -785,9 +1021,9 @@ def select_runtime_vehicle_metadata_path(
 
     A cache is eligible only when both the metadata JSON and its cached manifest
     exist, neither path is a symbolic link, and the metadata exactly matches the
-    cached manifest. When a bundled file is supplied, the cache must also have a
-    strictly newer source date; same-date/different-content and older caches
-    fall back to the bundled file.
+    cached manifest. Package revision is authoritative when either side provides
+    one. Legacy revision-less packages (effective revision 0) retain the source-
+    date comparison used by v0.4.60.
     """
     bundled = None if bundled_path is None else Path(bundled_path)
     cache = (
@@ -829,6 +1065,13 @@ def select_runtime_vehicle_metadata_path(
             bundled.read_bytes(),
             label="bundled metadata",
         )
+
+        cache_revision = int(cache_state.get("package_revision", 0))
+        bundled_revision = int(bundled_state.get("package_revision", 0))
+        if cache_revision > 0 or bundled_revision > 0:
+            if cache_revision > bundled_revision:
+                return cache
+            return bundled
 
         cache_date = date.fromisoformat(cache_state["source_updated"])
         bundled_date = date.fromisoformat(
@@ -897,7 +1140,7 @@ def fetch_manifest_bytes(
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Livery-Organizer-for-FH6/0.4.59-r06",
+            "User-Agent": USER_AGENT,
             "Accept": "application/json",
         },
         method="GET",
@@ -938,12 +1181,16 @@ def compare_local_metadata_with_manifest(
         remote_file_sha256=manifest_state["file_sha256"],
         local_record_count=local_state["record_count"],
         remote_record_count=manifest_state["record_count"],
+        local_package_revision=local_state.get("package_revision", 0),
+        remote_package_revision=manifest_state.get("package_revision", 0),
         manifest_url=manifest_url,
     )
 
     if manifest_state["file_sha256"] == local_state["file_sha256"]:
         if (
-            manifest_state["source_updated"] != local_state["source_updated"]
+            manifest_state.get("package_revision", 0)
+            != local_state.get("package_revision", 0)
+            or manifest_state["source_updated"] != local_state["source_updated"]
             or manifest_state["record_count"] != local_state["record_count"]
             or manifest_state["records_sha256"] != local_state["records_sha256"]
             or manifest_state["file_size"] != local_state["file_size"]
@@ -955,6 +1202,27 @@ def compare_local_metadata_with_manifest(
             )
         return VehicleMetadataUpdateResult(
             STATUS_UP_TO_DATE,
+            **common,
+        )
+
+    local_revision = int(local_state.get("package_revision", 0))
+    remote_revision = int(manifest_state.get("package_revision", 0))
+    if local_revision > 0 or remote_revision > 0:
+        if remote_revision > local_revision:
+            return VehicleMetadataUpdateResult(
+                STATUS_UPDATE_AVAILABLE,
+                **common,
+            )
+        if remote_revision < local_revision:
+            return VehicleMetadataUpdateResult(
+                STATUS_REMOTE_OLDER,
+                **common,
+            )
+        return VehicleMetadataUpdateResult(
+            STATUS_REVIEW_REQUIRED,
+            detail=(
+                "same package revision but metadata file SHA-256 differs"
+            ),
             **common,
         )
 
@@ -1223,7 +1491,14 @@ def format_update_check_result(
             )
         if result.remote_source_updated:
             lines.append(
-                f"\u53d6\u5f97\u5148\u57fa\u6e96\u65e5:   {result.remote_source_updated}"
+                f"取得先基準日:   {result.remote_source_updated}"
+            )
+        if (result.local_package_revision or 0) > 0 or (result.remote_package_revision or 0) > 0:
+            lines.append(
+                f"ローカルパッケージ版: {result.local_package_revision or 0}"
+            )
+            lines.append(
+                f"取得先パッケージ版:   {result.remote_package_revision or 0}"
             )
         if result.local_record_count is not None:
             lines.append(
@@ -1265,6 +1540,9 @@ def format_update_check_result(
         lines.append(f"Local source date:  {result.local_source_updated}")
     if result.remote_source_updated:
         lines.append(f"Remote source date: {result.remote_source_updated}")
+    if (result.local_package_revision or 0) > 0 or (result.remote_package_revision or 0) > 0:
+        lines.append(f"Local package rev:  {result.local_package_revision or 0}")
+        lines.append(f"Remote package rev: {result.remote_package_revision or 0}")
     if result.local_record_count is not None:
         lines.append(f"Local records:      {result.local_record_count}")
     if result.remote_record_count is not None:

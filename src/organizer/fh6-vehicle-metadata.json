@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "dataset": "fh6-official-vehicle-metadata",
+  "package_revision": 1,
   "source": {
     "name": "Forza official car list",
     "url": "https://forza.net/fh6cars",
