@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r03
+Livery Organizer for FH6 v0.4.60-r04
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r03"
+VERSION = "0.4.60-r04"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -18066,6 +18066,116 @@ class App:
         win.deiconify()
         win.lift()
 
+    def _show_vehicle_metadata_update_result_dialog(
+        self,
+        title: str,
+        body: str,
+        *,
+        kind: str = "info",
+    ) -> None:
+        """更新確認結果を選択・コピーできるモーダルダイアログで表示します。"""
+        win = tk.Toplevel(self.master)
+        win.withdraw()
+        win.title(title)
+        win.minsize(700, 390)
+        try:
+            win.transient(self.master)
+        except Exception:
+            pass
+
+        outer = ttk.Frame(win, padding=14)
+        outer.pack(fill="both", expand=True)
+
+        text_frame = ttk.Frame(outer)
+        text_frame.pack(fill="both", expand=True)
+        text_frame.rowconfigure(0, weight=1)
+        text_frame.columnconfigure(0, weight=1)
+
+        text = tk.Text(
+            text_frame,
+            height=16,
+            wrap="none",
+            padx=8,
+            pady=8,
+            font="TkTextFont",
+            exportselection=False,
+        )
+        yscroll = ttk.Scrollbar(text_frame, orient="vertical", command=text.yview)
+        xscroll = ttk.Scrollbar(text_frame, orient="horizontal", command=text.xview)
+        text.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        text.grid(row=0, column=0, sticky="nsew")
+        yscroll.grid(row=0, column=1, sticky="ns")
+        xscroll.grid(row=1, column=0, sticky="ew")
+        text.insert("1.0", body)
+        text.configure(state="disabled")
+
+        buttons = ttk.Frame(outer)
+        buttons.pack(fill="x", pady=(10, 0))
+
+        def copy_to_clipboard(value: str) -> bool:
+            try:
+                self.master.clipboard_clear()
+                self.master.clipboard_append(value)
+                self.master.update_idletasks()
+                return True
+            except Exception:
+                return False
+
+        def copy_all():
+            copy_to_clipboard(body)
+
+        def select_all(_event=None):
+            try:
+                text.tag_add("sel", "1.0", "end-1c")
+                text.mark_set("insert", "1.0")
+                text.see("1.0")
+            except Exception:
+                pass
+            return "break"
+
+        def copy_selection(_event=None):
+            try:
+                selected = text.get("sel.first", "sel.last")
+            except Exception:
+                return "break"
+            copy_to_clipboard(selected)
+            return "break"
+
+        def close_dialog():
+            try:
+                win.grab_release()
+            except Exception:
+                pass
+            win.destroy()
+
+        text.bind("<Control-a>", select_all)
+        text.bind("<Control-A>", select_all)
+        text.bind("<Control-c>", copy_selection)
+        text.bind("<Control-C>", copy_selection)
+
+        ttk.Button(
+            buttons,
+            text=tr("button.copy_clipboard"),
+            command=copy_all,
+        ).pack(side="left")
+        ttk.Button(
+            buttons,
+            text=tr("button.close"),
+            command=close_dialog,
+        ).pack(side="right")
+
+        win.protocol("WM_DELETE_WINDOW", close_dialog)
+        win.bind("<Escape>", lambda _event: close_dialog())
+        position_child_window(win, self.master, 860, 520)
+        win.deiconify()
+        win.lift()
+        try:
+            win.grab_set()
+            text.focus_set()
+        except Exception:
+            pass
+        win.wait_window()
+
     def check_vehicle_metadata_update_gui(self):
         if self._vehicle_metadata_update_running:
             return
@@ -18111,14 +18221,14 @@ class App:
             result.status == STATUS_UPDATE_AVAILABLE
             and manifest_bytes is not None
         ):
-            question = (
-                body
-                + "\n\n"
-                + update_gui_text("download_question", language)
+            self._show_vehicle_metadata_update_result_dialog(
+                title,
+                body,
+                kind=kind,
             )
             approved = messagebox.askyesno(
                 title,
-                question,
+                update_gui_text("download_question", language),
                 parent=self.master,
             )
             if approved:
@@ -18156,10 +18266,11 @@ class App:
 
         self._set_vehicle_metadata_update_idle()
 
-        if kind == "info":
-            messagebox.showinfo(title, body, parent=self.master)
-        else:
-            messagebox.showwarning(title, body, parent=self.master)
+        self._show_vehicle_metadata_update_result_dialog(
+            title,
+            body,
+            kind=kind,
+        )
 
     def _set_vehicle_metadata_update_idle(self):
         self._vehicle_metadata_update_running = False
