@@ -117,7 +117,7 @@ class OrganizerIntegrationTests(unittest.TestCase):
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
     def test_version_is_v0460(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.60-r07")
+        self.assertEqual(self.organizer.VERSION, "0.4.60-r08")
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
         self.assertIn(f"Livery Organizer for FH6 v{self.organizer.VERSION}", header)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r07
+Livery Organizer for FH6 v0.4.60-r08
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r07"
+VERSION = "0.4.60-r08"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9759,6 +9759,41 @@ body.dark-theme .fh6-location-caption {{
   .fh6-location-buttons .fh6-location-button:last-child:not(:disabled):not([aria-pressed="true"])::after {{
     margin-left:2px;
   }}
+}}
+
+/* =======================================================================
+   v0.4.60-r08 — ダークテーマの作成者カラー視認性
+   ======================================================================= */
+/* ライトテーマの淡い作成者カラーは維持し、ダークテーマだけ背景への混合率を
+   少し上げます。作成者名を主な識別手段としつつ、カード全体は塗りません。 */
+body.dark-theme .creator-color-badge.creator-colored {{
+  background:color-mix(in srgb, var(--creator-color) 28%, var(--surface));
+}}
+/* creator-name-button は link-filter として透明表示する意図ですが、
+   後段のダークテーマ共通 button 背景が上書きするため、ここで明示的に戻します。 */
+.creator-color-badge .creator-name-button,
+.creator-color-badge .creator-name-button:hover:not(:disabled),
+.creator-color-badge .creator-name-button:active:not(:disabled) {{
+  background:transparent;
+  box-shadow:none;
+  transform:none;
+}}
+/* ダークテーマ共通 button 背景は、色変更用の小さいドット/▼ボタンにも
+   適用されるため、親バッジの作成者色が透けるよう明示的に透明化します。 */
+body.dark-theme .creator-color-badge .creator-color-button {{
+  background:transparent;
+  color:var(--muted);
+  box-shadow:none;
+}}
+body.dark-theme .creator-color-badge .creator-color-button:hover:not(:disabled) {{
+  background:color-mix(in srgb, var(--creator-color) 12%, transparent);
+  color:CanvasText;
+  box-shadow:none;
+  transform:none;
+}}
+body.dark-theme .creator-color-badge .creator-color-button[aria-expanded="true"] {{
+  background:color-mix(in srgb, var(--creator-color) 14%, transparent);
+  color:CanvasText;
 }}
 
 /* =======================================================================

@@ -17,10 +17,10 @@ class CreatorColorsR06Tests(unittest.TestCase):
         cls.text = SOURCE.read_text(encoding="utf-8")
         cls.en = EN.read_text(encoding="utf-8")
 
-    def test_current_version_is_r07_while_r06_feature_remains(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r07"', self.text)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r07", self.text[:400])
-        self.assertNotIn('VERSION = "0.4.60-r06"', self.text[:10000])
+    def test_current_version_is_r08_while_r06_feature_remains(self) -> None:
+        self.assertIn('VERSION = "0.4.60-r08"', self.text)
+        self.assertIn("Livery Organizer for FH6 v0.4.60-r08", self.text[:400])
+        self.assertNotIn('VERSION = "0.4.60-r07"', self.text[:10000])
 
     def test_fixed_creator_color_ids_are_persisted_not_arbitrary_rgb(self) -> None:
         self.assertIn(
