@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r06
+Livery Organizer for FH6 v0.4.60-r07
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r06"
+VERSION = "0.4.60-r07"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -8913,7 +8913,7 @@ body.compact #fh6NavigatorSettings {{
   gap:7px;
   min-height:28px;
   font-size:10.5px;
-  color:var(--text);
+  color:CanvasText;
 }}
 .fh6-navigator-reset-option input {{ width:auto; min-height:auto; }}
 .fh6-navigator-settings-actions {{
@@ -9298,14 +9298,14 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
 #fh6TempDeletedReview {{
   border:1px solid color-mix(in srgb, #b42318 35%, var(--line));
   background:color-mix(in srgb, #b42318 8%, var(--surface));
-  color:color-mix(in srgb, #b42318 85%, var(--text));
+  color:color-mix(in srgb, #b42318 85%, CanvasText);
   font-weight:800;
 }}
 #fh6TempDeletedReview.hidden {{ display:none; }}
 .fh6-temp-delete-action {{
   border-color:color-mix(in srgb, #b42318 28%, var(--line)) !important;
   background:color-mix(in srgb, #b42318 6%, var(--surface)) !important;
-  color:color-mix(in srgb, #b42318 82%, var(--text)) !important;
+  color:color-mix(in srgb, #b42318 82%, CanvasText) !important;
 }}
 .fh6-temp-delete-list {{
   display:grid;
@@ -9760,6 +9760,12 @@ body.dark-theme .fh6-location-caption {{
     margin-left:2px;
   }}
 }}
+
+/* =======================================================================
+   v0.4.60-r07 — CSSテーマ参照の整理
+   ======================================================================= */
+/* 未定義だった --text 参照を CanvasText へ統一し、ライト / ダークテーマの
+   文字色フォールバックをブラウザ標準のテーマ色に明示的に揃えます。 */
 
 /* =======================================================================
    v0.4.60-r06 — 作成者カラーの永続管理
