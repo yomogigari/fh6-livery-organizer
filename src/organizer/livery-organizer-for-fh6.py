@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r04
+Livery Organizer for FH6 v0.4.60-r05
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r04"
+VERSION = "0.4.60-r05"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9660,6 +9660,94 @@ body.dark-theme .stat-filter-hint,
 body.dark-theme .fh6-move-target-caption,
 body.dark-theme .fh6-location-caption {{
   color:var(--accent-text);
+}}
+
+
+
+/* =======================================================================
+   v0.4.60-r05 — FH6位置番号のクリック視認性改善
+   ======================================================================= */
+/* 実スロット番号 / FH6位置のどちらもクリック可能な選択ボタンとして常時分かるよう、
+   セグメント境界・押しボタン感・hover / focus / activeフィードバックを強めます。
+   FH6位置（列+U/D）は実スロットより一段だけアクセントを強くし、視線で拾いやすくします。 */
+.fh6-move-target-group,
+.fh6-location-buttons {{
+  border-color:color-mix(in srgb, var(--accent) 58%, var(--line));
+  background:color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow:
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 18%, transparent),
+    var(--shadow-xs);
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger:not(:disabled),
+.fh6-location-buttons .fh6-location-button:not(:disabled) {{
+  position:relative;
+  cursor:pointer;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface));
+  box-shadow:inset 0 -2px 0 color-mix(in srgb, var(--accent) 34%, transparent);
+  transition:
+    background .12s ease,
+    color .12s ease,
+    box-shadow .12s ease,
+    transform .12s ease;
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger + .pill.fh6-move-target-trigger,
+.fh6-location-buttons .fh6-location-button + .fh6-location-button {{
+  border-left-color:color-mix(in srgb, var(--accent) 42%, var(--line));
+}}
+.topline .fh6-move-target-group .pill.fh6-my-design-position:not(:disabled),
+.fh6-location-buttons .fh6-location-button:last-child:not(:disabled) {{
+  background:color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color:color-mix(in srgb, var(--accent) 82%, CanvasText);
+  font-weight:900;
+}}
+.topline .fh6-move-target-group .pill.fh6-my-design-position:not(:disabled):not([aria-pressed="true"])::after,
+.fh6-location-buttons .fh6-location-button:last-child:not(:disabled):not([aria-pressed="true"])::after {{
+  content:"›";
+  display:inline-block;
+  margin-left:4px;
+  color:var(--accent);
+  font-size:1.05em;
+  font-weight:950;
+  line-height:1;
+  opacity:.82;
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger:hover:not(:disabled),
+.fh6-location-buttons .fh6-location-button:hover:not(:disabled) {{
+  background:var(--accent);
+  color:white;
+  box-shadow:
+    inset 0 -2px 0 color-mix(in srgb, black 14%, transparent),
+    0 2px 5px color-mix(in srgb, var(--accent) 22%, transparent);
+  transform:translateY(-1px);
+}}
+.topline .fh6-move-target-group .pill.fh6-my-design-position:hover:not(:disabled)::after,
+.fh6-location-buttons .fh6-location-button:last-child:hover:not(:disabled)::after {{
+  color:white;
+  opacity:1;
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger:active:not(:disabled),
+.fh6-location-buttons .fh6-location-button:active:not(:disabled) {{
+  box-shadow:inset 0 1px 2px color-mix(in srgb, black 18%, transparent);
+  transform:translateY(0);
+}}
+.topline .fh6-move-target-group .pill.fh6-move-target-trigger:focus-visible,
+.fh6-location-button:focus-visible {{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}}
+.fh6-move-target-group:has(.fh6-move-target-trigger[aria-pressed="true"]) .fh6-move-target-trigger:not(:disabled),
+.fh6-location-buttons:has(.fh6-location-button[aria-pressed="true"]) .fh6-location-button:not(:disabled) {{
+  background:transparent;
+  color:white;
+  box-shadow:none;
+  transform:none;
+}}
+@media (max-width:540px) {{
+  .topline .fh6-move-target-group .pill.fh6-my-design-position:not(:disabled):not([aria-pressed="true"])::after,
+  .fh6-location-buttons .fh6-location-button:last-child:not(:disabled):not([aria-pressed="true"])::after {{
+    margin-left:2px;
+  }}
 }}
 
 </style>
