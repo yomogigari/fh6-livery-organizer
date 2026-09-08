@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r05
+Livery Organizer for FH6 v0.4.60-r06
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r05"
+VERSION = "0.4.60-r06"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4240,6 +4240,23 @@ def write_report(
                 "normal"
             )
 
+            creator_color_control_html = (
+                (
+                    f'<span class="creator-color-badge" data-creator-color-name="{html.escape(r.creator)}">'
+                    f'<button class="link-filter creator-name-button" type="button" '
+                    f'data-filter-type="creator" data-filter-value="{html.escape((r.creator or "").lower())}">'
+                    f'{html.escape(r.creator)}</button>'
+                    f'<button class="creator-color-button" type="button" '
+                    f'data-creator-color-name="{html.escape(r.creator)}" '
+                    f'aria-label="作成者カラーを設定" title="作成者カラーを設定" '
+                    f'aria-haspopup="dialog" aria-expanded="false">'
+                    f'<span class="creator-color-dot" aria-hidden="true"></span>'
+                    f'<span class="creator-color-chevron" aria-hidden="true">▾</span></button>'
+                    f'</span>'
+                )
+                if r.creator else "—"
+            )
+
             cards.append(f"""
 <article class="card" data-key="{html.escape(record_key)}"
          data-search="{html.escape(search_text)}"
@@ -4307,17 +4324,11 @@ def write_report(
     }</h4>
     <p class="desc compact-optional-description">{html.escape(r.description or "—")}</p>
 
-    <div class="fh6-creator-display" title="FH6画面の作成者">{
-      f'<button class="link-filter" type="button" data-filter-type="creator" data-filter-value="{html.escape((r.creator or "").lower())}">{html.escape(r.creator)}</button>'
-      if r.creator else "—"
-    }</div>
+    <div class="fh6-creator-display" title="FH6画面の作成者">{creator_color_control_html}</div>
     <div class="fh6-display-date{' hidden' if not r.fh6_date_display else ''}" title="FH6画面の日付">{html.escape(r.fh6_date_display or "")}</div>
 
     <dl>
-      <dt class="fh6-normal-creator-row">作成者</dt><dd class="fh6-normal-creator-row">{
-        f'<button class="link-filter" type="button" data-filter-type="creator" data-filter-value="{html.escape((r.creator or "").lower())}">{html.escape(r.creator)}</button>'
-        if r.creator else "—"
-      }</dd>
+      <dt class="fh6-normal-creator-row">作成者</dt><dd class="fh6-normal-creator-row">{creator_color_control_html}</dd>
       <dt class="compact-optional-acquired compact-detail-label">取得日時</dt><dd class="compact-optional-acquired compact-detail-value" title="{html.escape(r.timestamp_local_guess)}">{html.escape(r.timestamp_local_guess)}</dd>
       <dt class="compact-optional-vinyl compact-detail-label">バイナル数</dt><dd class="compact-optional-vinyl compact-detail-value">{f"{r.vinyl_count:,}" if r.vinyl_count is not None else "—"}</dd>
     </dl>
@@ -9750,6 +9761,187 @@ body.dark-theme .fh6-location-caption {{
   }}
 }}
 
+/* =======================================================================
+   v0.4.60-r06 — 作成者カラーの永続管理
+   ======================================================================= */
+/* 作成者名を主表示として色分けし、カード全体は塗らず上端の細いラインだけで
+   一覧性を補助します。整理状態・選択状態など既存のカード意味色を上書きしません。 */
+.card.creator-colored {{
+  position:relative;
+}}
+.card.creator-colored::after {{
+  content:"";
+  position:absolute;
+  z-index:4;
+  top:0;
+  left:0;
+  right:0;
+  height:3px;
+  background:var(--creator-color);
+  pointer-events:none;
+}}
+.creator-color-badge {{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+  max-width:100%;
+  padding:1px 2px 1px 6px;
+  border:1px solid transparent;
+  border-radius:999px;
+  vertical-align:middle;
+}}
+.creator-color-badge.creator-colored {{
+  border-color:color-mix(in srgb, var(--creator-color) 52%, var(--line));
+  background:color-mix(in srgb, var(--creator-color) 15%, var(--surface));
+  box-shadow:inset 3px 0 0 var(--creator-color);
+}}
+.creator-color-badge .creator-name-button {{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}}
+.creator-color-button {{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  width:auto;
+  height:18px;
+  min-width:0;
+  min-height:18px !important;
+  padding:0 2px 0 1px !important;
+  border:0;
+  border-radius:5px !important;
+  background:transparent;
+  color:var(--muted);
+  box-shadow:none;
+}}
+.creator-color-button:hover:not(:disabled) {{
+  transform:none;
+  border-color:transparent;
+  background:color-mix(in srgb, CanvasText 7%, transparent);
+  color:CanvasText;
+  box-shadow:none;
+}}
+.creator-color-button:focus-visible {{
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+}}
+.creator-color-dot {{
+  display:block;
+  flex:0 0 8px;
+  width:8px;
+  height:8px;
+  margin:0;
+  border:1px dashed color-mix(in srgb, CanvasText 42%, transparent);
+  border-radius:999px;
+  background:transparent;
+}}
+.creator-color-chevron {{
+  display:block;
+  min-width:7px;
+  padding-left:3px;
+  border-left:1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  font-size:8px;
+  font-weight:800;
+  line-height:12px;
+  opacity:.56;
+}}
+.creator-color-button:hover:not(:disabled) .creator-color-chevron,
+.creator-color-button[aria-expanded="true"] .creator-color-chevron {{
+  opacity:.9;
+}}
+.creator-color-button[aria-expanded="true"] {{
+  background:color-mix(in srgb, var(--accent) 8%, transparent);
+  color:CanvasText;
+}}
+.creator-color-badge.creator-colored .creator-color-dot {{
+  border-style:solid;
+  border-color:color-mix(in srgb, var(--creator-color) 76%, CanvasText);
+  background:var(--creator-color);
+}}
+.creator-color-palette {{
+  position:fixed;
+  z-index:145;
+  width:min(360px,calc(100vw - 16px));
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:color-mix(in srgb, Canvas 96%, transparent);
+  box-shadow:var(--shadow-lg);
+  backdrop-filter:blur(18px);
+}}
+.creator-color-palette-head {{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  min-width:0;
+  margin-bottom:8px;
+}}
+.creator-color-palette-head b {{
+  flex:0 0 auto;
+  font-size:12px;
+}}
+.creator-color-palette-head .creator-name {{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:11px;
+}}
+.creator-color-options {{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}}
+.creator-color-option {{
+  min-width:0;
+  min-height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:6px;
+  padding:5px 7px;
+  font-size:10.5px;
+}}
+.creator-color-option.active {{
+  border-color:var(--accent);
+  background:var(--accent-soft);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
+}}
+.creator-color-swatch {{
+  flex:0 0 13px;
+  width:13px;
+  height:13px;
+  border:1px solid color-mix(in srgb, CanvasText 30%, transparent);
+  border-radius:999px;
+}}
+.creator-color-none .creator-color-swatch {{
+  background:linear-gradient(135deg, transparent 43%, var(--bad) 44% 56%, transparent 57%);
+}}
+.creator-color-option[data-creator-color="red"] .creator-color-swatch {{ background:#d65757; }}
+.creator-color-option[data-creator-color="orange"] .creator-color-swatch {{ background:#d97706; }}
+.creator-color-option[data-creator-color="yellow"] .creator-color-swatch {{ background:#c69a0a; }}
+.creator-color-option[data-creator-color="green"] .creator-color-swatch {{ background:#249b64; }}
+.creator-color-option[data-creator-color="cyan"] .creator-color-swatch {{ background:#0891b2; }}
+.creator-color-option[data-creator-color="blue"] .creator-color-swatch {{ background:#5873f6; }}
+.creator-color-option[data-creator-color="purple"] .creator-color-swatch {{ background:#8a63e8; }}
+.creator-color-option[data-creator-color="pink"] .creator-color-swatch {{ background:#d84f93; }}
+body.dark-theme .creator-color-palette {{
+  background:color-mix(in srgb, #171b22 96%, transparent);
+}}
+@media (max-width:540px) {{
+  .creator-color-options {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+  .creator-color-badge {{ padding-left:4px; }}
+  .creator-color-button {{ height:16px; min-height:16px !important; gap:2px; padding-right:1px !important; }}
+  .creator-color-dot {{ flex-basis:7px; width:7px; height:7px; }}
+  .creator-color-chevron {{ min-width:6px; padding-left:2px; font-size:7px; line-height:10px; }}
+}}
+
 </style>
 </head>
 <body>
@@ -10152,6 +10344,7 @@ body.dark-theme .fh6-location-caption {{
               <span class="backup-change-item">タグ・メモ <b id="backupChangeTagNoteCount">—</b></span>
               <span class="backup-change-item">お気に入り <b id="backupChangeFavoriteCount">—</b></span>
               <span class="backup-change-item">後で確認 <b id="backupChangeReviewCount">—</b></span>
+              <span class="backup-change-item">作成者カラー <b id="backupChangeCreatorColorCount">—</b></span>
               <span class="backup-change-item">新規判定基準 <b id="backupChangeScanCount">—</b></span>
               <span id="backupChangeOtherItem" class="backup-change-item hidden">その他 <b id="backupChangeOtherCount">0</b></span>
             </div>
@@ -10404,7 +10597,7 @@ body.dark-theme .fh6-location-caption {{
 
     <div class="help-intro">
       <b>FH6で取得したペイントを、検索・比較・判定・分類・バックアップするための整理画面です。</b>
-      判定、タグ、メモ、お気に入り、後で確認などはブラウザ側へ保存され、
+      判定、タグ、メモ、お気に入り、後で確認、作成者カラーなどはブラウザ側へ保存され、
       レポート上の操作からFH6のGameSaveを削除・移動・リネーム・上書きすることはありません。
     </div>
 
@@ -10551,6 +10744,7 @@ body.dark-theme .fh6-location-caption {{
           <li><b>お気に入り</b>：残したい・よく使う候補の目印。</li>
           <li><b>後で確認</b>：判断を保留したいカードの目印。</li>
           <li><b>タグ・メモ</b>：任意分類と自由記述。検索対象にもなります。</li>
+          <li><b>作成者カラー</b>：作成者名の横の色ボタンから設定します。同じ作成者名の全カードへ反映し、現在のペイントが0件になっても設定は保持されます。</li>
         </ul>
         <div class="help-tip help-warning">
           <b>「削除候補」はOrganizer内のラベルです。</b> FH6のファイルを削除しません。
@@ -10643,18 +10837,18 @@ body.dark-theme .fh6-location-caption {{
         </p>
         <p>
           <b>「バックアップ状態」</b>ではユーザーデータ保存 / 判定バックアップの前回保存時刻と、現在との差を確認します。
-          ユーザーデータについては、前回保存から変更された<b>判定、タグ・メモ、お気に入り、後で確認、新規判定基準</b>も項目別に集計します。
+          ユーザーデータについては、前回保存から変更された<b>判定、タグ・メモ、お気に入り、後で確認、作成者カラー、新規判定基準</b>も項目別に集計します。
         </p>
       </section>
 
       <section class="help-section">
         <h4>ユーザーデータ保存・復元</h4>
         <p>
-          判定、タグ、メモ、お気に入り、後で確認、UI状態、絞り込みプリセットなどは通常ブラウザの
+          判定、タグ、メモ、お気に入り、後で確認、作成者カラー、UI状態、絞り込みプリセットなどは通常ブラウザの
           <code>localStorage</code> へ保存します。利用できない環境では一時メモリへ切り替わります。
         </p>
         <p>
-          <b>ユーザーデータ保存</b>は判定・メタデータに加えてUI状態とスキャン状態をJSONへ保存します。
+          <b>ユーザーデータ保存</b>は判定・メタデータ・作成者カラーに加えてUI状態とスキャン状態をJSONへ保存します。
           <b>ユーザーデータ復元</b>ではプレビュー後に「現在データと統合」または「完全に置換」を選べます。
           <b>判定バックアップ</b>は主に残す / 削除候補の判定だけを保存する軽量版です。
         </p>
@@ -10664,7 +10858,7 @@ body.dark-theme .fh6-location-caption {{
         <h4>バックアップ状態の読み方</h4>
         <p>
           状態は <b>未バックアップ / 最新 / 変更あり</b> です。
-          ユーザーデータの比較対象は判定・タグ・メモ・お気に入り・後で確認・スキャン状態で、
+          ユーザーデータの比較対象は判定・タグ・メモ・お気に入り・後で確認・作成者カラー・スキャン状態で、
           検索条件、並び順、テーマなどの日常的なUI変更だけでは「変更あり」になりません。
         </p>
         <p>
@@ -10683,7 +10877,7 @@ body.dark-theme .fh6-location-caption {{
             <tr><td>全件CSV</td><td>全ペイント。現在の判定・タグ・メモ・お気に入り・後で確認を反映します。</td></tr>
             <tr><td>表示中CSV</td><td>現在表示されているカードだけを、画面上の現在の並び順と同じ行順で出力します。</td></tr>
             <tr><td>Excel</td><td>レポート生成時の <code>livery-organizer-for-fh6.xlsx</code>。サムネイル入りですが、HTMLを開いた後の判定変更はリアルタイム反映されません。</td></tr>
-            <tr><td>ユーザーデータJSON</td><td>判定、タグ、メモ、お気に入り、後で確認、UI状態、スキャン状態をブラウザから保存します。別PCへの整理内容移行にも使えます。</td></tr>
+            <tr><td>ユーザーデータJSON</td><td>判定、タグ、メモ、お気に入り、後で確認、作成者カラー、UI状態、スキャン状態をブラウザから保存します。別PCへの整理内容移行にも使えます。</td></tr>
             <tr><td>判定バックアップJSON</td><td>残す / 削除候補を中心に保存する軽量バックアップです。</td></tr>
           </tbody>
         </table>
@@ -10885,6 +11079,24 @@ body.dark-theme .fh6-location-caption {{
     <div id="historyBody"></div>
   </div>
 </div>
+<div id="creatorColorPalette" class="creator-color-palette hidden" role="dialog" aria-label="作成者カラー" aria-hidden="true">
+  <div class="creator-color-palette-head">
+    <b>作成者カラー</b>
+    <span id="creatorColorPaletteName" class="creator-name"></span>
+  </div>
+  <div class="creator-color-options">
+    <button class="creator-color-option creator-color-none" type="button" data-creator-color=""><span class="creator-color-swatch" aria-hidden="true"></span>色なし</button>
+    <button class="creator-color-option" type="button" data-creator-color="red"><span class="creator-color-swatch" aria-hidden="true"></span>赤</button>
+    <button class="creator-color-option" type="button" data-creator-color="orange"><span class="creator-color-swatch" aria-hidden="true"></span>オレンジ</button>
+    <button class="creator-color-option" type="button" data-creator-color="yellow"><span class="creator-color-swatch" aria-hidden="true"></span>黄</button>
+    <button class="creator-color-option" type="button" data-creator-color="green"><span class="creator-color-swatch" aria-hidden="true"></span>緑</button>
+    <button class="creator-color-option" type="button" data-creator-color="cyan"><span class="creator-color-swatch" aria-hidden="true"></span>シアン</button>
+    <button class="creator-color-option" type="button" data-creator-color="blue"><span class="creator-color-swatch" aria-hidden="true"></span>青</button>
+    <button class="creator-color-option" type="button" data-creator-color="purple"><span class="creator-color-swatch" aria-hidden="true"></span>紫</button>
+    <button class="creator-color-option" type="button" data-creator-color="pink"><span class="creator-color-swatch" aria-hidden="true"></span>ピンク</button>
+  </div>
+</div>
+
 <div id="userDataPreviewModal" class="modal hidden" aria-hidden="true">
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="userDataPreviewTitle">
     <div class="modal-head"><h3 id="userDataPreviewTitle">ユーザーデータ復元プレビュー</h3><button data-close-modal="userDataPreviewModal">閉じる</button></div>
@@ -11143,7 +11355,73 @@ function migrateLegacyDecision(card) {{
     }}
   }}
 }}
+const CREATOR_COLOR_STORAGE_KEY = "livery-organizer-for-fh6-creator-colors-v1";
+const CREATOR_COLOR_DEFS = Object.freeze({{
+  red:"#d65757", orange:"#d97706", yellow:"#c69a0a", green:"#249b64",
+  cyan:"#0891b2", blue:"#5873f6", purple:"#8a63e8", pink:"#d84f93"
+}});
 const cards = [...document.querySelectorAll(".card")];
+
+function sanitizeCreatorColorMap(value) {{
+  const result = {{}};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+  Object.entries(value).forEach(([rawName, rawColor]) => {{
+    const name = String(rawName || "").trim();
+    const colorId = String(rawColor || "");
+    if (!name || !Object.prototype.hasOwnProperty.call(CREATOR_COLOR_DEFS, colorId)) return;
+    result[name] = colorId;
+  }});
+  return result;
+}}
+
+function loadCreatorColorMap() {{
+  try {{
+    return sanitizeCreatorColorMap(JSON.parse(storageGet(CREATOR_COLOR_STORAGE_KEY) || "{{}}"));
+  }} catch (_) {{
+    return {{}};
+  }}
+}}
+
+let creatorColors = loadCreatorColorMap();
+
+function saveCreatorColorMap() {{
+  const clean = sanitizeCreatorColorMap(creatorColors);
+  creatorColors = clean;
+  if (Object.keys(clean).length) storageSet(CREATOR_COLOR_STORAGE_KEY, JSON.stringify(clean));
+  else storageRemove(CREATOR_COLOR_STORAGE_KEY);
+}}
+
+function creatorColorNameForCard(card) {{
+  return String(card?.dataset?.creatorDisplay || "").trim();
+}}
+
+function applyCreatorColorToCard(card) {{
+  const name = creatorColorNameForCard(card);
+  const colorId = name ? String(creatorColors[name] || "") : "";
+  const colorValue = CREATOR_COLOR_DEFS[colorId] || "";
+  card.classList.toggle("creator-colored", Boolean(colorValue));
+  if (colorValue) card.style.setProperty("--creator-color", colorValue);
+  else card.style.removeProperty("--creator-color");
+  card.querySelectorAll(".creator-color-badge").forEach(badge => {{
+    badge.classList.toggle("creator-colored", Boolean(colorValue));
+    badge.dataset.creatorColor = colorId;
+  }});
+}}
+
+function applyCreatorColors() {{
+  cards.forEach(applyCreatorColorToCard);
+}}
+
+function setCreatorColor(name, colorId) {{
+  const creatorName = String(name || "").trim();
+  if (!creatorName) return;
+  if (colorId && Object.prototype.hasOwnProperty.call(CREATOR_COLOR_DEFS, colorId)) creatorColors[creatorName] = colorId;
+  else delete creatorColors[creatorName];
+  saveCreatorColorMap();
+  applyCreatorColors();
+  refreshBackupUi();
+}}
+
 // v0.4.58-r15 rev3 — 1000件近いレポートでも検索中にlocalStorage読込や
 // 静的文字列の正規化を繰り返さないよう、ページ内だけで使うキャッシュを持ちます。
 // ユーザーデータ変更時は applyCardMeta() がメタ情報キャッシュを即時更新します。
@@ -11237,10 +11515,10 @@ const META_PREFIX = "livery-organizer-for-fh6-meta:";
 const LEGACY_META_PREFIXES = ["fh6-livery-meta:"];
 const SCAN_STATE_KEY = "livery-organizer-for-fh6-scan-state-v1";
 const LEGACY_SCAN_STATE_KEYS = ["fh6-livery-scan-state-v1"];
-const USERDATA_VERSION = 2;
+const USERDATA_VERSION = 3;
 const BACKUP_STATUS_KEY = "livery-organizer-for-fh6-backup-status-v1";
 const LEGACY_BACKUP_STATUS_KEYS = ["fh6-livery-backup-status-v1"];
-const BACKUP_STATUS_VERSION = 2;
+const BACKUP_STATUS_VERSION = 3;
 const undoStack = [];
 const redoStack = [];
 const MAX_UNDO = 100;
@@ -14836,6 +15114,93 @@ function applyCreatorSearch() {{
 }}
 creatorQuickSearch?.addEventListener("input", applyCreatorSearch);
 
+const creatorColorPalette = document.getElementById("creatorColorPalette");
+const creatorColorPaletteName = document.getElementById("creatorColorPaletteName");
+let creatorColorPaletteTarget = "";
+let creatorColorPaletteOpener = null;
+
+function closeCreatorColorPalette(restoreFocus = true) {{
+  if (!creatorColorPalette) return;
+  creatorColorPalette.classList.add("hidden");
+  creatorColorPalette.setAttribute("aria-hidden", "true");
+  const opener = creatorColorPaletteOpener;
+  if (opener instanceof HTMLElement) opener.setAttribute("aria-expanded", "false");
+  creatorColorPaletteTarget = "";
+  creatorColorPaletteOpener = null;
+  if (restoreFocus && opener instanceof HTMLElement && opener.isConnected) {{
+    requestAnimationFrame(() => opener.focus({{preventScroll:true}}));
+  }}
+}}
+
+function updateCreatorColorPaletteSelection() {{
+  if (!creatorColorPalette) return;
+  const selected = creatorColorPaletteTarget ? String(creatorColors[creatorColorPaletteTarget] || "") : "";
+  creatorColorPalette.querySelectorAll("[data-creator-color]").forEach(button => {{
+    const active = String(button.dataset.creatorColor || "") === selected;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  }});
+}}
+
+function openCreatorColorPalette(card, opener) {{
+  if (!creatorColorPalette || !card) return;
+  const name = creatorColorNameForCard(card);
+  if (!name) return;
+  creatorColorPaletteTarget = name;
+  creatorColorPaletteOpener = opener instanceof HTMLElement ? opener : null;
+  if (creatorColorPaletteOpener) creatorColorPaletteOpener.setAttribute("aria-expanded", "true");
+  if (creatorColorPaletteName) creatorColorPaletteName.textContent = name;
+  updateCreatorColorPaletteSelection();
+  creatorColorPalette.classList.remove("hidden");
+  creatorColorPalette.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => {{
+    const anchor = creatorColorPaletteOpener?.getBoundingClientRect?.();
+    if (!anchor) return;
+    const rect = creatorColorPalette.getBoundingClientRect();
+    const margin = 8;
+    let left = Math.max(margin, Math.min(anchor.left, window.innerWidth - rect.width - margin));
+    let top = anchor.bottom + 6;
+    if (top + rect.height > window.innerHeight - margin) top = Math.max(margin, anchor.top - rect.height - 6);
+    creatorColorPalette.style.left = `${{Math.round(left)}}px`;
+    creatorColorPalette.style.top = `${{Math.round(top)}}px`;
+    const selected = creatorColorPalette.querySelector('.creator-color-option.active') || creatorColorPalette.querySelector('.creator-color-option');
+    if (selected instanceof HTMLElement) selected.focus({{preventScroll:true}});
+  }});
+}}
+
+document.querySelectorAll(".creator-color-button").forEach(button => {{
+  button.addEventListener("click", event => {{
+    event.preventDefault();
+    event.stopPropagation();
+    const card = button.closest(".card");
+    const alreadyOpen = creatorColorPaletteTarget === creatorColorNameForCard(card) && !creatorColorPalette?.classList.contains("hidden");
+    if (alreadyOpen) closeCreatorColorPalette(false);
+    else openCreatorColorPalette(card, button);
+  }});
+}});
+
+creatorColorPalette?.querySelectorAll("[data-creator-color]").forEach(button => {{
+  button.addEventListener("click", () => {{
+    if (!creatorColorPaletteTarget) return;
+    setCreatorColor(creatorColorPaletteTarget, String(button.dataset.creatorColor || ""));
+    closeCreatorColorPalette(true);
+  }});
+}});
+
+document.addEventListener("pointerdown", event => {{
+  if (!creatorColorPalette || creatorColorPalette.classList.contains("hidden")) return;
+  const target = event.target;
+  if (creatorColorPalette.contains(target)) return;
+  if (target?.closest?.(".creator-color-button")) return;
+  closeCreatorColorPalette(false);
+}});
+
+document.addEventListener("keydown", event => {{
+  if (event.key !== "Escape" || !creatorColorPalette || creatorColorPalette.classList.contains("hidden")) return;
+  event.preventDefault();
+  closeCreatorColorPalette(true);
+}});
+
 document.querySelectorAll(".mobile-bottom-nav button").forEach(btn => {{
   btn.addEventListener("click", () => {{
     const action = btn.dataset.mobileAction;
@@ -15785,7 +16150,7 @@ async function runSelfDiagnostics() {{
       ["車種整理サマリー", ["none","partial","complete"].every(state => Boolean(document.querySelector(`[data-vehicle-progress-state="${{state}}"]`)))
         && vehicleProgressSummary().total === VEHICLE_CARDS.size,
         `未着手 ${{vehicleProgressSummary().none}} / 整理中 ${{vehicleProgressSummary().partial}} / 完了 ${{vehicleProgressSummary().complete}}車種`],
-      ["バックアップ状態", BACKUP_STATUS_VERSION === 2 && Boolean(document.getElementById("backupStatusPanel")),
+      ["バックアップ状態", BACKUP_STATUS_VERSION === 3 && Boolean(document.getElementById("backupStatusPanel")),
         `schema v${{BACKUP_STATUS_VERSION}} / full + decisions`],
       ["バックアップ変更サマリー", typeof backupSnapshotChangeSummary === "function"
         && Boolean(document.getElementById("backupChangeSummary")),
@@ -16761,6 +17126,15 @@ function buildMetadataBackupData() {{
   return metadata;
 }}
 
+function buildCreatorColorBackupData() {{
+  const result = {{}};
+  Object.keys(creatorColors).sort().forEach(name => {{
+    const colorId = String(creatorColors[name] || "");
+    if (name && Object.prototype.hasOwnProperty.call(CREATOR_COLOR_DEFS, colorId)) result[name] = colorId;
+  }});
+  return result;
+}}
+
 function loadScanStateForBackup() {{
   try {{ return JSON.parse(storageGetMigrated(SCAN_STATE_KEY, LEGACY_SCAN_STATE_KEYS) || "null"); }}
   catch (_) {{ return null; }}
@@ -16790,6 +17164,7 @@ function buildFullBackupSnapshot() {{
   return stableBackupClone({{
     decisions:buildDecisionBackupData(),
     metadata:buildMetadataBackupData(),
+    creatorColors:buildCreatorColorBackupData(),
     scanState:loadScanStateForBackup()
   }});
 }}
@@ -16847,9 +17222,17 @@ function backupSnapshotChangeSummary(previousSnapshot) {{
     if (stableBackupString(stripKnown(before)) !== stableBackupString(stripKnown(after)) || (rawChanged && !knownChanged)) other++;
   }});
 
+  const previousCreatorColors = sanitizeCreatorColorMap(previousSnapshot.creatorColors || {{}});
+  const currentCreatorColors = sanitizeCreatorColorMap(current.creatorColors || {{}});
+  const creatorColorKeys = new Set([...Object.keys(previousCreatorColors), ...Object.keys(currentCreatorColors)]);
+  let creatorColors = 0;
+  creatorColorKeys.forEach(name => {{
+    if (String(previousCreatorColors[name] || "") !== String(currentCreatorColors[name] || "")) creatorColors++;
+  }});
+
   const scanState = stableBackupString(previousSnapshot.scanState ?? null) === stableBackupString(current.scanState ?? null) ? 0 : 1;
-  const total = decisions + tagNote + favorites + review + scanState + other;
-  return {{decisions, tagNote, favorites, review, scanState, other, total}};
+  const total = decisions + tagNote + favorites + review + creatorColors + scanState + other;
+  return {{decisions, tagNote, favorites, review, creatorColors, scanState, other, total}};
 }}
 
 function setBackupChangeCount(id, value) {{
@@ -16869,7 +17252,7 @@ function updateBackupChangeSummary(fullEntry, fullState) {{
     panel.dataset.state = "none";
     if (status) status.textContent = "未バックアップ";
     if (note) note.textContent = "最初のユーザーデータ保存後から、変更内容の件数を表示します。";
-    ["backupChangeDecisionCount","backupChangeTagNoteCount","backupChangeFavoriteCount","backupChangeReviewCount","backupChangeScanCount"].forEach(id => setBackupChangeCount(id, null));
+    ["backupChangeDecisionCount","backupChangeTagNoteCount","backupChangeFavoriteCount","backupChangeReviewCount","backupChangeCreatorColorCount","backupChangeScanCount"].forEach(id => setBackupChangeCount(id, null));
     otherItem?.classList.add("hidden");
     return;
   }}
@@ -16878,7 +17261,7 @@ function updateBackupChangeSummary(fullEntry, fullState) {{
     panel.dataset.state = fullState === "current" ? "current" : "changed";
     if (status) status.textContent = "内訳未記録";
     if (note) note.textContent = "この保存記録は旧バージョン形式です。次回ユーザーデータ保存後から変更内訳を表示できます。";
-    ["backupChangeDecisionCount","backupChangeTagNoteCount","backupChangeFavoriteCount","backupChangeReviewCount","backupChangeScanCount"].forEach(id => setBackupChangeCount(id, null));
+    ["backupChangeDecisionCount","backupChangeTagNoteCount","backupChangeFavoriteCount","backupChangeReviewCount","backupChangeCreatorColorCount","backupChangeScanCount"].forEach(id => setBackupChangeCount(id, null));
     otherItem?.classList.add("hidden");
     return;
   }}
@@ -16889,6 +17272,7 @@ function updateBackupChangeSummary(fullEntry, fullState) {{
   setBackupChangeCount("backupChangeTagNoteCount", summary.tagNote);
   setBackupChangeCount("backupChangeFavoriteCount", summary.favorites);
   setBackupChangeCount("backupChangeReviewCount", summary.review);
+  setBackupChangeCount("backupChangeCreatorColorCount", summary.creatorColors);
   setBackupChangeCount("backupChangeScanCount", summary.scanState);
   setBackupChangeCount("backupChangeOtherCount", summary.other);
   otherItem?.classList.toggle("hidden", summary.other === 0);
@@ -17053,6 +17437,7 @@ function buildUserDataPayload() {{
     exportedAt:new Date().toISOString(),
     decisions:buildDecisionBackupData(),
     metadata:buildMetadataBackupData(),
+    creatorColors:buildCreatorColorBackupData(),
     uiState,
     scanState:loadScanStateForBackup()
   }};
@@ -17068,6 +17453,7 @@ document.getElementById("importUserData").addEventListener("click", () => docume
 function summarizeUserDataPayload(payload) {{
   const decisions = payload?.decisions || {{}};
   const metadata = payload?.metadata || {{}};
+  const creatorColors = sanitizeCreatorColorMap(payload?.creatorColors || {{}});
   const keys = new Set([...Object.keys(decisions), ...Object.keys(metadata)]);
   const matched = [...keys].filter(key => cards.some(card => card.dataset.key === key)).length;
   const metaValues = Object.values(metadata);
@@ -17078,6 +17464,7 @@ function summarizeUserDataPayload(payload) {{
     notes: metaValues.filter(meta => String(meta?.note || "").trim()).length,
     favorites: metaValues.filter(meta => Boolean(meta?.favorite)).length,
     review: metaValues.filter(meta => Boolean(meta?.reviewLater)).length,
+    creatorColors: Object.keys(creatorColors).length,
     matched,
     unmatched: Math.max(0, keys.size - matched)
   }};
@@ -17094,16 +17481,18 @@ function showUserDataPreview(payload) {{
       <div class="diagnostics-row"><span>メモあり</span><b>${{s.notes}}件</b></div>
       <div class="diagnostics-row"><span>お気に入り</span><b>${{s.favorites}}件</b></div>
       <div class="diagnostics-row"><span>後で確認</span><b>${{s.review}}件</b></div>
+      <div class="diagnostics-row"><span>作成者カラー</span><b>${{s.creatorColors}}件</b></div>
       <div class="diagnostics-row"><span>現在のペイントと一致</span><b>${{s.matched}}件</b></div>
       <div class="diagnostics-row"><span>現在存在しないデータ</span><b>${{s.unmatched}}件</b></div>
     </div>
-    <p class="small">「統合」は現在データを残してファイル内の値だけ上書きします。「完全に置換」は現在の整理状態・タグ・メモ等を消去してから復元します。</p>`;
+    <p class="small">「統合」は現在データを残してファイル内の値だけ上書きします。「完全に置換」は現在の整理状態・タグ・メモ・作成者カラー等を消去してから復元します。</p>`;
   openModal("userDataPreviewModal", document.getElementById("importUserData"));
 }}
 
 function applyUserDataPayload(payload, replaceExisting = false) {{
   const decisions = payload?.decisions || {{}};
   const metadata = payload?.metadata || {{}};
+  const importedCreatorColors = sanitizeCreatorColorMap(payload?.creatorColors || {{}});
 
   if (replaceExisting) {{
     cards.forEach(card => {{
@@ -17124,6 +17513,12 @@ function applyUserDataPayload(payload, replaceExisting = false) {{
     paintState(card);
     applyCardMeta(card);
   }});
+
+  creatorColors = replaceExisting
+    ? importedCreatorColors
+    : sanitizeCreatorColorMap({{...creatorColors, ...importedCreatorColors}});
+  saveCreatorColorMap();
+  applyCreatorColors();
 
   if (payload?.uiState) storageSet(UI_STATE_KEY, JSON.stringify(payload.uiState));
   if (payload?.scanState) storageSet(SCAN_STATE_KEY, JSON.stringify(payload.scanState));
@@ -17622,6 +18017,7 @@ document.addEventListener("keydown", e => {{
 
 multiFilterSelects.forEach(normalizeNativeMultiSelection);
 applyCompactFields(DEFAULT_COMPACT_FIELDS);
+applyCreatorColors();
 applyScanDiff();
 renderAllDetailFilterChoices();
 updateTagModeUi();

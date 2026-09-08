@@ -117,7 +117,7 @@ class OrganizerIntegrationTests(unittest.TestCase):
         self.organizer.set_language(self.organizer.DEFAULT_LANGUAGE)
 
     def test_version_is_v0460(self) -> None:
-        self.assertEqual(self.organizer.VERSION, "0.4.60-r05")
+        self.assertEqual(self.organizer.VERSION, "0.4.60-r06")
     def test_source_header_matches_version(self) -> None:
         header = ORGANIZER_SOURCE.read_text(encoding="utf-8").splitlines()[:8]
         self.assertIn(f"Livery Organizer for FH6 v{self.organizer.VERSION}", header)
@@ -895,8 +895,8 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 712)
-        self.assertEqual(len(en_locale.REPORT_ATTR), 99)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 729)
+        self.assertEqual(len(en_locale.REPORT_ATTR), 100)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
         self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())

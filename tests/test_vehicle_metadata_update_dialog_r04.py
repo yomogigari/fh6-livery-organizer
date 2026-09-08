@@ -37,8 +37,8 @@ class VehicleMetadataUpdateDialogR04Tests(unittest.TestCase):
         return str(segment)
 
     def test_version_is_r04(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r05"', self.source)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r05", self.source[:300])
+        self.assertIn('VERSION = "0.4.60-r06"', self.source)
+        self.assertIn("Livery Organizer for FH6 v0.4.60-r06", self.source[:300])
         self.assertNotIn('VERSION = "0.4.60-r03"', self.source)
 
     def test_result_dialog_uses_selectable_text(self) -> None:

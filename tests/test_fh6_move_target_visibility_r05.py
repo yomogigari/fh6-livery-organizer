@@ -14,9 +14,9 @@ class Fh6MoveTargetVisibilityR05Tests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.text = SOURCE.read_text(encoding="utf-8")
 
-    def test_version_is_r05(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r05"', self.text)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r05", self.text)
+    def test_current_version_is_r06_while_r05_feature_remains(self) -> None:
+        self.assertIn('VERSION = "0.4.60-r06"', self.text)
+        self.assertIn("Livery Organizer for FH6 v0.4.60-r06", self.text)
         self.assertNotIn('VERSION = "0.4.60-r04"', self.text)
 
     def test_r05_affordance_block_is_present_once(self) -> None:
