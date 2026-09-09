@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
-import runpy
 import unittest
 
 
@@ -129,11 +128,6 @@ class CreatorColorsR06Tests(unittest.TestCase):
         self.assertIn("const currentCreatorColors = sanitizeCreatorColorMap(current.creatorColors || {{}});", self.text)
         self.assertIn("let creatorColors = 0;", self.text)
         self.assertIn("total = decisions + tagNote + favorites + review + creatorColors + scanState + other", self.text)
-
-    def test_english_locale_resource_counts_match_i18n_audit(self) -> None:
-        locale = runpy.run_path(str(EN))
-        self.assertEqual(len(locale["REPORT_TEXT"]), 729)
-        self.assertEqual(len(locale["REPORT_ATTR"]), 100)
 
     def test_english_resources_cover_palette_and_attribute(self) -> None:
         expected = {

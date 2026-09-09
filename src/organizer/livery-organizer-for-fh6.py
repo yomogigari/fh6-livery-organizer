@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r09
+Livery Organizer for FH6 v0.4.60-r10
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r09"
+VERSION = "0.4.60-r10"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9762,6 +9762,158 @@ body.dark-theme .fh6-location-caption {{
 }}
 
 /* =======================================================================
+   v0.4.60-r10 — 作成者カラー管理
+   ======================================================================= */
+/* 現在レポートにいる作成者と、ペイント0件でも保存されている作成者カラーを
+   1つの一覧で確認・変更します。カード側の控えめな色変更UIはそのまま維持します。 */
+.creator-color-manager-panel {{
+  max-width:920px;
+}}
+.creator-color-manager-toolbar {{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) auto;
+  gap:8px;
+  align-items:center;
+  margin:10px 0 8px;
+}}
+.creator-color-manager-toolbar input {{
+  min-width:0;
+  width:100%;
+}}
+#creatorColorManagerColoredOnly[aria-pressed="true"] {{
+  border-color:color-mix(in srgb, var(--accent) 58%, var(--line));
+  background:var(--accent-soft);
+}}
+.creator-color-manager-summary {{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:8px;
+}}
+.creator-color-manager-summary span {{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  min-height:26px;
+  padding:4px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--surface);
+  font-size:10.5px;
+}}
+.creator-color-manager-list {{
+  display:grid;
+  gap:6px;
+  max-height:min(62vh,620px);
+  overflow:auto;
+  padding:1px;
+}}
+.creator-color-manager-row {{
+  --creator-manager-color:transparent;
+  display:grid;
+  grid-template-columns:minmax(180px,1fr) auto;
+  gap:10px;
+  align-items:center;
+  min-width:0;
+  padding:8px 9px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--surface);
+}}
+.creator-color-manager-row.creator-colored {{
+  border-color:color-mix(in srgb, var(--creator-manager-color) 48%, var(--line));
+  box-shadow:inset 3px 0 0 var(--creator-manager-color);
+  background:color-mix(in srgb, var(--creator-manager-color) 11%, var(--surface));
+}}
+.creator-color-manager-identity {{
+  min-width:0;
+}}
+.creator-color-manager-name {{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:800;
+}}
+.creator-color-manager-count {{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:10.5px;
+}}
+.creator-color-manager-row.creator-absent .creator-color-manager-count {{
+  color:color-mix(in srgb, #d97706 78%, CanvasText);
+  font-weight:750;
+}}
+.creator-color-manager-options {{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:4px;
+}}
+.creator-color-manager-option {{
+  position:relative;
+  flex:0 0 26px;
+  width:26px;
+  height:26px;
+  min-width:26px;
+  min-height:26px !important;
+  padding:0 !important;
+  border-radius:999px !important;
+  box-shadow:none;
+}}
+.creator-color-manager-option:hover:not(:disabled) {{
+  transform:none;
+}}
+.creator-color-manager-option[aria-pressed="true"] {{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}}
+.creator-color-manager-swatch {{
+  display:block;
+  width:12px;
+  height:12px;
+  margin:auto;
+  border:1px solid color-mix(in srgb, CanvasText 32%, transparent);
+  border-radius:999px;
+}}
+.creator-color-manager-option[data-creator-color=""] .creator-color-manager-swatch {{
+  background:linear-gradient(135deg, transparent 43%, var(--bad) 44% 56%, transparent 57%);
+}}
+.creator-color-manager-option[data-creator-color="red"] .creator-color-manager-swatch {{ background:#d65757; }}
+.creator-color-manager-option[data-creator-color="orange"] .creator-color-manager-swatch {{ background:#d97706; }}
+.creator-color-manager-option[data-creator-color="yellow"] .creator-color-manager-swatch {{ background:#c69a0a; }}
+.creator-color-manager-option[data-creator-color="green"] .creator-color-manager-swatch {{ background:#249b64; }}
+.creator-color-manager-option[data-creator-color="cyan"] .creator-color-manager-swatch {{ background:#0891b2; }}
+.creator-color-manager-option[data-creator-color="blue"] .creator-color-manager-swatch {{ background:#5873f6; }}
+.creator-color-manager-option[data-creator-color="purple"] .creator-color-manager-swatch {{ background:#8a63e8; }}
+.creator-color-manager-option[data-creator-color="pink"] .creator-color-manager-swatch {{ background:#d84f93; }}
+.creator-color-manager-empty {{
+  margin:8px 0 0;
+  padding:16px;
+  border:1px dashed var(--line);
+  border-radius:11px;
+  color:var(--muted);
+  text-align:center;
+}}
+body.dark-theme .creator-color-manager-row.creator-colored {{
+  background:color-mix(in srgb, var(--creator-manager-color) 20%, var(--surface));
+}}
+@media (max-width:620px) {{
+  .creator-color-manager-toolbar {{
+    grid-template-columns:1fr;
+  }}
+  .creator-color-manager-row {{
+    grid-template-columns:1fr;
+    gap:7px;
+  }}
+  .creator-color-manager-options {{
+    justify-content:flex-start;
+  }}
+}}
+
+/* =======================================================================
    v0.4.60-r08 — ダークテーマの作成者カラー視認性
    ======================================================================= */
 /* ライトテーマの淡い作成者カラーは維持し、ダークテーマだけ背景への混合率を
@@ -10434,6 +10586,14 @@ body.dark-theme .creator-color-palette {{
         <span class="small">Nキーでも次の未決定へ移動できます。未完了車種は現在の表示順を基準に先頭 / 前 / 次へ移動でき、Vキーで次、Shift+Vで前へ移動します。連続整理ON時はK/Dのあと自動で次へ進みます。</span>
       </section>
 
+      <section class="secondary-action-group" aria-labelledby="secondaryCreatorColorTitle">
+        <h4 id="secondaryCreatorColorTitle">作成者カラー</h4>
+        <div class="secondary-action-group-actions">
+          <button id="creatorColorManagerAction" type="button">作成者カラー管理</button>
+        </div>
+        <span class="small">一覧で確認・変更し、現在のペイントが0件になった作成者の保存済みカラーも管理できます。</span>
+      </section>
+
       <section class="secondary-action-group" aria-labelledby="secondaryExportTitle">
         <h4 id="secondaryExportTitle">エクスポート</h4>
         <div class="secondary-action-group-actions">
@@ -10787,6 +10947,11 @@ body.dark-theme .creator-color-palette {{
           <li><b>タグ・メモ</b>：任意分類と自由記述。検索対象にもなります。</li>
           <li><b>作成者カラー</b>：作成者名の横の色ボタンから設定します。同じ作成者名の全カードへ反映し、現在のペイントが0件になっても設定は保持されます。</li>
         </ul>
+        <div class="help-tip">
+          <b>作成者カラー管理</b>：
+          <span class="help-path"><span>その他の操作</span> → <span>作成者カラー管理</span></span>
+          では、作成者カラーを一覧から検索・変更・解除できます。「設定済みのみ」で色を設定した作成者だけに絞り込め、現在のペイントが0件でも保存済みの色設定があれば「現在0件で保持」として確認できます。
+        </div>
         <div class="help-tip help-warning">
           <b>「削除候補」はOrganizer内のラベルです。</b> FH6のファイルを削除しません。
         </div>
@@ -11120,6 +11285,29 @@ body.dark-theme .creator-color-palette {{
     <div id="historyBody"></div>
   </div>
 </div>
+<div id="creatorColorManagerModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-panel creator-color-manager-panel" role="dialog" aria-modal="true" aria-labelledby="creatorColorManagerTitle">
+    <div class="modal-head">
+      <div>
+        <h3 id="creatorColorManagerTitle">作成者カラー管理</h3>
+        <div class="small">現在のペイントが0件の作成者も、保存済みの色設定があれば一覧に残ります。</div>
+      </div>
+      <button data-close-modal="creatorColorManagerModal">閉じる</button>
+    </div>
+    <div class="creator-color-manager-toolbar">
+      <input id="creatorColorManagerSearch" type="search" placeholder="作成者を検索…" aria-label="作成者を検索" data-modal-initial-focus>
+      <button id="creatorColorManagerColoredOnly" type="button" aria-pressed="false">設定済みのみ</button>
+    </div>
+    <div class="creator-color-manager-summary" aria-live="polite">
+      <span>現在の作成者 <b id="creatorColorManagerCurrentCount">0</b></span>
+      <span>カラー設定済み <b id="creatorColorManagerColoredCount">0</b></span>
+      <span>現在0件で保持 <b id="creatorColorManagerAbsentCount">0</b></span>
+    </div>
+    <div id="creatorColorManagerList" class="creator-color-manager-list" aria-label="作成者カラー設定"></div>
+    <div id="creatorColorManagerEmpty" class="creator-color-manager-empty hidden">条件に一致する作成者がいません。</div>
+  </div>
+</div>
+
 <div id="creatorColorPalette" class="creator-color-palette hidden" role="dialog" aria-label="作成者カラー" aria-hidden="true">
   <div class="creator-color-palette-head">
     <b>作成者カラー</b>
@@ -11461,6 +11649,7 @@ function setCreatorColor(name, colorId) {{
   saveCreatorColorMap();
   applyCreatorColors();
   refreshBackupUi();
+  refreshCreatorColorManagerIfOpen();
 }}
 
 // v0.4.58-r15 rev3 — 1000件近いレポートでも検索中にlocalStorage読込や
@@ -15154,6 +15343,128 @@ function applyCreatorSearch() {{
   if (countEl) countEl.textContent = needle ? `${{matches}}人` : "";
 }}
 creatorQuickSearch?.addEventListener("input", applyCreatorSearch);
+
+const creatorColorManagerModal = document.getElementById("creatorColorManagerModal");
+const creatorColorManagerAction = document.getElementById("creatorColorManagerAction");
+const creatorColorManagerSearch = document.getElementById("creatorColorManagerSearch");
+const creatorColorManagerColoredOnly = document.getElementById("creatorColorManagerColoredOnly");
+const creatorColorManagerList = document.getElementById("creatorColorManagerList");
+const creatorColorManagerEmpty = document.getElementById("creatorColorManagerEmpty");
+const creatorColorManagerCurrentCount = document.getElementById("creatorColorManagerCurrentCount");
+const creatorColorManagerColoredCount = document.getElementById("creatorColorManagerColoredCount");
+const creatorColorManagerAbsentCount = document.getElementById("creatorColorManagerAbsentCount");
+const CREATOR_COLOR_MANAGER_OPTIONS = Object.freeze([
+  ["", "色なし"], ["red", "赤"], ["orange", "オレンジ"], ["yellow", "黄"],
+  ["green", "緑"], ["cyan", "シアン"], ["blue", "青"], ["purple", "紫"], ["pink", "ピンク"]
+]);
+
+function creatorColorCurrentCounts() {{
+  const counts = new Map();
+  cards.forEach(card => {{
+    const name = creatorColorNameForCard(card);
+    if (!name) return;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  }});
+  return counts;
+}}
+
+function creatorColorManagerEntries() {{
+  const counts = creatorColorCurrentCounts();
+  const names = new Set([...counts.keys(), ...Object.keys(creatorColors)]);
+  return [...names]
+    .sort((a,b) => a.localeCompare(b, REPORT_LOCALE))
+    .map(name => ({{
+      name,
+      currentCount:Number(counts.get(name) || 0),
+      colorId:String(creatorColors[name] || "")
+    }}));
+}}
+
+function creatorColorManagerOption(name, colorId, label, selected) {{
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "creator-color-manager-option";
+  button.dataset.creatorColor = colorId;
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.setAttribute("aria-pressed", selected ? "true" : "false");
+  const swatch = document.createElement("span");
+  swatch.className = "creator-color-manager-swatch";
+  swatch.setAttribute("aria-hidden", "true");
+  button.appendChild(swatch);
+  button.addEventListener("click", () => setCreatorColor(name, colorId));
+  return button;
+}}
+
+function renderCreatorColorManager() {{
+  if (!creatorColorManagerList) return;
+  const entries = creatorColorManagerEntries();
+  const needle = normFilterValue(creatorColorManagerSearch?.value || "");
+  const coloredOnly = creatorColorManagerColoredOnly?.getAttribute("aria-pressed") === "true";
+  const visible = entries.filter(entry => {{
+    if (coloredOnly && !entry.colorId) return false;
+    return !needle || normFilterValue(entry.name).includes(needle);
+  }});
+
+  const currentCreators = entries.filter(entry => entry.currentCount > 0).length;
+  const coloredCreators = entries.filter(entry => Boolean(entry.colorId)).length;
+  const absentStored = entries.filter(entry => entry.currentCount === 0 && Boolean(entry.colorId)).length;
+  if (creatorColorManagerCurrentCount) creatorColorManagerCurrentCount.textContent = String(currentCreators);
+  if (creatorColorManagerColoredCount) creatorColorManagerColoredCount.textContent = String(coloredCreators);
+  if (creatorColorManagerAbsentCount) creatorColorManagerAbsentCount.textContent = String(absentStored);
+
+  const fragment = document.createDocumentFragment();
+  visible.forEach(entry => {{
+    const row = document.createElement("div");
+    row.className = "creator-color-manager-row";
+    row.dataset.creatorColorName = entry.name;
+    if (entry.currentCount === 0) row.classList.add("creator-absent");
+    const colorValue = CREATOR_COLOR_DEFS[entry.colorId] || "";
+    if (colorValue) {{
+      row.classList.add("creator-colored");
+      row.style.setProperty("--creator-manager-color", colorValue);
+    }}
+
+    const identity = document.createElement("div");
+    identity.className = "creator-color-manager-identity";
+    const name = document.createElement("span");
+    name.className = "creator-color-manager-name creator-name";
+    name.textContent = entry.name;
+    const count = document.createElement("span");
+    count.className = "creator-color-manager-count";
+    count.textContent = entry.currentCount > 0 ? `${{entry.currentCount}}件` : "現在のペイントなし";
+    identity.append(name, count);
+
+    const options = document.createElement("div");
+    options.className = "creator-color-manager-options";
+    options.setAttribute("role", "group");
+    options.setAttribute("aria-label", "作成者カラー設定");
+    CREATOR_COLOR_MANAGER_OPTIONS.forEach(([colorId, label]) => {{
+      options.appendChild(creatorColorManagerOption(entry.name, colorId, label, colorId === entry.colorId));
+    }});
+    row.append(identity, options);
+    fragment.appendChild(row);
+  }});
+  creatorColorManagerList.replaceChildren(fragment);
+  creatorColorManagerEmpty?.classList.toggle("hidden", visible.length > 0);
+}}
+
+function refreshCreatorColorManagerIfOpen() {{
+  if (!creatorColorManagerModal || creatorColorManagerModal.classList.contains("hidden")) return;
+  renderCreatorColorManager();
+}}
+
+creatorColorManagerAction?.addEventListener("click", event => {{
+  setSecondaryActionsOpen(false);
+  renderCreatorColorManager();
+  openModal("creatorColorManagerModal", document.getElementById("secondaryActionsToggle") || event.currentTarget);
+}});
+creatorColorManagerSearch?.addEventListener("input", renderCreatorColorManager);
+creatorColorManagerColoredOnly?.addEventListener("click", () => {{
+  const next = creatorColorManagerColoredOnly.getAttribute("aria-pressed") !== "true";
+  creatorColorManagerColoredOnly.setAttribute("aria-pressed", next ? "true" : "false");
+  renderCreatorColorManager();
+}});
 
 const creatorColorPalette = document.getElementById("creatorColorPalette");
 const creatorColorPaletteName = document.getElementById("creatorColorPaletteName");
