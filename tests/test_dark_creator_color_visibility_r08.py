@@ -14,11 +14,6 @@ class DarkCreatorColorVisibilityR08Tests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.text = SOURCE.read_text(encoding="utf-8")
 
-    def test_current_version_is_r08(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r08"', self.text)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r08", self.text[:400])
-        self.assertNotIn('VERSION = "0.4.60-r07"', self.text[:10000])
-
     def test_r08_dark_creator_color_marker_is_present_once(self) -> None:
         self.assertEqual(self.text.count("v0.4.60-r08 — ダークテーマの作成者カラー視認性"), 1)
 

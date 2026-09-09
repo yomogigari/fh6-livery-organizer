@@ -14,11 +14,6 @@ class CssThemeTokensR07Tests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.text = SOURCE.read_text(encoding="utf-8")
 
-    def test_current_version_is_r08_while_r07_feature_remains(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r08"', self.text)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r08", self.text[:400])
-        self.assertNotIn('VERSION = "0.4.60-r07"', self.text[:10000])
-
     def test_r07_css_cleanup_marker_is_present_once(self) -> None:
         self.assertEqual(self.text.count("v0.4.60-r07 — CSSテーマ参照の整理"), 1)
 

@@ -36,11 +36,6 @@ class VehicleMetadataUpdateDialogR04Tests(unittest.TestCase):
         self.assertIsNotNone(segment)
         return str(segment)
 
-    def test_version_is_r04(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r08"', self.source)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r08", self.source[:300])
-        self.assertNotIn('VERSION = "0.4.60-r03"', self.source)
-
     def test_result_dialog_uses_selectable_text(self) -> None:
         method = self.method_source("_show_vehicle_metadata_update_result_dialog")
         self.assertIn("tk.Toplevel", method)

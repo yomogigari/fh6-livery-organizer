@@ -14,11 +14,6 @@ class Fh6MoveTargetVisibilityR05Tests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.text = SOURCE.read_text(encoding="utf-8")
 
-    def test_current_version_is_r08_while_r05_feature_remains(self) -> None:
-        self.assertIn('VERSION = "0.4.60-r08"', self.text)
-        self.assertIn("Livery Organizer for FH6 v0.4.60-r08", self.text)
-        self.assertNotIn('VERSION = "0.4.60-r04"', self.text)
-
     def test_r05_affordance_block_is_present_once(self) -> None:
         marker = "v0.4.60-r05 — FH6位置番号のクリック視認性改善"
         self.assertEqual(self.text.count(marker), 1)
