@@ -893,7 +893,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 740)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 741)
         self.assertEqual(len(en_locale.REPORT_ATTR), 100)
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)

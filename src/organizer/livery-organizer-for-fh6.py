@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r10
+Livery Organizer for FH6 v0.4.60-r11
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r10"
+VERSION = "0.4.60-r11"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -11058,6 +11058,9 @@ body.dark-theme .creator-color-palette {{
           <b>ユーザーデータ復元</b>ではプレビュー後に「現在データと統合」または「完全に置換」を選べます。
           <b>判定バックアップ</b>は主に残す / 削除候補の判定だけを保存する軽量版です。
         </p>
+        <p>
+          「統合」は現在データを残してファイル内の値だけ上書きします。レポートに現在表示されていないペイントの整理データも保存領域へ復元します。「完全に置換」は現在表示されていないペイントを含む保存済みの整理状態・タグ・メモ・作成者カラー等を消去してから復元します。
+        </p>
       </section>
 
       <section class="help-section">
@@ -17462,18 +17465,60 @@ document.getElementById("resetStates").addEventListener("click", () => {{
 
 function buildDecisionBackupData() {{
   const decisions = {{}};
+
+  // 現在レポート外のペイントも、ブラウザ保存に残っている判定を
+  // 次のユーザーデータバックアップへ引き継ぎます。
+  const collectPrefix = prefix => {{
+    storageKeysWithPrefixes([prefix]).forEach(storageKey => {{
+      const key = normalizedBackupDataKey(storageKey.slice(prefix.length));
+      if (!key) return;
+      const state = String(storageGet(storageKey) || "");
+      if (state === "keep" || state === "delete") decisions[key] = state;
+      else delete decisions[key];
+    }});
+  }};
+  LEGACY_STORAGE_PREFIXES.forEach(collectPrefix);
+  collectPrefix(STORAGE_PREFIX);
+
+  // 現在レポートにあるカードの実効値を最後に優先します。
   cards.forEach(card => {{
+    const key = normalizedBackupDataKey(card.dataset.key);
+    if (!key) return;
     const state = getState(card);
-    if (state !== "undecided") decisions[card.dataset.key] = state;
+    if (state !== "undecided") decisions[key] = state;
+    else delete decisions[key];
   }});
   return decisions;
 }}
 
 function buildMetadataBackupData() {{
   const metadata = {{}};
+
+  // 現在レポート外のペイントも、ブラウザ保存に残っているタグ・メモ等を
+  // 次のユーザーデータバックアップへ引き継ぎます。
+  const collectPrefix = prefix => {{
+    storageKeysWithPrefixes([prefix]).forEach(storageKey => {{
+      const key = normalizedBackupDataKey(storageKey.slice(prefix.length));
+      if (!key) return;
+      let meta = {{}};
+      try {{
+        const parsed = JSON.parse(storageGet(storageKey) || "{{}}");
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) meta = parsed;
+      }} catch (_) {{}}
+      if (Object.keys(meta).length) metadata[key] = meta;
+      else delete metadata[key];
+    }});
+  }};
+  LEGACY_META_PREFIXES.forEach(collectPrefix);
+  collectPrefix(META_PREFIX);
+
+  // 現在レポートにあるカードの実効値を最後に優先します。
   cards.forEach(card => {{
+    const key = normalizedBackupDataKey(card.dataset.key);
+    if (!key) return;
     const meta = loadCardMeta(card);
-    if (Object.keys(meta).length) metadata[card.dataset.key] = meta;
+    if (Object.keys(meta).length) metadata[key] = meta;
+    else delete metadata[key];
   }});
   return metadata;
 }}
@@ -17485,6 +17530,66 @@ function buildCreatorColorBackupData() {{
     if (name && Object.prototype.hasOwnProperty.call(CREATOR_COLOR_DEFS, colorId)) result[name] = colorId;
   }});
   return result;
+}}
+
+// v0.4.60-r11 — レポート外ユーザーデータの復元保持
+// バックアップ内のペイントが現在のHTMLに表示されていなくても、判定・タグ・メモ等を
+// localStorageへ復元し、同じui_keyのペイントが後のレポートで再表示されたときに引き継ぎます。
+function normalizedBackupDataKey(value) {{
+  return String(value ?? "").trim();
+}}
+
+function storageKeysWithPrefixes(prefixes) {{
+  const keys = new Set();
+  const wanted = prefixes.map(prefix => String(prefix || "")).filter(Boolean);
+  if (persistentStorage) {{
+    try {{
+      for (let index = 0; index < persistentStorage.length; index++) {{
+        const key = persistentStorage.key(index);
+        if (key && wanted.some(prefix => key.startsWith(prefix))) keys.add(key);
+      }}
+    }} catch (_) {{
+      persistentStorage = null;
+    }}
+  }}
+  for (const key of memoryStorage.keys()) {{
+    if (wanted.some(prefix => String(key).startsWith(prefix))) keys.add(String(key));
+  }}
+  return [...keys];
+}}
+
+function clearStoredPaintUserData() {{
+  const prefixes = [STORAGE_PREFIX, ...LEGACY_STORAGE_PREFIXES, META_PREFIX, ...LEGACY_META_PREFIXES];
+  storageKeysWithPrefixes(prefixes).forEach(key => storageRemove(key));
+}}
+
+function restoreDecisionBackupData(decisions) {{
+  let restored = 0;
+  if (!decisions || typeof decisions !== "object" || Array.isArray(decisions)) return restored;
+  Object.entries(decisions).forEach(([rawKey, rawState]) => {{
+    const key = normalizedBackupDataKey(rawKey);
+    const state = String(rawState || "");
+    if (!key || !["keep","delete","undecided"].includes(state)) return;
+    const currentKey = STORAGE_PREFIX + key;
+    if (state === "undecided") storageRemove(currentKey);
+    else storageSet(currentKey, state);
+    LEGACY_STORAGE_PREFIXES.forEach(prefix => storageRemove(prefix + key));
+    restored++;
+  }});
+  return restored;
+}}
+
+function restoreMetadataBackupData(metadata) {{
+  let restored = 0;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return restored;
+  Object.entries(metadata).forEach(([rawKey, rawMeta]) => {{
+    const key = normalizedBackupDataKey(rawKey);
+    if (!key || !rawMeta || typeof rawMeta !== "object" || Array.isArray(rawMeta)) return;
+    storageSet(META_PREFIX + key, JSON.stringify(rawMeta));
+    LEGACY_META_PREFIXES.forEach(prefix => storageRemove(prefix + key));
+    restored++;
+  }});
+  return restored;
 }}
 
 function loadScanStateForBackup() {{
@@ -17835,9 +17940,9 @@ function showUserDataPreview(payload) {{
       <div class="diagnostics-row"><span>後で確認</span><b>${{s.review}}件</b></div>
       <div class="diagnostics-row"><span>作成者カラー</span><b>${{s.creatorColors}}件</b></div>
       <div class="diagnostics-row"><span>現在のペイントと一致</span><b>${{s.matched}}件</b></div>
-      <div class="diagnostics-row"><span>現在存在しないデータ</span><b>${{s.unmatched}}件</b></div>
+      <div class="diagnostics-row"><span>現在レポート外のペイントデータ</span><b>${{s.unmatched}}件</b></div>
     </div>
-    <p class="small">「統合」は現在データを残してファイル内の値だけ上書きします。「完全に置換」は現在の整理状態・タグ・メモ・作成者カラー等を消去してから復元します。</p>`;
+    <p class="small">「統合」は現在データを残してファイル内の値だけ上書きします。レポートに現在表示されていないペイントの整理データも保存領域へ復元します。「完全に置換」は現在表示されていないペイントを含む保存済みの整理状態・タグ・メモ・作成者カラー等を消去してから復元します。</p>`;
   openModal("userDataPreviewModal", document.getElementById("importUserData"));
 }}
 
@@ -17847,21 +17952,19 @@ function applyUserDataPayload(payload, replaceExisting = false) {{
   const importedCreatorColors = sanitizeCreatorColorMap(payload?.creatorColors || {{}});
 
   if (replaceExisting) {{
-    cards.forEach(card => {{
-      storageRemove(stateKey(card));
-      storageRemove(metaKey(card));
-    }});
+    clearStoredPaintUserData();
+    creatorColors = {{}};
+    saveCreatorColorMap();
+    storageRemove(UI_STATE_KEY);
+    LEGACY_UI_STATE_KEYS.forEach(key => storageRemove(key));
+    storageRemove(SCAN_STATE_KEY);
+    LEGACY_SCAN_STATE_KEYS.forEach(key => storageRemove(key));
   }}
 
+  restoreDecisionBackupData(decisions);
+  restoreMetadataBackupData(metadata);
+
   cards.forEach(card => {{
-    const state = decisions[card.dataset.key];
-    if (["keep","delete","undecided"].includes(state)) {{
-      if (state === "undecided") storageRemove(stateKey(card));
-      else storageSet(stateKey(card), state);
-    }}
-    if (Object.prototype.hasOwnProperty.call(metadata, card.dataset.key)) {{
-      storageSet(metaKey(card), JSON.stringify(metadata[card.dataset.key] || {{}}));
-    }}
     paintState(card);
     applyCardMeta(card);
   }});
@@ -17942,16 +18045,8 @@ document.getElementById("importDecisionsFile").addEventListener("change", async 
   try {{
     const payload = JSON.parse(await file.text());
     const decisions = payload?.decisions || {{}};
-    let restored = 0;
-    cards.forEach(card => {{
-      const state = decisions[card.dataset.key];
-      if (["keep","delete","undecided"].includes(state)) {{
-        if (state === "undecided") storageRemove(stateKey(card));
-        else storageSet(stateKey(card), state);
-        restored++;
-      }}
-      paintState(card);
-    }});
+    const restored = restoreDecisionBackupData(decisions);
+    cards.forEach(card => paintState(card));
     applyFilters();
     alert(`${{restored}}件の判定を復元しました。`);
   }} catch (error) {{
