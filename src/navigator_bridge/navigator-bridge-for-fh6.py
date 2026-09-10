@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Navigator Bridge for FH6 v0.0.27
+"""Navigator Bridge for FH6 v0.0.27-r01
 
 非公式・非営利のファンメイド操作支援ツールです。
 Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承認・後援を
@@ -8,8 +8,9 @@ Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承�
 
 このツールは、Forza Horizon 6 の「マイデザイン」画面内で、利用者が指定した位置まで
 カーソルを移動しやすくするための補助Bridgeです。Organizer連携のBridgeモードでは、
-(1) 前後の空白を除いたウィンドウタイトルが Forza Horizon 6 と完全一致する場合だけ
-    FH6として検出し、フォアグラウンドへ切り替えること、
+(1) 前後の空白を除いたウィンドウタイトルが Forza Horizon 6 と完全一致し、
+    ウィンドウ所有プロセスが forzahorizon6.exe で、候補が1つだけの場合にFH6として
+    検出し、フォアグラウンドへ切り替えること、
 (2) 位置移動に必要なカーソルキーを送ること、の2点だけを担当します。
 
 【固定された安全境界】
@@ -18,6 +19,8 @@ Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承�
   Escを1回、Return(RET/Enter)を1回、この順序で送信します。
 - 初期位置リセットの標準待ち時間は、Esc後 500ms / Return後 800ms です。
 - 「上」、文字キー、ファンクションキー、その他のキーはFH6へ送信しません。
+- 移動キーは1回送るごとに、対象HWNDが現在も前面・タイトル完全一致・
+  forzahorizon6.exe 所有かを直前確認します。
 - 外部連携URIから任意のキーコード・任意のキー名・任意のキー順序を指定する機能はありません。
 - 標準のWindows入力APIを使用しますが、ゲームのメモリ・実行コード・ゲームファイル・
   セーブデータを変更しません。
@@ -55,6 +58,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import ntpath
 import os
 from ctypes import wintypes
 import re
@@ -76,8 +80,9 @@ except Exception:
 
 APP_NAME = "Navigator Bridge for FH6"
 PACKAGED_EXE_FILENAME = "Navigator-Bridge-for-FH6.exe"
-APP_VERSION = "v0.0.27"
+APP_VERSION = "v0.0.27-r01"
 FH6_WINDOW_TITLE = "Forza Horizon 6"
+FH6_PROCESS_IMAGE_NAME = "forzahorizon6.exe"
 APP_USER_MODEL_ID = "LiveryTools.NavigatorBridgeForFH6"
 PROTOCOL_SCHEME = "navigatorbridgeforfh6"
 PROTOCOL_ROOT = rf"Software\Classes\{PROTOCOL_SCHEME}"
@@ -515,8 +520,44 @@ def is_fh6_window_title(title: str) -> bool:
     return str(title or "").strip(" ") == FH6_WINDOW_TITLE
 
 
+def is_fh6_process_image_path(path: Path | str | None) -> bool:
+    """Return True only for the public FH6 game executable name.
+
+    Both the Steam public launch configuration and Xbox/Microsoft Store installs
+    use forzahorizon6.exe.  Only the basename is checked so install-directory
+    differences do not matter.
+    """
+    if path is None:
+        return False
+    basename = ntpath.basename(str(path).strip()).casefold()
+    return basename == FH6_PROCESS_IMAGE_NAME.casefold()
+
+
+def get_window_process_id(hwnd: int) -> int:
+    """Best-effort owning process id for a top-level window."""
+    if not IS_WINDOWS or user32 is None or not hwnd:
+        return 0
+    pid = wintypes.DWORD(0)
+    thread_id = user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    if not thread_id:
+        return 0
+    return int(pid.value or 0)
+
+
+def get_window_process_image_path(hwnd: int) -> Path | None:
+    """Best-effort image path of the process that owns hwnd."""
+    return _windows_process_image_path(get_window_process_id(hwnd))
+
+
+def is_fh6_window_identity(hwnd: int) -> bool:
+    """Require both the exact FH6 title and the known FH6 process image name."""
+    return is_fh6_window_title(get_window_title(hwnd)) and is_fh6_process_image_path(
+        get_window_process_image_path(hwnd)
+    )
+
+
 def find_fh6_windows() -> list[tuple[int, str]]:
-    """Return visible top-level windows whose normalized title exactly matches FH6."""
+    """Return visible top-level windows that pass title + process identity checks."""
     if not IS_WINDOWS or user32 is None:
         return []
 
@@ -530,13 +571,38 @@ def find_fh6_windows() -> list[tuple[int, str]]:
         if not user32.IsWindowVisible(hwnd):
             return True
         title = get_window_title(hwnd)
-        if is_fh6_window_title(title):
+        if is_fh6_window_title(title) and is_fh6_process_image_path(
+            get_window_process_image_path(hwnd)
+        ):
             found.append((int(hwnd), title))
         return True
 
     user32.EnumWindows(enum_proc, 0)
     found.sort(key=lambda x: x[0])
     return found
+
+
+def select_unique_fh6_window(windows: list[tuple[int, str]]) -> tuple[int, str]:
+    """Require exactly one exact-title FH6 candidate before any foreground activation.
+
+    v0.0.27 already rejects partial title matches.  r01 also refuses to choose an
+    arbitrary HWND when more than one exact-title candidate exists, because doing so
+    would make the key-input destination ambiguous.
+    """
+    candidates = list(windows or [])
+    if not candidates:
+        raise RuntimeError(
+            "タイトルが「Forza Horizon 6」と完全一致し、所有プロセスが "
+            "forzahorizon6.exe のウィンドウが見つかりません。\n"
+            "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。"
+        )
+    if len(candidates) != 1:
+        raise RuntimeError(
+            "FH6のタイトルとプロセス条件に一致するウィンドウが複数見つかりました。\n"
+            "誤送信防止のため、Bridgeは移動先を自動選択しません。\n"
+            "FH6以外の同名ウィンドウを閉じてから再実行してください。"
+        )
+    return candidates[0]
 
 
 def activate_fh6_window(hwnd: int) -> None:
@@ -576,8 +642,8 @@ def is_foreground_window(hwnd: int) -> bool:
 
 
 def is_foreground_fh6_window(hwnd: int) -> bool:
-    """Foreground handle and current title must both still identify FH6."""
-    return is_foreground_window(hwnd) and is_fh6_window_title(get_window_title(hwnd))
+    """Foreground handle, exact title, and owning process must still identify FH6."""
+    return is_foreground_window(hwnd) and is_fh6_window_identity(hwnd)
 
 @dataclass(frozen=True)
 class TargetPosition:
@@ -1250,6 +1316,15 @@ def send_movement_key(vk: int) -> None:
     _send_allowed_vk(vk)
 
 
+def send_fh6_movement_key(hwnd: int, vk: int) -> None:
+    """Re-confirm foreground + exact title + FH6 process immediately before SendInput."""
+    if not is_foreground_fh6_window(hwnd):
+        raise RuntimeError(
+            "FH6として前面確認できないため、安全のため移動キーを送信しません。"
+        )
+    send_movement_key(vk)
+
+
 def send_origin_reset_step(step: str) -> None:
     """Send exactly one step of the fixed ESC -> RETURN origin reset sequence."""
     key = str(step or "").upper()
@@ -1752,16 +1827,12 @@ class NavigatorApp:
             return
 
         windows = find_fh6_windows()
-        if not windows:
-            show_app_error(
-                self.root,
-                "タイトルが「Forza Horizon 6」と完全一致するウィンドウが見つかりません。\n"
-                "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。",
-            )
-            self.status_var.set("FH6が見つからなかったため、キー入力は行いませんでした。")
+        try:
+            hwnd, title = select_unique_fh6_window(windows)
+        except RuntimeError as exc:
+            show_app_error(self.root, str(exc))
+            self.status_var.set("FH6ウィンドウを一意に確認できなかったため、キー入力は行いませんでした。")
             return
-
-        hwnd, title = windows[0]
         self.abort_requested = False
         self.set_running(True)
         self.status_var.set(f"FH6を検出: {title}。前面へ切り替えています…")
@@ -1870,7 +1941,7 @@ class NavigatorApp:
                         self._finish(f"中止しました。{done}/{total}キー送信済み。")
                         return
 
-                    send_movement_key(vk)
+                    send_fh6_movement_key(hwnd, vk)
                     done += 1
                     self._set_status_threadsafe(
                         f"{symbol} {i + 1}/{plan.horizontal_presses}（全体 {done}/{total}）"
@@ -1898,7 +1969,7 @@ class NavigatorApp:
                 if self._should_abort():
                     self._finish(f"中止しました。{done}/{total}キー送信済み。")
                     return
-                send_movement_key(key_name_to_vk(plan.vertical_key))
+                send_fh6_movement_key(hwnd, key_name_to_vk(plan.vertical_key))
                 done += 1
 
             self._finish(
@@ -1993,12 +2064,7 @@ def execute_headless_move(args: argparse.Namespace) -> str:
     plan, interval_s, switch_delay_s, turn_delay_s, wrap_delay_s, reset_origin, reset_esc_delay_s, reset_ret_delay_s = validate_headless_args(args)
     save_shared_move_settings(move_settings_from_args(args))
     windows = find_fh6_windows()
-    if not windows:
-        raise RuntimeError(
-            "タイトルが「Forza Horizon 6」と完全一致するウィンドウが見つかりません。\n"
-            "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。"
-        )
-    hwnd, title = windows[0]
+    hwnd, title = select_unique_fh6_window(windows)
     bridge_log(
         f"request target={plan.target.slot} position={plan.target.column:03d}{plan.target.row} "
         f"last_slot={plan.last_slot} interval_ms={interval_s*1000:g} reset_origin={int(reset_origin)} title={title!r}"
@@ -2041,7 +2107,7 @@ def execute_headless_move(args: argparse.Namespace) -> str:
         for i in range(plan.horizontal_presses):
             if not is_foreground_fh6_window(hwnd):
                 raise RuntimeError("移動中にFH6として前面確認できなくなったため、安全のため中止しました。")
-            send_movement_key(vk)
+            send_fh6_movement_key(hwnd, vk)
             done += 1
             if i + 1 < plan.horizontal_presses:
                 delay_s = interval_s
@@ -2056,8 +2122,8 @@ def execute_headless_move(args: argparse.Namespace) -> str:
     if plan.vertical_key and plan.vertical_presses:
         if not is_foreground_fh6_window(hwnd):
             raise RuntimeError("上下移動前にFH6として前面確認できなくなったため、安全のため中止しました。")
-        # key_name_to_vk() + send_movement_key() both enforce LEFT / RIGHT / DOWN only.
-        send_movement_key(key_name_to_vk(plan.vertical_key))
+        # key_name_to_vk() + send_fh6_movement_key() both enforce LEFT / RIGHT / DOWN only.
+        send_fh6_movement_key(hwnd, key_name_to_vk(plan.vertical_key))
         done += 1
 
     result = f"complete target=#{plan.target.slot}/#{plan.target.column:03d}{plan.target.row} keys={done}"
