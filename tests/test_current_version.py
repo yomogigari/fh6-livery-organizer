@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
-EXPECTED_VERSION = "0.4.60-r11"
+EXPECTED_VERSION = "0.4.60-r12"
 REVISION_FEATURE_TESTS = tuple(sorted((ROOT / "tests").glob("test_*_r[0-9][0-9].py")))
 HISTORICAL_FEATURE_TESTS = (
     ROOT / "tests" / "test_i18n.py",
@@ -35,8 +35,8 @@ class CurrentVersionTests(unittest.TestCase):
         self.assertIn(f"Livery Organizer for FH6 v{EXPECTED_VERSION}", header)
 
     def test_previous_revision_is_not_still_current(self) -> None:
-        self.assertNotIn('VERSION = "0.4.60-r10"', self.text[:10000])
-        self.assertNotIn("Livery Organizer for FH6 v0.4.60-r10", self.text[:400])
+        self.assertNotIn('VERSION = "0.4.60-r11"', self.text[:10000])
+        self.assertNotIn("Livery Organizer for FH6 v0.4.60-r11", self.text[:400])
 
     def test_historical_feature_tests_do_not_pin_current_revision(self) -> None:
         offenders: list[str] = []

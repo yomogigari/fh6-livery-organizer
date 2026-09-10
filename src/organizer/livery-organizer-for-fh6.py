@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r11
+Livery Organizer for FH6 v0.4.60-r12
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r11"
+VERSION = "0.4.60-r12"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4329,6 +4329,7 @@ def write_report(
 
     <dl>
       <dt class="fh6-normal-creator-row">作成者</dt><dd class="fh6-normal-creator-row">{creator_color_control_html}</dd>
+      <dt class="fh6-normal-upload-date-row">アップロード日</dt><dd class="fh6-normal-upload-date-row fh6-upload-date-value" title="FH6画面の日付">{html.escape(r.fh6_date_display or "—")}</dd>
       <dt class="compact-optional-acquired compact-detail-label">取得日時</dt><dd class="compact-optional-acquired compact-detail-value" title="{html.escape(r.timestamp_local_guess)}">{html.escape(r.timestamp_local_guess)}</dd>
       <dt class="compact-optional-vinyl compact-detail-label">バイナル数</dt><dd class="compact-optional-vinyl compact-detail-value">{f"{r.vinyl_count:,}" if r.vinyl_count is not None else "—"}</dd>
     </dl>
@@ -8242,7 +8243,8 @@ body.fh6-my-design-view-mode .fh6-my-design-column .fh6-display-date {{
   font-weight:800;
   font-variant-numeric:tabular-nums;
 }}
-body.fh6-my-design-view-mode .fh6-my-design-column .fh6-normal-creator-row {{
+body.fh6-my-design-view-mode .fh6-my-design-column .fh6-normal-creator-row,
+body.fh6-my-design-view-mode .fh6-my-design-column .fh6-normal-upload-date-row {{
   display:none !important;
 }}
 .exact-duplicate-panel {{ max-width:1180px; }}
@@ -9454,6 +9456,10 @@ body.compact:not(.fh6-my-design-view-mode) .card dl dd.fh6-normal-creator-row::b
   content:"@ ";
   opacity:.6;
 }}
+body.compact:not(.fh6-my-design-view-mode) .card dl dd.fh6-normal-upload-date-row::before {{
+  content:"UP ";
+  opacity:.6;
+}}
 body.compact:not(.fh6-my-design-view-mode) .compact-detail-value.compact-optional-acquired::before {{
   content:"取得 ";
   opacity:.6;
@@ -9946,6 +9952,16 @@ body.dark-theme .creator-color-badge .creator-color-button:hover:not(:disabled) 
 body.dark-theme .creator-color-badge .creator-color-button[aria-expanded="true"] {{
   background:color-mix(in srgb, var(--creator-color) 14%, transparent);
   color:CanvasText;
+}}
+
+/* =======================================================================
+   v0.4.60-r12 — カードの作成者位置 / アップロード日表示
+   ======================================================================= */
+/* 作成者カラーバッジは左端に色ライン用の余白を持つため、バッジ全体だけを
+   その余白分戻して、作成者名の1文字目を他のカード情報と揃えます。 */
+body:not(.compact):not(.fh6-my-design-view-mode) .card dl dd.fh6-normal-creator-row .creator-color-badge,
+body.fh6-my-design-view-mode .fh6-my-design-column .fh6-creator-display .creator-color-badge {{
+  margin-left:-7px;
 }}
 
 /* =======================================================================
@@ -10937,7 +10953,7 @@ body.dark-theme .creator-color-palette {{
       <section class="help-section">
         <h4>カードの見方と整理</h4>
         <p>
-          各カードにはサムネイル、車両情報、タイトル、説明、作成者、取得日時、バイナル数などを表示します。
+          各カードにはサムネイル、車両情報、タイトル、説明、作成者、アップロード日、取得日時、バイナル数などを表示します。
           サムネイルはクリックで拡大できます。
         </p>
         <ul>
