@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r13
+Livery Organizer for FH6 v0.4.60-r14
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r13"
+VERSION = "0.4.60-r14"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -10265,6 +10265,8 @@ body.dark-theme .creator-color-palette {{
         <option value="title">タイトル順</option>
       </optgroup>
       <optgroup label="日時・年式">
+        <option value="upload-desc">アップロード日:新しい順</option>
+        <option value="upload-asc">アップロード日:古い順</option>
         <option value="timestamp-desc">取得日時:新しい順</option>
         <option value="timestamp-asc">取得日時:古い順</option>
         <option value="year-desc">年式:新しい順</option>
@@ -10921,6 +10923,7 @@ body.dark-theme .creator-color-palette {{
             <tr><td>タイトル順 / 整理状態順</td><td>車種グループをまたいでカード単位で並び替えます。整理状態は未決定 → 後で確認 → 残す → 削除候補の作業順です。</td></tr>
             <tr><td>整理進捗順</td><td>車種単位で未着手（0%）/ 整理中（1〜99%）/ 完了（100%）を昇順または逆順にします。</td></tr>
             <tr><td>ペイント件数順</td><td>車種ごとのペイント件数で車種グループを並び替えます。</td></tr>
+            <tr><td>アップロード日順</td><td>作成者がFH6へアップロードした日付でカード単位に並び替えます。日付を取得できなかったカードは昇順 / 降順のどちらでも最後に表示します。</td></tr>
             <tr><td>バイナル数順 / 取得日時順</td><td>カード単位で昇順 / 降順に並び替えます。取得日時はフォルダ名のUTC時刻をJST（UTC+9）へ変換して表示します。</td></tr>
           </tbody>
         </table>
@@ -14204,6 +14207,7 @@ function applySort() {{
   if (
     mode === "title" || mode === "decision" ||
     mode === "vinyl-asc" || mode === "vinyl-desc" ||
+    mode === "upload-asc" || mode === "upload-desc" ||
     mode === "timestamp-asc" || mode === "timestamp-desc"
   ) {{
     document.body.classList.remove("creator-sort-mode");
@@ -14283,6 +14287,26 @@ function applySort() {{
       }});
       if (flatTitle) flatTitle.textContent =
         direction === "desc" ? "バイナル数:降順" : "バイナル数:昇順";
+    }} else if (mode.startsWith("upload-")) {{
+      sortedCards.sort((a, b) => {{
+        // fh6DateはYYYY-MM-DDなので文字列順がそのまま日付順になります。
+        // FH6から日付を取得できなかったカードは、昇順 / 降順のどちらでも末尾へ配置します。
+        const av = String(a.dataset.fh6Date || "").trim();
+        const bv = String(b.dataset.fh6Date || "").trim();
+        if (!av && bv) return 1;
+        if (!bv && av) return -1;
+        if (av && bv) {{
+          const dateResult = av.localeCompare(bv);
+          if (dateResult !== 0) return direction === "desc" ? -dateResult : dateResult;
+        }}
+        const timestampResult = String(a.dataset.timestamp || "").localeCompare(String(b.dataset.timestamp || ""));
+        if (timestampResult !== 0) return direction === "desc" ? -timestampResult : timestampResult;
+        const carResult = Number(a.dataset.car || 0) - Number(b.dataset.car || 0);
+        if (carResult !== 0) return carResult;
+        return String(a.dataset.key || "").localeCompare(String(b.dataset.key || ""));
+      }});
+      if (flatTitle) flatTitle.textContent =
+        direction === "desc" ? "アップロード日:降順" : "アップロード日:昇順";
     }} else {{
       sortedCards.sort((a, b) => {{
         // timestamp_rawはYYYYMMDDhhmmss（UTC）なので、文字列順がそのまま時系列順になります。

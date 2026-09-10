@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
-EXPECTED_VERSION = "0.4.60-r13"
+EXPECTED_VERSION = "0.4.60-r14"
 REVISION_FEATURE_TESTS = tuple(sorted((ROOT / "tests").glob("test_*_r[0-9][0-9].py")))
 VERSION_AUDIT_TESTS = tuple(
     sorted(
