@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "dataset": "fh6-official-vehicle-metadata",
-  "package_revision": 1,
+  "package_revision": 2,
   "source": {
     "name": "Forza official car list",
     "url": "https://forza.net/fh6cars",
-    "updated": "2026-08-13"
+    "updated": "2026-09-08"
   },
-  "generated_from": "Vehicle DB Generator for FH6 v0.6.1",
+  "generated_from": "Vehicle DB Generator for FH6 v0.6.2",
   "records": {
     "247": {
       "year": 1969,
@@ -74,6 +74,12 @@
       "make": "Porsche",
       "model": "959",
       "display_name": "1987 Porsche 959"
+    },
+    "278": {
+      "year": 2006,
+      "make": "Vauxhall",
+      "model": "Astra VXR",
+      "display_name": "2006 Vauxhall Astra VXR"
     },
     "281": {
       "year": 1968,
@@ -194,6 +200,12 @@
       "make": "Ferrari",
       "model": "Enzo Ferrari",
       "display_name": "2002 Ferrari Enzo Ferrari"
+    },
+    "335": {
+      "year": 2002,
+      "make": "Lotus",
+      "model": "Esprit",
+      "display_name": "2002 Lotus Esprit"
     },
     "336": {
       "year": 1961,
@@ -1137,6 +1149,12 @@
       "model": "Torana A9X",
       "display_name": "1977 Holden Torana A9X"
     },
+    "1534": {
+      "year": 1990,
+      "make": "Jaguar",
+      "model": "XJ-S",
+      "display_name": "1990 Jaguar XJ-S"
+    },
     "1537": {
       "year": 1974,
       "make": "Toyota",
@@ -1544,6 +1562,12 @@
       "make": "Subaru",
       "model": "SVX",
       "display_name": "1996 Subaru SVX"
+    },
+    "2235": {
+      "year": 2015,
+      "make": "Jaguar",
+      "model": "XKR-S GT",
+      "display_name": "2015 Jaguar XKR-S GT"
     },
     "2242": {
       "year": 2015,
@@ -2607,6 +2631,12 @@
       "model": "Defender 110 X",
       "display_name": "2020 Land Rover Defender 110 X"
     },
+    "3429": {
+      "year": 2019,
+      "make": "Ginetta",
+      "model": "G40 Junior",
+      "display_name": "2019 Ginetta G40 Junior"
+    },
     "3434": {
       "year": 2020,
       "make": "BMW",
@@ -2858,6 +2888,12 @@
       "make": "Nissan",
       "model": "GT-R NISMO (R35)",
       "display_name": "2020 Nissan GT-R NISMO (R35)"
+    },
+    "3624": {
+      "year": 1987,
+      "make": "Porsche",
+      "model": "Carrera Coupe 'Luftauto 002'",
+      "display_name": "1987 Porsche Carrera Coupe 'Luftauto 002'"
     },
     "3625": {
       "year": 2021,
@@ -3417,6 +3453,12 @@
       "model": "1500 TRX",
       "display_name": "2024 Ram 1500 TRX"
     },
+    "3958": {
+      "year": 2023,
+      "make": "Dodge",
+      "model": "Challenger SRT Demon 170",
+      "display_name": "2023 Dodge Challenger SRT Demon 170"
+    },
     "3959": {
       "year": 2022,
       "make": "Dodge",
@@ -3434,6 +3476,12 @@
       "make": "Toyota",
       "model": "Prius Prime XSE Premium",
       "display_name": "2024 Toyota Prius Prime XSE Premium"
+    },
+    "3980": {
+      "year": 1998,
+      "make": "Renault",
+      "model": "Sport Spider",
+      "display_name": "1998 Renault Sport Spider"
     },
     "3983": {
       "year": 2024,
@@ -3477,6 +3525,12 @@
       "model": "Skyline GT-R V-Spec",
       "display_name": "1997 Nissan Skyline GT-R V-Spec"
     },
+    "4067": {
+      "year": 2025,
+      "make": "Bentley",
+      "model": "Continental GT Speed",
+      "display_name": "2025 Bentley Continental GT Speed"
+    },
     "4069": {
       "year": 1988,
       "make": "BMW",
@@ -3518,6 +3572,12 @@
       "make": "Nissan",
       "model": "Skyline GT-R",
       "display_name": "1992 Nissan Skyline GT-R"
+    },
+    "4118": {
+      "year": 2025,
+      "make": "McLaren",
+      "model": "W1",
+      "display_name": "2025 McLaren W1"
     },
     "4119": {
       "year": 1998,
@@ -3824,6 +3884,12 @@
       "make": "Toyota",
       "model": "Sports 800 Fanta Edition",
       "display_name": "1965 Toyota Sports 800 Fanta Edition"
+    },
+    "4354": {
+      "year": 1990,
+      "make": "Jaguar",
+      "model": "XJ-S Forza Edition",
+      "display_name": "1990 Jaguar XJ-S Forza Edition"
     }
   },
   "curation": {

@@ -4,13 +4,13 @@
   "metadata": {
     "dataset": "fh6-official-vehicle-metadata",
     "schema_version": 1,
-    "package_revision": 1,
-    "source_updated": "2026-08-13",
-    "record_count": 636,
-    "records_sha256": "2cc931208e7bbcdf5764f0d80793a3c5dc6647328272203e6345eba9acc7e528",
-    "file_sha256": "e93dc90c2a8672238c1c170b42675a4906ae5331a410b622ff469114be9712db",
-    "file_size": 96226,
-    "generated_from": "Vehicle DB Generator for FH6 v0.6.1",
+    "package_revision": 2,
+    "source_updated": "2026-09-08",
+    "record_count": 647,
+    "records_sha256": "b7063310d800b9de3be27b11f7b10f231822cd7f4c768a156c6fe2f657a73b5d",
+    "file_sha256": "e86fabd9e07fda7074f88f47227028de99e60ce3b3634bb259add516e912a7c0",
+    "file_size": 97847,
+    "generated_from": "Vehicle DB Generator for FH6 v0.6.2",
     "curation": {
       "in_game_vehicle_name_overrides": {
         "record_count": 1,
