@@ -1,19 +1,20 @@
-Livery Organizer for FH6 v0.4.60 Preview
+Livery Organizer for FH6 v0.4.61 Preview
 ========================================
 
-Release date: 2026-09-06
+Release date: 2026-09-11
 
 Livery Organizer for FH6 is a Windows tool for listing, searching, and organizing
 paint designs (liveries) downloaded in the PC version of Forza Horizon 6.
 
-v0.4.59 adds Japanese/English localization for the Organizer desktop GUI,
-generated HTML report, and Excel report. It also reduces unnecessary work during
-live search in large HTML reports.
+v0.4.61 adds a creator-color manager, creator upload-date display and sorting,
+and backup/restore support for user data belonging to paints that are outside the
+current report.
 
-The optional Navigator Bridge for FH6 is updated to v0.0.27. Bridge now treats a
-window as FH6 only when the window title, after trimming outer spaces, exactly
-matches "Forza Horizon 6". A browser, GitHub page, Organizer window, or another
-application that merely contains the game name is rejected.
+The bundled vehicle metadata follows the FH6 official car-list update dated
+2026-09-08 and now contains 647 vehicles with metadata package revision 2.
+The optional Navigator Bridge for FH6 is updated to v0.0.28. It verifies both the
+exact FH6 window title and owning forzahorizon6.exe process, refuses ambiguous
+multiple candidates, and revalidates the same target before every movement key.
 
 
 ■ Release files
@@ -25,9 +26,12 @@ README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0460.py
+python\livery-organizer-for-fh6-v0461.py
 python\i18n.py
-python\navigator-bridge-for-fh6-v027.py
+python\vehicle_metadata_update.py
+python\fh6-vehicle-metadata.json
+python\fh6-vehicle-metadata-manifest.json
+python\navigator-bridge-for-fh6-v028.py
 python\locales\__init__.py
 python\locales\ja.py
 python\locales\en.py
@@ -77,14 +81,16 @@ should use the English documentation as the common reference.
   and other fields
 - Keep / Delete candidate / Undecided organization states
 - Favorites, Review later, tags, and notes
+- Persistent creator colors and a dedicated creator-color manager
+- Creator upload-date display and newest-first / oldest-first sorting
 - Per-vehicle organization progress and unfinished-vehicle navigation
 - Undo / Redo
-- User-data and decision backup / restore
+- User-data and decision backup / restore, including data outside the current report
 - CSV output and Excel output with thumbnails
 - FH6 My Designs order view
 - Real-slot numbers such as #001 and FH6 positions such as #001U / #001D
 - Position or vehicle-name jump within FH6 My Designs order
-- FH6 display date in DD/MM/YYYY format
+- Creator upload date in FH6-style DD/MM/YYYY format
 - Similar-design comparison by image or creator/title match
 - Separate handling of identical re-downloaded liveries that currently occupy
   different GameSave slots
@@ -107,10 +113,10 @@ Livery-Organizer-for-FH6.exe
 
 Python:
 From the folder where you extracted the release ZIP, run:
-python python\livery-organizer-for-fh6-v0460.py
+python python\livery-organizer-for-fh6-v0461.py
 
 With uv:
-uv run python\livery-organizer-for-fh6-v0460.py
+uv run python\livery-organizer-for-fh6-v0461.py
 
 Keep python\i18n.py and the python\locales folder in place. They contain the
 Japanese/English UI resources required by the Python Organizer.
@@ -163,7 +169,7 @@ into a newly generated report. Use the built-in backup functions for data you
 want to preserve.
 
 
-■ Navigator Bridge for FH6 v0.0.27
+■ Navigator Bridge for FH6 v0.0.28
 
 Navigator Bridge is an optional companion tool that moves the FH6 My Designs
 cursor to a paint position selected in Organizer.
@@ -179,9 +185,9 @@ Select the number and press F or use Move to selected design in FH6. Organizer
 passes the target, the current final real-slot number, and movement timing
 settings to Bridge.
 
-Bridge calculates the cursor moves from #001U, foregrounds FH6, checks that the
-foreground title is exactly "Forza Horizon 6", and sends the fixed Left / Right /
-Down cursor sequence through the standard Windows input API.
+Bridge calculates the cursor moves from #001U, foregrounds the unique FH6 window
+that passed the title + process checks, and sends the fixed Left / Right / Down
+cursor sequence through the standard Windows input API.
 
 On first use, start Bridge by itself and run Register Integration once.
 The navigatorbridgeforfh6:// Windows registration stores Bridge's absolute path.
@@ -207,9 +213,12 @@ by one fixed Return before normal movement.
 Organizer or the external URI cannot supply arbitrary key codes, key names, or
 key sequences.
 
-Bridge only accepts a target window whose title, after trimming outer spaces,
-exactly matches "Forza Horizon 6". It checks the foreground window again before
-input and sends no movement keys if the check fails.
+Bridge accepts a target only when the title, after trimming outer spaces,
+exactly matches "Forza Horizon 6" and the owning process is forzahorizon6.exe.
+If multiple windows satisfy both checks, Bridge stops instead of selecting one.
+Before every normal Left / Right / Down movement key, it revalidates that the same
+HWND is foreground, has the exact title, and belongs to the FH6 process. If any
+check fails, the next movement key is not sent.
 
 Bridge does not modify game memory, executable code, game files, or GameSave.
 It does not use image recognition and does not read the game's internal paint or

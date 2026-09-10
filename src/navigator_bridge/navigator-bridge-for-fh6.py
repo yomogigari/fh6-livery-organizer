@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Navigator Bridge for FH6 v0.0.27-r01
+"""Navigator Bridge for FH6 v0.0.28
 
 非公式・非営利のファンメイド操作支援ツールです。
 Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承認・後援を
@@ -80,7 +80,7 @@ except Exception:
 
 APP_NAME = "Navigator Bridge for FH6"
 PACKAGED_EXE_FILENAME = "Navigator-Bridge-for-FH6.exe"
-APP_VERSION = "v0.0.27-r01"
+APP_VERSION = "v0.0.28"
 FH6_WINDOW_TITLE = "Forza Horizon 6"
 FH6_PROCESS_IMAGE_NAME = "forzahorizon6.exe"
 APP_USER_MODEL_ID = "LiveryTools.NavigatorBridgeForFH6"
@@ -585,8 +585,8 @@ def find_fh6_windows() -> list[tuple[int, str]]:
 def select_unique_fh6_window(windows: list[tuple[int, str]]) -> tuple[int, str]:
     """Require exactly one exact-title FH6 candidate before any foreground activation.
 
-    v0.0.27 already rejects partial title matches.  r01 also refuses to choose an
-    arbitrary HWND when more than one exact-title candidate exists, because doing so
+    v0.0.28 keeps the exact-title + process identity rule and also refuses to choose
+    an arbitrary HWND when more than one valid candidate exists, because doing so
     would make the key-input destination ambiguous.
     """
     candidates = list(windows or [])

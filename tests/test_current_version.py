@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import tomllib
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
-EXPECTED_VERSION = "0.4.60-r15"
+PYPROJECT = ROOT / "pyproject.toml"
+EXPECTED_VERSION = "0.4.61"
 REVISION_FEATURE_TESTS = tuple(sorted((ROOT / "tests").glob("test_*_r[0-9][0-9].py")))
 VERSION_AUDIT_TESTS = tuple(
     sorted(
@@ -39,6 +41,10 @@ class CurrentVersionTests(unittest.TestCase):
     def test_source_header_matches_current_version(self) -> None:
         header = self.text.splitlines()[:8]
         self.assertIn(f"Livery Organizer for FH6 v{EXPECTED_VERSION}", header)
+
+    def test_pyproject_matches_current_version(self) -> None:
+        data = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
+        self.assertEqual(data["project"]["version"], EXPECTED_VERSION)
 
     def test_other_tests_do_not_pin_organizer_version(self) -> None:
         offenders: list[str] = []

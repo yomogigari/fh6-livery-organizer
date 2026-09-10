@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.60-r15
+Livery Organizer for FH6 v0.4.61
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.60-r15"
+VERSION = "0.4.61"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -10759,7 +10759,7 @@ body.dark-theme .creator-color-palette {{
         </span>
         <button id="fh6MyDesignJump" type="button" title="指定した位置または車種へ移動します">移動</button>
         <button id="fh6NavigatorMove" type="button" disabled aria-keyshortcuts="F"
-          title="Navigator Bridge for FH6 v0.0.27へ選択デザインの現在位置と移動設定を渡します。Fキーでも実行できます。Navigator Bridge側で連携を一度登録してください。">FH6で選択デザインへ移動</button>
+          title="Navigator Bridge for FH6へ選択デザインの現在位置と移動設定を渡します。Fキーでも実行できます。Navigator Bridge側で連携を一度登録してください。">FH6で選択デザインへ移動</button>
         <span id="fh6VehicleMatchNav" class="fh6-vehicle-match-nav hidden" aria-label="位置・車種ジャンプの状態と一致位置の移動">
           <button id="fh6VehicleMatchPrev" type="button" aria-keyshortcuts="Shift+ArrowLeft" title="検索一致の前へ移動します（Shift+←）" hidden>← 前の一致</button>
           <span id="fh6VehicleMatchState" class="small" aria-live="polite"></span>
@@ -10781,9 +10781,9 @@ body.dark-theme .creator-color-palette {{
       <p><b class="fh6-foot-label">表示・基本移動</b>1列に上・下の2件を配置します。横スクロール、通常のマウスホイール（縦回転）、← / →キー、または「前へ / 次へ」で移動できます。端では反対側へ循環します。各カード下部にはFH6「マイデザイン」画面と同じ日付を DD/MM/YYYY 形式で表示します。</p>
       <p><b class="fh6-foot-label">位置・車種ジャンプ</b><b>537 / #537</b> のような実スロット通し番号、<b>#269U / #269D</b> のようなFH6画面の列＋U/D位置（U=上段、D=下段）、または <b>RX-7</b> のような車種名を指定できます。車種名は部分一致で候補を表示し、↑ / ↓で選択できます。候補を選ばずにEnterまたは「移動」を押すと、一致した各車種を1車種1位置ずつ巡回します。↑ / ↓で特定の車種候補を選んでEnterすると、その1車種に属する実スロットを巡回します。どちらも検索を確定した後は <b>Shift+→</b> で次の一致、<b>Shift+←</b> で前の一致へ移動し、末尾では先頭へ循環します。<b>J</b> でいつでもジャンプ入力欄へ戻れます。</p>
       <p><b class="fh6-foot-label">重複・仮削除</b>完全一致の再ダウンロードも別ペイントとして表示し、FH6本体の実スロット位置を維持します。FH6で削除したデザインはカードの <b>FH6で削除済み</b> で一時的に非表示にでき、残りの実スロット番号とFH6位置を即時に詰め直します。上部の <b>FH6削除済み（仮）</b> から1件ずつ、または全件を復元できます。仮削除はこの生成HTML専用のlocalStorageへ保存され、新しくHTMLを生成すると引き継ぎません。再DL完全一致は {stats.get("fh6_exact_duplicate_groups", 0)}組 / {stats.get("fh6_exact_duplicate_cards", 0)}件（余分 {stats.get("fh6_exact_duplicate_instances", 0)}件）で、「再DL重複のみ」から直接絞り込めます。</p>
-      <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カード上の実スロット番号 <b>#603</b> またはFH6位置 <b>#302U</b> をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中はFH6移動グループ全体をアクセント表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは <b>F</b> キーで移動できます。FH6標準の「マイデザイン」ではサムネイル・タイトル・作成者・作成者がUPした日付の4項目だけで目的のペイントを探す必要がありますが、Organizerでは車種・メーカー・年式・作成者・タイトルなどから先に使いたいデザインを特定できます。Bridgeで該当位置まで移動したあと、FH6上で利用者が<b>「デザインを読み込み」</b>を実行すれば、現在運転しているマシンへそのペイントを適用できます。また、不要なペイントをFH6で削除した場合は「FH6で削除済み（仮）」へ反映することで、残りの実スロット番号とFH6位置を再計算し、次の整理へ続けられます。Bridgeは読み込み・選択・削除・確定操作を行わず、対象位置までのカーソル移動だけを補助します。移動時は現在の最終実スロット番号と「FH6移動設定」を Navigator Bridge for FH6 v0.0.27 へ渡します。</p>
+      <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カード上の実スロット番号 <b>#603</b> またはFH6位置 <b>#302U</b> をクリックすると、そのデザインをOrganizer全体のFH6移動対象に設定できます。選択中はFH6移動グループ全体をアクセント表示します。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面からも同じ移動対象を選べます。選択後はボタンまたは <b>F</b> キーで移動できます。FH6標準の「マイデザイン」ではサムネイル・タイトル・作成者・作成者がUPした日付の4項目だけで目的のペイントを探す必要がありますが、Organizerでは車種・メーカー・年式・作成者・タイトルなどから先に使いたいデザインを特定できます。Bridgeで該当位置まで移動したあと、FH6上で利用者が<b>「デザインを読み込み」</b>を実行すれば、現在運転しているマシンへそのペイントを適用できます。また、不要なペイントをFH6で削除した場合は「FH6で削除済み（仮）」へ反映することで、残りの実スロット番号とFH6位置を再計算し、次の整理へ続けられます。Bridgeは読み込み・選択・削除・確定操作を行わず、対象位置までのカーソル移動だけを補助します。移動時は現在の最終実スロット番号と「FH6移動設定」を Navigator Bridge for FH6 v0.0.28 へ渡します。</p>
       <p><b class="fh6-foot-label">#001Uへ戻す</b>このオプションをONにした場合だけ、移動前に <b>ESC → RET</b> を各1回固定順序で送ってマイデザインを開き直します。標準待ち時間は <b>ESC後 500ms / RET後 800ms</b> です。任意のキーコード・キー名・キー順序は指定できず、上・文字キー・ファンクションキーその他は送信しません。</p>
-      <p><b class="fh6-foot-label">Bridge連携</b>Navigator Bridge v0.0.27はシングルインスタンスで動作し、OrganizerからのBridgeモード起動ではGUIを表示しません。起動済みなら新しいウィンドウを増やさず既存Bridgeへ指示を渡します。初回だけNavigator Bridge側の「連携を登録」を実行し、ブラウザから外部アプリを開く確認が表示された場合は許可してください。Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から「連携を登録」を再実行してください。BridgeはFH6の画面内容やゲーム内部のペイント位置・カーソル位置を読み取らず、設定された間隔で固定キー入力を送信する方式です。そのためPCやFH6の処理負荷などで入力が取りこぼされると、指定位置からずれる場合があります。ずれる場合はキー間隔や各待ち時間を長めに調整してください。</p>
+      <p><b class="fh6-foot-label">Bridge連携</b>Navigator Bridge v0.0.28はシングルインスタンスで動作し、OrganizerからのBridgeモード起動ではGUIを表示しません。起動済みなら新しいウィンドウを増やさず既存Bridgeへ指示を渡します。初回だけNavigator Bridge側の「連携を登録」を実行し、ブラウザから外部アプリを開く確認が表示された場合は許可してください。Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から「連携を登録」を再実行してください。BridgeはFH6の画面内容やゲーム内部のペイント位置・カーソル位置を読み取らず、設定された間隔で固定キー入力を送信する方式です。そのためPCやFH6の処理負荷などで入力が取りこぼされると、指定位置からずれる場合があります。ずれる場合はキー間隔や各待ち時間を長めに調整してください。</p>
     </div>
   </section>
 

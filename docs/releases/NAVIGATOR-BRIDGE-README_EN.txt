@@ -1,10 +1,11 @@
-Navigator Bridge for FH6 v0.0.27
+Navigator Bridge for FH6 v0.0.28
 ================================
-Release date: 2026-09-04
+Release date: 2026-09-11
 
-Navigator Bridge for FH6 v0.0.27 tightens FH6 window detection to avoid treating
-unrelated windows as the game. A window is accepted only when its title, after
-trimming outer spaces, exactly matches "Forza Horizon 6".
+Navigator Bridge for FH6 v0.0.28 further hardens FH6 window targeting. A target
+must have the exact "Forza Horizon 6" title and be owned by forzahorizon6.exe.
+Ambiguous multiple candidates are rejected, and the same target is revalidated
+immediately before every normal movement key.
 
 This document describes the current behavior and usage of the optional Bridge.
 
@@ -37,9 +38,10 @@ selects #603 / #302U, moving right from #001U would require 301 Right inputs,
 while using the left wrap requires 113 Left inputs. Bridge chooses the shorter
 113-Left plan.
 
-Bridge then finds a window whose title exactly matches "Forza Horizon 6", brings
-it to the foreground, verifies the foreground title again, and sends the planned
-cursor keys at the configured intervals using the standard Windows input API.
+Bridge then finds a unique window whose title exactly matches "Forza Horizon 6"
+and whose owning process is forzahorizon6.exe, brings it to the foreground, and
+sends the planned cursor keys at the configured intervals using the standard
+Windows input API. Before each normal movement key, the same HWND is revalidated.
 
 In short:
 
@@ -116,16 +118,18 @@ outer spaces, exactly matches:
 
   Forza Horizon 6
 
-Examples that are rejected include:
+and whose owning process image is:
 
-  Forza Horizon 6 - Microsoft Edge
-  a GitHub page whose title contains Forza Horizon 6
-  Livery Organizer windows containing the game name
-  Navigator Bridge windows containing the game name
-  other titles that merely contain the text
+  forzahorizon6.exe
 
-Bridge verifies the foreground title again immediately before input. If the
-check fails, no movement keys are sent.
+Examples that are rejected include browsers, GitHub pages, Organizer/Bridge
+windows whose titles merely contain the game name, and a different process even
+if its window title has been changed to exactly "Forza Horizon 6". If more than
+one window passes both identity checks, Bridge stops instead of choosing one.
+
+Before each normal movement key, Bridge verifies that the same target HWND is
+still foreground, still has the exact title, and is still owned by the FH6
+process. If any check fails, the next movement key is not sent.
 
 Because Bridge does not read back the real cursor location, dropped key input,
 unexpected screen state, system load, frame-rate changes, or window-switch delay
@@ -228,13 +232,15 @@ Organizer and the external URI cannot specify arbitrary key codes, arbitrary key
 names, or arbitrary key order. Up, character keys, function keys, and other keys
 are not available as normal movement commands.
 
-Bridge sends input only when:
+Bridge selects a movement target only when:
 
-1. a window title, after trimming outer spaces, exactly matches "Forza Horizon 6";
-2. that window has been foregrounded; and
-3. the current foreground title is checked again immediately before input.
+1. its title, after trimming outer spaces, exactly matches "Forza Horizon 6";
+2. its owning process image is forzahorizon6.exe; and
+3. exactly one window satisfies both identity checks.
 
-If these checks fail, Bridge does not send the movement keys.
+Before every normal Left / Right / Down movement key, Bridge revalidates that the
+same target HWND is still foreground and still passes the title + process checks.
+If any check fails, the next movement key is not sent.
 
 Bridge uses the standard Windows input API. It does not modify game memory,
 executable code, game files, or GameSave.

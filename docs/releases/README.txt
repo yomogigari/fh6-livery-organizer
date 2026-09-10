@@ -1,20 +1,21 @@
-Livery Organizer for FH6 v0.4.60 Preview
+Livery Organizer for FH6 v0.4.61 Preview
 =========================================
 
-公開日: 2026-09-06
+公開日: 2026-09-11
 
 Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 ペイント（Livery）を、ローカル環境で一覧化・検索・整理するためのツールです。
 
 このリリースはプレビュー版です。
 
-v0.4.59では、OrganizerのデスクトップGUI・生成HTML・Excelを日本語 / 英語で利用できる
-多言語基盤を追加しました。生成HTMLでは、900～1000件規模のレポートでも検索入力を
-滑らかに保ちやすいよう、ライブ検索時の不要な全体再計算やlocalStorage再読込も削減しています。
+v0.4.61では、作成者カラーを一覧で管理できる画面を追加し、カードに作成者アップロード日を
+表示して「新しい順 / 古い順」で並び替えられるようにしました。バックアップ / 復元では、
+現在のレポートに含まれないペイントのユーザーデータも保持し、次のバックアップへ引き継げます。
 
-任意の補助ツール Navigator Bridge for FH6 は v0.0.27 へ更新し、前後の通常スペースを除いた
-ウィンドウタイトルが「Forza Horizon 6」と完全一致する場合だけFH6として扱うようにしました。
-タイトルにゲーム名を含むだけのブラウザや別アプリにはキーを送信しません。
+同梱車両メタデータは2026-09-08更新のFH6公式車種リストへ追随し、647車種・package revision 2へ
+更新しました。任意の補助ツール Navigator Bridge for FH6 は v0.0.28 となり、タイトル完全一致に
+加えて所有プロセスがforzahorizon6.exeであることを確認し、各移動キーの直前にも同じ対象を
+再検証します。条件を満たす候補が複数ある場合は自動選択しません。
 
 
 ■ 配布ファイル
@@ -26,9 +27,12 @@ README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0460.py
+python\livery-organizer-for-fh6-v0461.py
 python\i18n.py
-python\navigator-bridge-for-fh6-v027.py
+python\vehicle_metadata_update.py
+python\fh6-vehicle-metadata.json
+python\fh6-vehicle-metadata-manifest.json
+python\navigator-bridge-for-fh6-v028.py
 python\locales\__init__.py
 python\locales\ja.py
 python\locales\en.py
@@ -106,7 +110,7 @@ PC版 Forza Horizon 6
 開発・動作確認はMicrosoft Store / Xbox App版を中心に行っています。
 OrganizerについてはSteam版でも利用者から正常動作の報告がありますが、開発側でSteam環境を
 正式に検証したものではありません。Navigator BridgeもSteam環境での正式検証は行っておらず、
-利用にはFH6ウィンドウタイトルが「Forza Horizon 6」と一致する必要があります。
+利用にはFH6ウィンドウタイトルが「Forza Horizon 6」と完全一致し、所有プロセスをFH6本体として確認できる必要があります。
 
 Python版はPython標準ライブラリのみで動作し、GUIにはTkinterを使用します。
 
@@ -117,13 +121,13 @@ EXE版:
 Livery-Organizer-for-FH6.exe を起動してください。
 
 Python版:
-配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0460.py を実行してください。
+配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0461.py を実行してください。
 
 例:
-python python\livery-organizer-for-fh6-v0460.py
+python python\livery-organizer-for-fh6-v0461.py
 
 uvを利用している場合:
-uv run python\livery-organizer-for-fh6-v0460.py
+uv run python\livery-organizer-for-fh6-v0461.py
 
 python\i18n.py と python\locales フォルダーは多言語表示に必要です。
 Organizer本体と同じpythonフォルダー構成のまま使用してください。
@@ -163,14 +167,16 @@ Excelにもサムネイル画像を埋め込みます。
 ・車種、メーカー、年式、作成者などによる検索・絞り込み・並び替え
 ・「残す / 削除候補 / 未決定」による整理
 ・お気に入り、後で確認、タグ、メモ
+・作成者カラーの設定と一覧管理
+・作成者アップロード日の表示と新しい順 / 古い順ソート
 ・車種ごとの整理進捗と未完了車種ナビゲーション
 ・Undo / Redo
-・ユーザーデータと判定状態のバックアップ / 復元
+・ユーザーデータと判定状態のバックアップ / 復元（現在のレポート外データも保持）
 ・CSV出力、サムネイル付きExcel出力
 ・FH6本体の表示に合わせた「FH6マイデザイン順」表示
 ・実スロット番号 #001... とFH6位置 #001U / #001D... の表示
 ・位置番号または車種名によるFH6マイデザイン内ジャンプ
-・FH6画面と同じ DD/MM/YYYY 形式の「FH6表示日付」
+・FH6画面と同じ DD/MM/YYYY 形式の作成者アップロード日
 ・画像一致 / 同一作者・同名による類似候補の比較
 ・現在のGameSave内にある再ダウンロード完全一致ペイントの別カード表示
 ・再DL重複の専用整理画面
@@ -243,7 +249,7 @@ GameSaveを書き換えず、新しくHTMLを生成した場合は引き継ぎ�
 
 ■ FH6上の選択デザインへ移動する
 
-この機能には Navigator Bridge for FH6 v0.0.27 を使用します。
+この機能には Navigator Bridge for FH6 v0.0.28 を使用します。
 Bridgeの仕組みは同梱の `NAVIGATOR-BRIDGE-README.txt` の冒頭で、
 #603 / #302U を例に詳しく説明しています。
 
@@ -304,10 +310,11 @@ Escを1回、Return（RET / Enter）を1回、この順序で送信します。
 任意のキーコード、キー名、キー順序を外部から指定する機能はありません。
 上、文字キー、ファンクションキーなどを位置移動用として送信しません。
 
-Bridgeは前後の通常スペースを除いたウィンドウタイトルが「Forza Horizon 6」と完全一致する
-ウィンドウだけをFH6として検出し、前面化できた場合だけ入力を送信します。
-タイトルに「Forza Horizon 6」を含むだけのブラウザ、GitHubページ、Organizer等は対象にしません。
-キー送信直前にも現在の前面ウィンドウを再確認し、条件を満たさない場合は入力しません。
+Bridgeは前後の通常スペースを除いたウィンドウタイトルが「Forza Horizon 6」と完全一致し、
+所有プロセスがforzahorizon6.exeのウィンドウだけをFH6候補として扱います。候補が複数ある場合は
+誤送信防止のため自動選択しません。通常の左 / 右 / 下キーは1回送信するごとに、同じ対象HWNDが
+現在も前面・タイトル完全一致・FH6プロセス所有であることを確認し、条件を満たさない場合は
+次の移動キーを送信しません。
 標準のWindows入力APIを使用し、ゲームのメモリ、実行コード、ゲームファイル、
 GameSaveを書き換えません。
 

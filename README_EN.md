@@ -6,16 +6,18 @@
 
 It reads information from the local FH6 GameSave and game assets and generates an HTML report with thumbnails, plus an Excel report. The generated HTML provides search, filtering, sorting, organization states, tags, notes, backups, FH6 My Designs ordering, and optional integration with **Navigator Bridge for FH6**.
 
-**v0.4.60 Preview** (released 2026-09-06) adds Japanese/English localization for the Organizer desktop UI, generated HTML, and Excel output. It also reduces live-search work in large HTML reports. The bundled **Navigator Bridge for FH6 v0.0.27** tightens FH6 window detection so that unrelated windows containing the game name are not treated as FH6.
+**v0.4.61 Preview** (released 2026-09-11) adds a creator-color manager, creator upload-date display and sorting, and backup/restore support for user data belonging to paints that are not in the current report. The bundled vehicle metadata now follows the FH6 official car-list update dated 2026-09-08 and contains 647 vehicles. The optional **Navigator Bridge for FH6 v0.0.28** now verifies both the FH6 window title and owning process and revalidates the target immediately before every movement key.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data.
 
-## What's new in v0.4.60 Preview
+## What's new in v0.4.61 Preview
 
-v0.4.60 Preview moves vehicle metadata out of the Organizer source and adds an optional update check. The Organizer does not contact the network or force an update at startup. A verified cached update can be used from the next launch, while the bundled metadata remains available if the cached data cannot be used.
+Creator colors can now be reviewed and changed from a dedicated manager. Normal cards show the creator upload date used by FH6, and reports can sort those dates newest-first or oldest-first.
 
-The compact FH6 My Designs layout has also been tightened, FH6 movement settings are now shared across all sort modes, and dark-theme accent text is easier to read.
+User-data backup/restore now preserves organization data for paints that are not present in the current HTML report, so data restored from an older report can be included again in later backups.
+
+The bundled vehicle metadata follows the FH6 official car-list update dated 2026-09-08 and grows from 636 to 647 vehicles. Its metadata package revision is 2. Startup still performs no automatic network access or forced update.
 
 For the Python version, keep `i18n.py`, `vehicle_metadata_update.py`, `fh6-vehicle-metadata.json`, `fh6-vehicle-metadata-manifest.json`, and `locales/` together with the Organizer script in the `python/` folder.
 
@@ -33,12 +35,14 @@ For the Python version, keep `i18n.py`, `vehicle_metadata_update.py`, `fh6-vehic
 - Current real-slot sequence number and `#columnU / #columnD` FH6-position display
 - Keep / Delete candidate / Undecided organization states
 - Favorites, Review later, tags, and notes
+- Persistent creator colors with a dedicated creator-color manager
+- Creator upload-date display and newest-first / oldest-first sorting
 - Similar-thumbnail candidate review
 - Re-download duplicate comparison and organization
 - Per-vehicle organization progress
 - Temporary “Deleted in FH6” state with current-position recalculation
 - Undo / Redo
-- User-data and decision backups/restores
+- User-data and decision backups/restores, including data outside the current report
 - CSV export
 - In-browser diagnostics
 - Python version using only the Python standard library
@@ -46,7 +50,7 @@ For the Python version, keep `i18n.py`, `vehicle_metadata_update.py`, `fh6-vehic
 
 ## Navigator Bridge for FH6
 
-**Navigator Bridge for FH6 v0.0.27** is an optional companion tool that moves the cursor in FH6's **My Designs** screen to a paint position selected in Organizer.
+**Navigator Bridge for FH6 v0.0.28** is an optional companion tool that moves the cursor in FH6's **My Designs** screen to a paint position selected in Organizer.
 
 Organizer can display a position such as:
 
@@ -86,7 +90,7 @@ States such as Delete candidate or Deleted in FH6 (temporary) are Organizer-side
 
 Navigator Bridge does not modify the FH6 GameSave, game files, or game memory.
 
-The current Bridge treats a window as FH6 **only when its title, after trimming outer spaces, exactly matches `Forza Horizon 6`**. A browser tab, GitHub page, Organizer window, or another application that merely contains “Forza Horizon 6” in its title is rejected. The foreground title is checked again before key input; if the check fails, Bridge does not send the movement keys.
+The current Bridge accepts an FH6 target only when its title, after trimming outer spaces, **exactly matches `Forza Horizon 6`** and the owning process is **`forzahorizon6.exe`**. If more than one window satisfies both checks, Bridge stops instead of choosing one automatically. Before every normal Left / Right / Down movement key, Bridge revalidates that the same target HWND is still foreground, has the exact title, and belongs to the FH6 process; if any check fails, the next movement key is not sent.
 
 Normal position movement can send only:
 
@@ -127,7 +131,7 @@ See [docs/I18N_EN.md](docs/I18N_EN.md) for the translation and internationalizat
 
 ## Release package
 
-GitHub Releases for v0.4.60 Preview contain the EXE versions, Python versions, and Japanese/English documentation in one ZIP:
+GitHub Releases for v0.4.61 Preview contain the EXE versions, Python versions, and Japanese/English documentation in one ZIP:
 
 ```text
 Livery-Organizer-for-FH6.exe
@@ -138,12 +142,12 @@ NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 python/
-  livery-organizer-for-fh6-v0460.py
+  livery-organizer-for-fh6-v0461.py
   i18n.py
   vehicle_metadata_update.py
   fh6-vehicle-metadata.json
   fh6-vehicle-metadata-manifest.json
-  navigator-bridge-for-fh6-v027.py
+  navigator-bridge-for-fh6-v028.py
   locales/
     __init__.py
     ja.py
@@ -172,7 +176,7 @@ Primary target environment:
 
 Development and verification are centered on the Microsoft Store / Xbox App version.
 
-Users have reported successful Organizer use with the Steam version, but Steam is not an officially verified development environment and save/game paths or file layouts may differ. Navigator Bridge is also not formally verified on Steam and requires the FH6 window title to match `Forza Horizon 6`.
+Users have reported successful Organizer use with the Steam version, but Steam is not an officially verified development environment and save/game paths or file layouts may differ. Navigator Bridge is also not formally verified on Steam and requires both the exact `Forza Horizon 6` window title and a verifiable FH6 owning process.
 
 The Python version uses only the Python standard library and Tkinter for its GUI.
 
@@ -193,13 +197,13 @@ Run:
 From the folder where you extracted the release ZIP, run:
 
 ```powershell
-python python\livery-organizer-for-fh6-v0460.py
+python python\livery-organizer-for-fh6-v0461.py
 ```
 
 With `uv`:
 
 ```powershell
-uv run python\livery-organizer-for-fh6-v0460.py
+uv run python\livery-organizer-for-fh6-v0461.py
 ```
 
 Keep `python\i18n.py` and the `python\locales` folder in place; they contain the Japanese/English UI resources used by the Python Organizer.
@@ -221,7 +225,7 @@ Start it by itself once and run **Register Integration** before using it from Or
 ### Python
 
 ```powershell
-python python\navigator-bridge-for-fh6-v027.py
+python python\navigator-bridge-for-fh6-v028.py
 ```
 
 For detailed behavior and setup, see `NAVIGATOR-BRIDGE-README_EN.txt` in the release package or `docs/releases/NAVIGATOR-BRIDGE-README_EN.txt` in the repository.

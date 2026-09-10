@@ -27,8 +27,8 @@ BRIDGE = load_bridge_module()
 
 
 class NavigatorBridgeWindowDetectionTests(unittest.TestCase):
-    def test_version_is_v0027_r01(self):
-        self.assertEqual(BRIDGE.APP_VERSION, "v0.0.27-r01")
+    def test_version_is_v0028(self):
+        self.assertEqual(BRIDGE.APP_VERSION, "v0.0.28")
 
     def test_fh6_title_requires_exact_text_after_outer_whitespace(self):
         accepted = (

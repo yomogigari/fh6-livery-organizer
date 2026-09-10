@@ -107,7 +107,7 @@ class LocalizationTests(unittest.TestCase):
 class OrganizerIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("fh6_organizer_v0460", ORGANIZER_SOURCE)
+        spec = importlib.util.spec_from_file_location("fh6_organizer_i18n", ORGANIZER_SOURCE)
         assert spec is not None and spec.loader is not None
         cls.organizer = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.organizer
@@ -894,7 +894,13 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
         self.assertEqual(len(en_locale.REPORT_TEXT), 748)
-        self.assertEqual(len(en_locale.REPORT_ATTR), 100)
+        self.assertEqual(len(en_locale.REPORT_ATTR), 101)
+        self.assertEqual(
+            en_locale.REPORT_ATTR.get(
+                "Navigator Bridge for FH6へ選択デザインの現在位置と移動設定を渡します。Fキーでも実行できます。Navigator Bridge側で連携を一度登録してください。"
+            ),
+            "Pass the selected design position and navigation settings to Navigator Bridge for FH6. You can also press F. Register Organizer integration once in Navigator Bridge before using it.",
+        )
         self.assertGreaterEqual(en_locale.REPORT_DYNAMIC_RULES_JS.count("[/^"), 100)
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
         self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())

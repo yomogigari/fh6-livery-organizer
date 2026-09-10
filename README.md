@@ -6,16 +6,18 @@
 
 GameSaveから取得した情報をもとに、サムネイル付きのHTMLレポートとExcelを生成します。生成されたHTMLでは、検索・絞り込み・並び替え・整理状態・タグ・メモ・バックアップなどを利用できます。
 
-**v0.4.60 Preview**（2026-09-06公開）では、OrganizerのデスクトップGUI・生成HTML・Excelを日本語 / 英語で利用できる多言語基盤を追加し、大規模レポートのライブ検索も軽量化しました。あわせて、任意の補助ツール **Navigator Bridge for FH6 v0.0.27** ではFH6ウィンドウ判定を厳格化し、別ウィンドウへの誤送信を防ぎやすくしています。
+**v0.4.61 Preview**（2026-09-11公開）では、作成者カラーの一覧管理、作成者アップロード日のカード表示・新旧順ソート、現在のレポートに含まれないペイントのユーザーデータ復元・再バックアップを追加しました。同梱車両メタデータは2026-09-08更新のFH6公式車種リストへ追随し、647車種を収録しています。任意の補助ツール **Navigator Bridge for FH6 v0.0.28** では、FH6ウィンドウのタイトルに加えて所有プロセスを確認し、各移動キーの送信直前にも対象ウィンドウを再検証します。
 
 > [!IMPORTANT]
 > 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。
 
-## v0.4.60 Previewの主な更新
+## v0.4.61 Previewの主な更新
 
-v0.4.60 Previewでは、車両メタデータをOrganizer本体から分離し、利用者が必要なときだけ更新確認できる仕組みを追加しました。起動時の自動通信や強制更新は行いません。検証済みの更新データがある場合は次回起動時から利用し、問題がある場合は同梱データを使用します。
+作成者ごとに設定した色を一覧で確認・変更できる「作成者カラー管理」を追加しました。カードではFH6に表示される作成者アップロード日を通常の並び順でも確認でき、「アップロード日:新しい順 / 古い順」で並び替えできます。
 
-また、FH6マイデザイン順のカードをよりコンパクトにし、FH6移動設定を全ソートで共通化しました。ダークテーマでは「絞り込み」「FH6移動」などの青い文字を明るくして視認性を改善しています。
+ユーザーデータのバックアップ / 復元は、現在のHTMLレポートに存在しないペイントの整理情報も保持できるようになりました。過去レポートから復元したデータを、その後のバックアップでも失わずに引き継げます。
+
+同梱車両メタデータはFH6公式車種リストの2026-09-08更新へ追随し、636車種から647車種へ更新しました。メタデータpackage revisionは2です。起動時の自動通信や強制更新は引き続き行いません。
 
 Python版では、Organizer本体に加えて `i18n.py`、`vehicle_metadata_update.py`、`fh6-vehicle-metadata.json`、`fh6-vehicle-metadata-manifest.json`、`locales/` を同じ `python/` フォルダー内に保持してください。
 
@@ -33,12 +35,14 @@ Python版では、Organizer本体に加えて `i18n.py`、`vehicle_metadata_upda
 - 実スロット番号と `#列U / D` によるFH6上の位置表示
 - 「残す / 削除候補 / 未決定」の整理状態
 - お気に入り、後で確認、タグ、メモ
+- 作成者カラーの設定と一覧管理
+- 作成者アップロード日の表示と新しい順 / 古い順ソート
 - 類似サムネイル候補の確認
 - 再ダウンロード重複ペイントの比較・整理
 - 車種ごとの整理進捗
 - 「FH6で削除済み（仮）」による一時非表示と位置再計算
 - Undo / Redo
-- ユーザーデータ、判定状態のバックアップと復元
+- ユーザーデータ、判定状態のバックアップと復元（現在のレポート外データも保持）
 - CSV出力
 - ブラウザ内の動作診断
 - Python標準ライブラリのみで動作するPython版
@@ -46,7 +50,7 @@ Python版では、Organizer本体に加えて `i18n.py`、`vehicle_metadata_upda
 
 ## Navigator Bridge for FH6
 
-**Navigator Bridge for FH6 v0.0.27** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
+**Navigator Bridge for FH6 v0.0.28** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
 
 Organizerでは、各ペイントに次のような現在位置を表示します。
 
@@ -108,7 +112,7 @@ Navigator Bridgeは、FH6のGameSave・ゲームファイル・ゲームメモ�
 
 Bridgeが行うのは、FH6ウィンドウを検出して前面化し、FH6「マイデザイン」内の指定位置まで移動するためのカーソルキーをWindowsの標準入力APIから送信することです。
 
-現在のBridgeは、前後の通常スペースを除いたウィンドウタイトルが **`Forza Horizon 6` と完全一致する場合だけ** FH6として扱います。タイトルに文字列が含まれるだけのブラウザや別アプリは対象にしません。入力直前にも前面ウィンドウを再確認し、条件を満たさない場合はキーを送信しません。
+現在のBridgeは、前後の通常スペースを除いたウィンドウタイトルが **`Forza Horizon 6` と完全一致**し、かつそのウィンドウの所有プロセスが **`forzahorizon6.exe`** の場合だけFH6候補として扱います。条件を満たす候補が複数ある場合は自動選択せず停止します。通常の左 / 右 / 下キーは1回送信するごとに、同じ対象ウィンドウが現在も前面・タイトル完全一致・FH6プロセス所有であることを再確認し、条件を満たさなくなった時点で次の移動キーを送信しません。
 
 次の操作は自動化しません。
 
@@ -132,12 +136,12 @@ NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 python/
-  livery-organizer-for-fh6-v0460.py
+  livery-organizer-for-fh6-v0461.py
   i18n.py
   vehicle_metadata_update.py
   fh6-vehicle-metadata.json
   fh6-vehicle-metadata-manifest.json
-  navigator-bridge-for-fh6-v027.py
+  navigator-bridge-for-fh6-v028.py
   locales/
     __init__.py
     ja.py
@@ -180,7 +184,7 @@ Organizerの利用者向け表示は、現在 **日本語** と **英語** に�
 
 開発・動作確認は **Microsoft Store / Xbox App版** を中心に行っています。
 
-**OrganizerについてはSteam版でも利用者から正常動作の報告があります**が、開発側でSteam環境を正式に検証したものではありません。環境によってFH6本体やセーブデータの保存先・ファイル構成などが異なる可能性があります。Navigator BridgeもSteam環境での正式検証は行っておらず、利用にはウィンドウタイトルが `Forza Horizon 6` と一致する必要があります。
+**OrganizerについてはSteam版でも利用者から正常動作の報告があります**が、開発側でSteam環境を正式に検証したものではありません。環境によってFH6本体やセーブデータの保存先・ファイル構成などが異なる可能性があります。Navigator BridgeもSteam環境での正式検証は行っておらず、利用にはウィンドウタイトルが `Forza Horizon 6` と一致し、所有プロセスをFH6本体として確認できる必要があります。
 
 Python版はPython標準ライブラリのみを使用し、GUIにはTkinterを使用します。
 
@@ -199,13 +203,13 @@ Livery-Organizer-for-FH6.exe
 配布ZIPを展開したフォルダーで、次のように実行します。
 
 ```powershell
-python python\livery-organizer-for-fh6-v0460.py
+python python\livery-organizer-for-fh6-v0461.py
 ```
 
 uvを使用する場合:
 
 ```powershell
-uv run python\livery-organizer-for-fh6-v0460.py
+uv run python\livery-organizer-for-fh6-v0461.py
 ```
 
 `python` フォルダー内の `i18n.py` と `locales` フォルダーはOrganizerの日本語/英語表示に必要です。
@@ -231,7 +235,7 @@ Navigator-Bridge-for-FH6.exe
 ### Navigator Bridge Python版
 
 ```powershell
-python python\navigator-bridge-for-fh6-v027.py
+python python\navigator-bridge-for-fh6-v028.py
 ```
 
 Organizerから利用する場合は、Python版Bridgeを単独起動して「連携を登録」を行ってください。
