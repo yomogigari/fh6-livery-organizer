@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61
+Livery Organizer for FH6 v0.4.61-r01
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61"
+VERSION = "0.4.61-r01"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -13408,6 +13408,17 @@ function fh6LocationButtonsHtml(card) {{
   </div>`;
 }}
 
+// =======================================================================
+// v0.4.61-r01 — 比較画面からFH6削除済み反映
+// =======================================================================
+// 類似比較 / 選択比較でも、カード一覧と同じ現在instanceを対象にします。
+// GameSave自体は変更せず、既存の仮削除処理へ委譲して実スロット位置を再計算します。
+function fh6CompareTempDeleteButtonHtml(card) {{
+  const location = fh6LocationForCard(card);
+  if (!location) return "";
+  return `<button type="button" class="fh6-temp-delete-action fh6-compare-temp-delete-action" data-compare-temp-delete="${{escapeCompareHtml(location.instanceId)}}" title="FH6でこのデザインを削除した後、現在のHTML上でも一時的に除外して位置を詰め直します">FH6で削除済み</button>`;
+}}
+
 const FH6_NAVIGATOR_SETTINGS_KEY = "navigator-bridge-for-fh6-settings-v1";
 const LEGACY_FH6_NAVIGATOR_SETTINGS_KEYS = ["fh6-my-designs-navigator-settings-v1"];
 const FH6_NAVIGATOR_DEFAULTS = Object.freeze({{
@@ -16711,6 +16722,7 @@ document.getElementById("themeToggle").addEventListener("click",()=>{{document.b
 
 let activeCompareMembers = [];
 let activeCompareMode = "similar";
+let activeCompareOptions = {{}};
 function escapeCompareHtml(value) {{
   return String(value ?? "").replace(/[&<>"']/g, ch => ({{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}}[ch]));
 }}
@@ -16745,6 +16757,7 @@ function setCompareSelection(members, selected) {{
 function renderCompareMembers(members, options = {{}}) {{
   activeCompareMembers = [...members];
   activeCompareMode = options.mode === "selected" ? "selected" : "similar";
+  activeCompareOptions = {{...options, mode:activeCompareMode}};
   const title = document.getElementById("compareModalTitle");
   const grid = document.getElementById("compareGrid");
   const summary = document.getElementById("compareSummary");
@@ -16770,6 +16783,7 @@ function renderCompareMembers(members, options = {{}}) {{
     const relativeBadges = `${{newest?`<span class="compare-badge newest">${{REPORT_LABEL_NEWEST}}</span>`:""}}${{oldest?`<span class="compare-badge">${{REPORT_LABEL_OLDEST}}</span>`:""}}`;
     const badges = `${{reasonBadge}}${{relativeBadges}}`;
     const locationHtml = fh6LocationButtonsHtml(member);
+    const tempDeleteHtml = fh6CompareTempDeleteButtonHtml(member);
     item.innerHTML=`
       ${{img?`<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src")||"")}}" alt="">`:""}}
       ${{badges ? `<div class="compare-badges">${{badges}}</div>` : ""}}
@@ -16786,6 +16800,7 @@ function renderCompareMembers(members, options = {{}}) {{
       </dl>
       <div class="compare-item-actions">
         <button type="button" data-compare-toggle="${{escapeCompareHtml(member.dataset.key)}}">${{selectedKeys.has(member.dataset.key)?"選択解除":"選択"}}</button>
+        ${{tempDeleteHtml}}
       </div>`;
     grid.appendChild(item);
   }});
@@ -16796,6 +16811,30 @@ function renderCompareMembers(members, options = {{}}) {{
     else selectedKeys.add(member.dataset.key);
     applyFilters();
     updateCompareSelectionUi();
+  }}));
+  grid.querySelectorAll("[data-compare-temp-delete]").forEach(button => button.addEventListener("click", () => {{
+    const instanceId = String(button.dataset.compareTempDelete || "");
+    const member = activeCompareMembers.find(card =>
+      String(currentFh6InstanceForCard(card)?.instance_id || "") === instanceId
+    );
+    if (!member || !markFh6InstanceTempDeleted(instanceId)) return;
+
+    // 仮削除したペイントを比較・一括操作の対象から外し、残りをその場で再描画します。
+    selectedKeys.delete(member.dataset.key);
+    const remaining = activeCompareMembers.filter(card => card !== member && !fh6CardIsTempDeleted(card));
+    if (!remaining.length) {{
+      activeCompareMembers = [];
+      closeModal("compareModal", false);
+      return;
+    }}
+    const options = {{...activeCompareOptions}};
+    if (activeCompareMode === "selected") {{
+      options.summary = `選択中の${{remaining.length}}件を取得日時の新しい順で比較しています。`;
+    }} else {{
+      const reason = String(options.badgeLabel || "類似条件一致");
+      options.summary = `${{reason}} / ${{remaining.length}}件。新しい取得日時から順に表示しています。`;
+    }}
+    renderCompareMembers(remaining, options);
   }}));
   updateCompareSelectionUi();
   updateFh6NavigatorUi();
