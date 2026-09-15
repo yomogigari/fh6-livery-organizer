@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61-r03
+Livery Organizer for FH6 v0.4.61-r04
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61-r03"
+VERSION = "0.4.61-r04"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -9304,6 +9304,23 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
   font-weight:800;
 }}
 #fh6TempDeletedReview.hidden {{ display:none; }}
+.fh6-temp-delete-tools {{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) auto auto;
+  gap:8px;
+  align-items:center;
+  margin:10px 0 4px;
+}}
+.fh6-temp-delete-search {{
+  width:100%;
+  min-width:0;
+}}
+.fh6-temp-delete-search-status {{
+  white-space:nowrap;
+  color:var(--muted);
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+}}
 .fh6-temp-delete-action {{
   border-color:color-mix(in srgb, #b42318 28%, var(--line)) !important;
   background:color-mix(in srgb, #b42318 6%, var(--surface)) !important;
@@ -9335,6 +9352,9 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
   font-size:11px;
   font-variant-numeric:tabular-nums;
 }}
+.fh6-temp-delete-row-meta + .fh6-temp-delete-row-meta {{
+  margin-top:1px;
+}}
 .fh6-temp-delete-empty {{
   padding:14px;
   border:1px dashed var(--line);
@@ -9348,6 +9368,8 @@ body.fh6-my-design-view-mode .fh6-global-move-bar {{ display:none !important; }}
   margin-top:10px;
 }}
 @media (max-width:760px) {{
+  .fh6-temp-delete-tools {{ grid-template-columns:minmax(0,1fr) auto; }}
+  .fh6-temp-delete-search-status {{ grid-column:1 / -1; grid-row:2; }}
   .fh6-temp-delete-row {{ grid-template-columns:minmax(0,1fr); }}
   .fh6-temp-delete-row button {{ width:100%; }}
 }}
@@ -10915,7 +10937,7 @@ body.dark-theme .creator-color-palette {{
                 <p><b>横移動</b><br>横スクロール、通常のマウスホイール（縦回転）、← / →キー、「前へ / 次へ」で1列ずつ移動できます。先頭の左は最後へ、最後の右は先頭へ循環します。</p>
                 <p><b>位置・車種ジャンプ</b><br><b>537 / #537</b> の実スロット番号、<b>#269U / #269D</b> の列＋U/D位置、または車種名の一部から直接移動できます。車種候補は年式・メーカー・車名を対象に部分一致し、↑ / ↓で選択できます。候補を選んでEnterするとその車種内を巡回し、候補を選ばずEnterまたは「移動」を押すと一致車種を<b>1車種1位置</b>で巡回します。確定後は <b>Shift+← / Shift+→</b> で前後の一致へ移動でき、<b>J</b>で入力欄へ戻り、Escで候補を閉じます。</p>
                 <p><b>FH6で選択デザインへ移動</b><br>FH6標準の「マイデザイン」で確認できるのは、サムネイル・タイトル・作成者・作成者がUPした日付の4項目です。ダウンロード済みペイントが増えると、目的のデザインをFH6画面だけで探すのは手間がかかります。Organizerでは車種・メーカー・年式・作成者・タイトルなどで先に目的のペイントを探し、カードの <b>#603</b> や <b>#302U</b> をクリックしてFH6移動対象にできます。メーカー順・車名順・作成者順など他の並び順や、類似ペイント比較・再DL重複整理画面でも同じ操作ができます。選択後は <b>FH6で選択デザインへ移動</b> または <b>F</b> キーで実行します。対象位置へ移動したあと、FH6上で利用者が <b>「デザインを読み込み」</b> を実行すれば、現在運転しているマシンへそのペイントを適用できます。Bridgeは「デザインを読み込み」、選択、削除、確定を自動化しません。Navigator BridgeはFH6の画面内容や内部のカーソル位置を読み取らず、設定した間隔でキー操作を送るだけなので、PCやFH6の負荷による入力取りこぼしで指定位置からずれる場合があります。ずれる場合はFH6移動設定の待ち時間を長めにしてください。</p>
-                <p><b>FH6で削除済み（仮）</b><br>Bridgeで整理対象の位置へ移動し、FH6上で利用者が不要なデザインを削除したあと、同じデザインをOrganizerで一時的に非表示にすると、残りの実スロット番号と列＋U/D位置をその場で詰め直します。再計算された位置は次のBridge移動にも使われるため、削除で後続スロットが詰まっても連続して整理できます。上部の <b>FH6削除済み（仮）</b> から個別復元 / 全件復元できます。この状態は現在の生成HTML専用で、新しく生成したHTMLには引き継ぎません。</p>
+                <p><b>FH6で削除済み（仮）</b><br>Bridgeで整理対象の位置へ移動し、FH6上で利用者が不要なデザインを削除したあと、同じデザインをOrganizerで一時的に非表示にすると、残りの実スロット番号と列＋U/D位置をその場で詰め直します。再計算された位置は次のBridge移動にも使われるため、削除で後続スロットが詰まっても連続して整理できます。上部の <b>FH6削除済み（仮）</b> から個別復元 / 全件復元できます。復元画面では車種・タイトル・作成者・元の実スロット番号 / FH6位置で検索でき、FH6表示日付と取得日時も確認できます。この状態は現在の生成HTML専用で、新しく生成したHTMLには引き継ぎません。</p>
                 <p><b>絞り込み中</b><br>現在の仮削除反映後の位置を維持し、表示対象がない列だけ省略します。ジャンプ先が絞り込みで非表示の場合は条件を変更せず、その旨を案内します。移動先は一時的に強調表示します。</p>
               </div>
             </td></tr>
@@ -11414,6 +11436,12 @@ body.dark-theme .creator-color-palette {{
         <div class="small">FH6で削除したデザインをこのHTML上だけ一時的に除外しています。元のGameSaveは変更しません。</div>
       </div>
       <button data-close-modal="fh6TempDeletedModal">閉じる</button>
+    </div>
+    <div class="fh6-temp-delete-tools">
+      <input id="fh6TempDeletedSearch" class="fh6-temp-delete-search" type="search"
+        placeholder="車種・タイトル・作成者・#001・#001U で検索" aria-label="FH6削除済みを検索">
+      <span id="fh6TempDeletedSearchStatus" class="fh6-temp-delete-search-status" aria-live="polite"></span>
+      <button id="fh6TempDeletedSearchClear" type="button">検索をクリア</button>
     </div>
     <div id="fh6TempDeletedBody"></div>
     <div class="fh6-temp-delete-modal-actions">
@@ -12511,15 +12539,54 @@ function placeFh6TempDeletedReview() {{
   if (host && button.parentElement !== host) host.appendChild(button);
 }}
 
+// v0.4.61-r04 — FH6削除済み（仮）を検索しやすくし、復元対象を特定しやすくします。
+function fh6TempDeletedSearchText(instance, width) {{
+  const slot = String(instance.slot_number || 0).padStart(width, "0");
+  return [
+    instance.vehicle_label, instance.vehicle_make, instance.vehicle_model, instance.vehicle_year,
+    instance.title, instance.creator, instance.car_id,
+    `#${{slot}}`, instance.position,
+    instance.fh6_date_display, instance.timestamp_display
+  ].map(value => String(value ?? "").toLocaleLowerCase()).join(" ");
+}}
+
+function filteredFh6TempDeletedInstances() {{
+  const items = fh6TempDeletedInstances();
+  const search = document.getElementById("fh6TempDeletedSearch");
+  const query = String(search?.value || "").trim().toLocaleLowerCase();
+  if (!query) return items;
+  const width = Math.max(3, String(Math.max(1, FH6_MY_DESIGN_INSTANCES.length)).length);
+  const tokens = query.split(/\\s+/).filter(Boolean);
+  return items.filter(instance => {{
+    const haystack = fh6TempDeletedSearchText(instance, width);
+    return tokens.every(token => haystack.includes(token));
+  }});
+}}
+
 function renderFh6TempDeletedModal() {{
   const body = document.getElementById("fh6TempDeletedBody");
   if (!body) return;
-  const items = fh6TempDeletedInstances();
+  const allItems = fh6TempDeletedInstances();
+  const items = filteredFh6TempDeletedInstances();
+  const search = document.getElementById("fh6TempDeletedSearch");
+  const searchStatus = document.getElementById("fh6TempDeletedSearchStatus");
+  const clearSearch = document.getElementById("fh6TempDeletedSearchClear");
+  const hasQuery = Boolean(String(search?.value || "").trim());
+  if (searchStatus) searchStatus.textContent = `表示 ${{items.length}} / ${{allItems.length}}件`;
+  if (clearSearch) clearSearch.disabled = !hasQuery;
   body.replaceChildren();
-  if (!items.length) {{
+  if (!allItems.length) {{
     const empty = document.createElement("div");
     empty.className = "fh6-temp-delete-empty";
     empty.textContent = "一時的に非表示にしているデザインはありません。";
+    body.appendChild(empty);
+    updateFh6TempDeletedUi();
+    return;
+  }}
+  if (!items.length) {{
+    const empty = document.createElement("div");
+    empty.className = "fh6-temp-delete-empty";
+    empty.textContent = "検索条件に一致するFH6削除済み（仮）はありません。";
     body.appendChild(empty);
     updateFh6TempDeletedUi();
     return;
@@ -12541,8 +12608,17 @@ function renderFh6TempDeletedModal() {{
     const meta = document.createElement("div");
     meta.className = "fh6-temp-delete-row-meta";
     const creator = String(instance.creator || "").trim();
-    meta.textContent = `生成時 #${{String(instance.slot_number || 0).padStart(width, "0")}} / ${{String(instance.position || "—")}}${{creator ? ` · ${{creator}}` : ""}}`;
+    meta.textContent = `元の位置 #${{String(instance.slot_number || 0).padStart(width, "0")}} / ${{String(instance.position || "—")}}${{creator ? ` · 作成者 ${{creator}}` : ""}}`;
+    const dateMeta = document.createElement("div");
+    dateMeta.className = "fh6-temp-delete-row-meta";
+    const fh6Date = String(instance.fh6_date_display || "").trim();
+    const acquired = String(instance.timestamp_display || "").trim();
+    const dateParts = [];
+    if (fh6Date) dateParts.push(`FH6表示日付 ${{fh6Date}}`);
+    if (acquired) dateParts.push(`取得日時 ${{acquired}}`);
+    dateMeta.textContent = dateParts.join(" · ");
     main.append(title, meta);
+    if (dateParts.length) main.appendChild(dateMeta);
 
     const restore = document.createElement("button");
     restore.type = "button";
@@ -17148,6 +17224,15 @@ document.getElementById("showRemoved")?.addEventListener("click",()=>{{
 document.getElementById("fh6TempDeletedReview")?.addEventListener("click", event => {{
   renderFh6TempDeletedModal();
   openModal("fh6TempDeletedModal", event.currentTarget);
+  requestAnimationFrame(() => document.getElementById("fh6TempDeletedSearch")?.focus());
+}});
+document.getElementById("fh6TempDeletedSearch")?.addEventListener("input", renderFh6TempDeletedModal);
+document.getElementById("fh6TempDeletedSearchClear")?.addEventListener("click", () => {{
+  const search = document.getElementById("fh6TempDeletedSearch");
+  if (!search) return;
+  search.value = "";
+  renderFh6TempDeletedModal();
+  search.focus();
 }});
 document.getElementById("fh6TempDeletedRestoreAll")?.addEventListener("click", () => {{
   if (!fh6TempDeletedInstanceIds.size) return;

@@ -157,6 +157,20 @@ SMOKE_SCRIPT = r"""
     assert(activeCompareMembers.length === 1 && activeCompareMembers[0] === second, "compare view did not remove deleted member");
     assert(document.querySelectorAll("#compareGrid .compare-item").length === 1, "compare view did not redraw remaining member");
     assert(fh6LocationForCard(second)?.slotNumber === 1, "FH6 slot numbers were not compacted after temp delete");
+
+    renderFh6TempDeletedModal();
+    const deletedSearch = document.getElementById("fh6TempDeletedSearch");
+    assert(deletedSearch, "FH6 temp-deleted search is missing");
+    deletedSearch.value = "Browser Smoke 1 #001U";
+    deletedSearch.dispatchEvent(new Event("input", {bubbles:true}));
+    assert(document.querySelectorAll("#fh6TempDeletedBody .fh6-temp-delete-row").length === 1, "FH6 temp-deleted search did not match vehicle/title/position");
+    assert(document.getElementById("fh6TempDeletedSearchStatus")?.textContent === "表示 1 / 1件", "FH6 temp-deleted search count is incorrect");
+    deletedSearch.value = "no-such-design";
+    deletedSearch.dispatchEvent(new Event("input", {bubbles:true}));
+    assert(document.querySelectorAll("#fh6TempDeletedBody .fh6-temp-delete-row").length === 0, "FH6 temp-deleted search did not filter unmatched item");
+    document.getElementById("fh6TempDeletedSearchClear")?.click();
+    assert(document.querySelectorAll("#fh6TempDeletedBody .fh6-temp-delete-row").length === 1, "FH6 temp-deleted search clear did not restore list");
+
     assert(restoreAllFh6TempDeletedInstances(), "FH6 temp-delete restore failed");
     assert(fh6LocationForCard(second)?.slotNumber === 2, "FH6 slot numbers were not restored");
 
@@ -174,7 +188,7 @@ SMOKE_SCRIPT = r"""
     assert(document.getElementById("exactDuplicateModal")?.classList.contains("hidden"), "resolved final duplicate group did not close modal");
     restoreAllFh6TempDeletedInstances();
 
-    finish("PASS", "compare decision, FH6 temp delete, slot recompute, and exact-duplicate flow");
+    finish("PASS", "compare decision, FH6 temp-delete search/restore, slot recompute, and exact-duplicate flow");
   } catch (error) {
     console.error(error);
     finish("FAIL", error && error.message ? error.message : String(error));
@@ -334,7 +348,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             if ok:
                 print(f"PASS — browser compare/FH6 smoke test: {browser}")
-                print("Checked compare decisions, FH6 temp delete, slot recompute, and exact-duplicate resolution.")
+                print("Checked compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
                 return 0
             errors.append(f"{browser}: {detail[-1200:]}")
 

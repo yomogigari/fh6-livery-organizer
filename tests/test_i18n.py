@@ -893,8 +893,8 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 748)
-        self.assertEqual(len(en_locale.REPORT_ATTR), 101)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 750)
+        self.assertEqual(len(en_locale.REPORT_ATTR), 103)
         self.assertEqual(
             en_locale.REPORT_ATTR.get(
                 "Navigator Bridge for FH6へ選択デザインの現在位置と移動設定を渡します。Fキーでも実行できます。Navigator Bridge側で連携を一度登録してください。"
