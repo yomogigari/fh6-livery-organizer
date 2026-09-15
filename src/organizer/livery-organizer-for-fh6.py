@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61-r01
+Livery Organizer for FH6 v0.4.61-r02
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61-r01"
+VERSION = "0.4.61-r02"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -11026,6 +11026,7 @@ body.dark-theme .creator-color-palette {{
           <b>再DL重複のみ</b>を使うと、この完全一致再ダウンロードだけを直接絞り込めます。
           <b>再DL重複 ○件</b>バッジをクリックすると専用整理画面を開き、FH6位置・FH6表示日付・取得日時・Livery IDを見比べながら
           <b>「これを残す」</b>を選べます。選んだ1件を「残す」、同じ完全一致グループの残りを「削除候補」にまとめて設定します。
+          FH6本体で不要な重複を削除した後は、この画面の <b>FH6で削除済み</b> を押すとその場で仮削除へ反映し、残りの実スロット位置を再計算します。1件だけ残ったグループは整理済みとして専用画面から外れます。
         </p>
         <p>
           カードを2件以上チェックして <span class="help-path">絞り込み → 選択・一括 → 選択中を比較</span> を使うと、
@@ -16873,16 +16874,22 @@ function renderSelectedCompareModal() {{
 
 let activeExactDuplicateGroup = "";
 
+// =======================================================================
+// v0.4.61-r02 — 再DL重複整理画面からFH6削除済み反映
+// =======================================================================
+// 仮削除済みinstanceは専用整理画面の重複件数から除外します。
+// 1件だけ残ったgroupは整理完了として一覧から外し、次の重複groupへ進めます。
 function exactDuplicateGroupEntries() {{
   const groups = new Map();
   cards.forEach(card => {{
-    if (card.dataset.exactDuplicate !== "1") return;
+    if (card.dataset.exactDuplicate !== "1" || fh6CardIsTempDeleted(card)) return;
     const group = String(card.dataset.exactDuplicateGroup || "");
     if (!group) return;
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group).push(card);
   }});
   return [...groups.entries()]
+    .filter(([, members]) => members.length >= 2)
     .map(([group, members]) => [group, members.sort((a,b) =>
       Number(fh6LocationForCard(a)?.slotNumber || Number.MAX_SAFE_INTEGER) - Number(fh6LocationForCard(b)?.slotNumber || Number.MAX_SAFE_INTEGER)
       || String(a.dataset.key || "").localeCompare(String(b.dataset.key || ""))
@@ -16915,6 +16922,7 @@ function renderExactDuplicateModal(groupId) {{
     const state = getState(member);
     item.classList.toggle("is-keeper", state === "keep");
     const locationHtml = fh6LocationButtonsHtml(member);
+    const tempDeleteHtml = fh6CompareTempDeleteButtonHtml(member);
     const vinyl = Number(member.dataset.vinylCount);
     item.innerHTML = `
       ${{img ? `<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src") || "")}}" alt="">` : ""}}
@@ -16931,11 +16939,29 @@ function renderExactDuplicateModal(groupId) {{
       </dl>
       <div class="compare-item-actions">
         <button class="keeper-action" type="button" data-exact-duplicate-keeper="${{escapeCompareHtml(member.dataset.key || "")}}">${{state === "keep" ? "この1件を残しています" : "これを残す"}}</button>
+        ${{tempDeleteHtml}}
       </div>`;
     grid.appendChild(item);
   }});
   grid.querySelectorAll("[data-exact-duplicate-keeper]").forEach(button => button.addEventListener("click", () => {{
     chooseExactDuplicateKeeper(button.dataset.exactDuplicateKeeper || "");
+  }}));
+  grid.querySelectorAll("[data-compare-temp-delete]").forEach(button => button.addEventListener("click", () => {{
+    const instanceId = String(button.dataset.compareTempDelete || "");
+    if (!instanceId || !markFh6InstanceTempDeleted(instanceId)) return;
+
+    const remainingEntries = exactDuplicateGroupEntries();
+    if (!remainingEntries.length) {{
+      activeExactDuplicateGroup = "";
+      closeModal("exactDuplicateModal", false);
+      return;
+    }}
+    if (remainingEntries.some(([entryGroup]) => entryGroup === group)) {{
+      renderExactDuplicateModal(group);
+      return;
+    }}
+    const nextIndex = Math.min(index, remainingEntries.length - 1);
+    renderExactDuplicateModal(remainingEntries[nextIndex][0]);
   }}));
   updateFh6NavigatorUi();
   return true;

@@ -59,12 +59,12 @@ class CompareFh6TempDeleteR01Tests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.text)
 
-    def test_redownload_duplicate_modal_is_not_changed_by_this_revision(self) -> None:
-        start = self.text.index("function renderExactDuplicateModal(groupId)")
-        end = self.text.index("function chooseExactDuplicateKeeper", start)
+    def test_r01_compare_delete_handler_remains_in_shared_compare_renderer(self) -> None:
+        start = self.text.index("function renderCompareMembers(members, options = {{}})")
+        end = self.text.index("function renderCompareModal(sourceCard)", start)
         block = self.text[start:end]
-        self.assertNotIn("data-compare-temp-delete", block)
-        self.assertNotIn("fh6CompareTempDeleteButtonHtml", block)
+        self.assertIn('grid.querySelectorAll("[data-compare-temp-delete]")', block)
+        self.assertIn("markFh6InstanceTempDeleted(instanceId)", block)
 
 
 if __name__ == "__main__":
