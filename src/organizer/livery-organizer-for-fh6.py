@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61-r02
+Livery Organizer for FH6 v0.4.61-r03
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -138,7 +138,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61-r02"
+VERSION = "0.4.61-r03"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -11018,7 +11018,8 @@ body.dark-theme .creator-color-palette {{
         <p>
           類似候補があるカードには、判定理由に応じて<b>「画像一致 ○件」</b>または<b>「同一作者・同名 ○件」</b>と表示します。
           同じ車種内の<b>サムネイル完全一致</b>または<b>作成者＋タイトル一致</b>を手がかりに候補化し、
-          比較画面では一致理由、取得日時、説明、整理状態、フィンガープリントを確認できます。
+          比較画面では一致理由、取得日時、説明、整理状態、フィンガープリントを確認でき、各ペイントの <b>残す / 削除候補 / 未決定</b> をその場で変更できます。
+          比較画面の整理状態変更は一覧カードと同じ保存・Undo経路を使うため、閉じた後の一覧にも即時反映されます。
           <span class="help-path">絞り込み → 条件</span> では、<b>類似候補のみ</b>に加えて
           <b>画像一致のみ</b> / <b>同一作者・同名のみ</b>で、表示中の判定理由ごとに候補を絞り込めます。
           現在スナップショット内に同じペイントを再ダウンロードした完全一致スロットが複数ある場合は、
@@ -16730,6 +16731,20 @@ function escapeCompareHtml(value) {{
 function compareDecisionLabel(card) {{
   return ({{undecided:"未決定", keep:"残す", delete:"削除候補"}})[getState(card)] || getState(card);
 }}
+
+// =======================================================================
+// v0.4.61-r03 — 比較画面から整理状態を直接変更
+// =======================================================================
+// 一覧カードと同じ setState() を使い、Undo・保存・件数更新を共通経路へ揃えます。
+function compareDecisionButtonsHtml(card) {{
+  const state = getState(card);
+  const key = escapeCompareHtml(card.dataset.key || "");
+  return `<div class="decision compare-decision-actions" role="group" aria-label="整理状態">
+    <button type="button" data-compare-state="keep" data-compare-key="${{key}}" class="${{state === "keep" ? "active" : ""}}" aria-pressed="${{state === "keep" ? "true" : "false"}}">残す</button>
+    <button type="button" data-compare-state="delete" data-compare-key="${{key}}" class="${{state === "delete" ? "active" : ""}}" aria-pressed="${{state === "delete" ? "true" : "false"}}">削除候補</button>
+    <button type="button" data-compare-state="undecided" data-compare-key="${{key}}" class="${{state === "undecided" ? "active" : ""}}" aria-pressed="${{state === "undecided" ? "true" : "false"}}">未決定</button>
+  </div>`;
+}}
 function compareCreatorLabel(card) {{
   return String(card.dataset.creatorDisplay || card.dataset.creator || "").trim() || "—";
 }}
@@ -16784,6 +16799,7 @@ function renderCompareMembers(members, options = {{}}) {{
     const relativeBadges = `${{newest?`<span class="compare-badge newest">${{REPORT_LABEL_NEWEST}}</span>`:""}}${{oldest?`<span class="compare-badge">${{REPORT_LABEL_OLDEST}}</span>`:""}}`;
     const badges = `${{reasonBadge}}${{relativeBadges}}`;
     const locationHtml = fh6LocationButtonsHtml(member);
+    const decisionButtonsHtml = compareDecisionButtonsHtml(member);
     const tempDeleteHtml = fh6CompareTempDeleteButtonHtml(member);
     item.innerHTML=`
       ${{img?`<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src")||"")}}" alt="">`:""}}
@@ -16799,6 +16815,7 @@ function renderCompareMembers(members, options = {{}}) {{
         <dt>整理状態</dt><dd>${{escapeCompareHtml(compareDecisionLabel(member))}}</dd>
         <dt>Fingerprint</dt><dd><code title="${{escapeCompareHtml(fingerprint)}}">${{escapeCompareHtml(fingerprint.slice(0,16))}}</code></dd>
       </dl>
+      ${{decisionButtonsHtml}}
       <div class="compare-item-actions">
         <button type="button" data-compare-toggle="${{escapeCompareHtml(member.dataset.key)}}">${{selectedKeys.has(member.dataset.key)?"選択解除":"選択"}}</button>
         ${{tempDeleteHtml}}
@@ -16812,6 +16829,15 @@ function renderCompareMembers(members, options = {{}}) {{
     else selectedKeys.add(member.dataset.key);
     applyFilters();
     updateCompareSelectionUi();
+  }}));
+  grid.querySelectorAll("[data-compare-state]").forEach(button => button.addEventListener("click", () => {{
+    const member = activeCompareMembers.find(card => card.dataset.key === button.dataset.compareKey);
+    const state = String(button.dataset.compareState || "");
+    if (!member || !["keep", "delete", "undecided"].includes(state) || getState(member) === state) return;
+    const members = [...activeCompareMembers];
+    const options = {{...activeCompareOptions}};
+    setState(member, state);
+    renderCompareMembers(members, options);
   }}));
   grid.querySelectorAll("[data-compare-temp-delete]").forEach(button => button.addEventListener("click", () => {{
     const instanceId = String(button.dataset.compareTempDelete || "");
