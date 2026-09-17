@@ -11,7 +11,7 @@ import unittest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = REPO_ROOT / "src" / "organizer" / "vehicle_metadata_update.py"
+MODULE_PATH = REPO_ROOT / "src" / "organizer" / "vehicle-metadata-update.py"
 BUNDLED_METADATA = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata.json"
 BUNDLED_MANIFEST = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata-manifest.json"
 

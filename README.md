@@ -19,7 +19,7 @@ GameSaveから取得した情報をもとに、サムネイル付きのHTMLレ�
 
 同梱車両メタデータはFH6公式車種リストの2026-09-08更新へ追随し、636車種から647車種へ更新しました。メタデータpackage revisionは2です。起動時の自動通信や強制更新は引き続き行いません。
 
-Python版では、Organizer本体に加えて `i18n.py`、`vehicle_metadata_update.py`、`fh6-vehicle-metadata.json`、`fh6-vehicle-metadata-manifest.json`、`locales/` を同じ `python/` フォルダー内に保持してください。
+Python版では、Organizer本体に加えて `i18n.py`、`vehicle-metadata-update.py`、`fh6-vehicle-metadata.json`、`fh6-vehicle-metadata-manifest.json`、`locales/` を同じ `python/` フォルダー内に保持してください。
 
 ## 特徴
 
@@ -138,7 +138,7 @@ CHANGELOG.md
 python/
   livery-organizer-for-fh6-v0461.py
   i18n.py
-  vehicle_metadata_update.py
+  vehicle-metadata-update.py
   fh6-vehicle-metadata.json
   fh6-vehicle-metadata-manifest.json
   navigator-bridge-for-fh6-v028.py

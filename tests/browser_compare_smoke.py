@@ -38,11 +38,7 @@ def make_record(o, *, index: int, fingerprint: str, ui_key: str, car_id: int | N
     car_id = index if car_id is None else car_id
     score = {1: 5, 2: 2, 3: 1}.get(index, 1)
     band = "automation-likely" if score >= 3 else ("review" if score == 2 else "inconclusive")
-    display = {
-        "automation-likely": "自動生成を含む可能性が高い",
-        "review": "要確認",
-        "inconclusive": "判別困難",
-    }[band]
+    display = f"{score}/5"
     audit = {
         "calibration": "lo4fh6-2026-09-provisional-v1",
         "eligible": True,
@@ -163,13 +159,13 @@ SMOKE_SCRIPT = r"""
     assert(fh6LocationForCard(first)?.slotNumber === 1, "first card is not slot #001");
     assert(fh6LocationForCard(second)?.slotNumber === 2, "second card is not slot #002");
     assert(first.dataset.authorshipAuditScore === "5", "authorship audit score is missing from card data");
-    assert(first.querySelector(".authorship-audit-status")?.textContent?.includes("自動生成"), "authorship audit summary is missing");
+    assert(first.querySelector(".authorship-audit-score")?.textContent?.trim() === "5/5", "authorship audit summary score is missing");
 
     renderCompareMembers([first, second], {mode:"selected", title:"Browser smoke"});
     let grid = document.getElementById("compareGrid");
     assert(grid?.querySelectorAll(".compare-item").length === 2, "compare view did not render 2 cards");
     assert(grid?.textContent?.includes("作成方法監査"), "authorship audit is missing from compare view");
-    assert(grid?.textContent?.includes("自動生成を含む可能性が高い (5/5)"), "authorship audit score is missing from compare view");
+    assert(grid?.textContent?.includes("5/5"), "authorship audit score is missing from compare view");
     const deleteButton = [...grid.querySelectorAll('[data-compare-state="delete"]')]
       .find(button => button.dataset.compareKey === first.dataset.key);
     assert(deleteButton, "delete-candidate button is missing");

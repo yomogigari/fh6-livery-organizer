@@ -19,7 +19,7 @@ User-data backup/restore now preserves organization data for paints that are not
 
 The bundled vehicle metadata follows the FH6 official car-list update dated 2026-09-08 and grows from 636 to 647 vehicles. Its metadata package revision is 2. Startup still performs no automatic network access or forced update.
 
-For the Python version, keep `i18n.py`, `vehicle_metadata_update.py`, `fh6-vehicle-metadata.json`, `fh6-vehicle-metadata-manifest.json`, and `locales/` together with the Organizer script in the `python/` folder.
+For the Python version, keep `i18n.py`, `vehicle-metadata-update.py`, `fh6-vehicle-metadata.json`, `fh6-vehicle-metadata-manifest.json`, and `locales/` together with the Organizer script in the `python/` folder.
 
 ## Main features
 
@@ -144,7 +144,7 @@ CHANGELOG.md
 python/
   livery-organizer-for-fh6-v0461.py
   i18n.py
-  vehicle_metadata_update.py
+  vehicle-metadata-update.py
   fh6-vehicle-metadata.json
   fh6-vehicle-metadata-manifest.json
   navigator-bridge-for-fh6-v028.py

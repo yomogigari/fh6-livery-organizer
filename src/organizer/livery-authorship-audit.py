@@ -19,12 +19,8 @@ AUDIT_RULES = (
     ("dominant_color_ratio_le_0_05", "dominant_color_ratio", "<=", 0.05, "最多色の占有率が5%以下"),
     ("mantissa_low8_zero_ratio_ge_0_28", "mantissa_low8_zero_ratio", ">=", 0.28, "変形値の量子化傾向が28%以上"),
 )
-AUDIT_BAND_TEXT = {
-    "automation-likely": "自動生成を含む可能性が高い",
-    "review": "要確認",
-    "inconclusive": "判定困難",
-    "not-assessable": "判定材料不足",
-}
+# 内部bandは精度検証と将来の表示再検討用に保持します。
+# 利用者向け結果は分類語ではなくスコアだけを表示します。
 
 
 class AuditError(RuntimeError):
@@ -165,7 +161,7 @@ def empty_assessment(note: str = "監査に必要な解析情報がありませ�
         "score": None,
         "max_score": len(AUDIT_RULES),
         "band": "not-assessable",
-        "display": AUDIT_BAND_TEXT["not-assessable"],
+        "display": "—",
         "scan_quality": "unvalidated",
         "scan_ratio_vs_declared": None,
         "recovered_direct_records": 0,
@@ -210,7 +206,7 @@ def assess_decompressed_c_livery(
         "score": score,
         "max_score": len(AUDIT_RULES),
         "band": band,
-        "display": AUDIT_BAND_TEXT[band],
+        "display": f"{score}/{len(AUDIT_RULES)}" if score is not None else "—",
         "scan_quality": quality,
         "scan_ratio_vs_declared": round(ratio, 6) if ratio is not None else None,
         "recovered_direct_records": len(records),

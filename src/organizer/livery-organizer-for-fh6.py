@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61-r05
+Livery Organizer for FH6 v0.4.61-r06
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -51,6 +51,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import html
 import io
+import importlib
 import json
 import math
 import os
@@ -91,46 +92,33 @@ except ImportError:
         normalize_language, pseudo_localize, set_language, tr, build_report_i18n_script, locale_for_language,
     )
 
-try:
-    from .livery_authorship_audit import assess_decompressed_c_livery, empty_assessment
-except ImportError:
-    from livery_authorship_audit import assess_decompressed_c_livery, empty_assessment
+def _import_sibling_module(filename_stem: str):
+    """ハイフンを含む同階層モジュールを通常実行・package実行の両方で読み込みます。"""
+    if __package__:
+        return importlib.import_module(f".{filename_stem}", __package__)
+    return importlib.import_module(filename_stem)
 
 
-try:
-    from .vehicle_metadata_update import (
-        STATUS_CHECK_FAILED,
-        STATUS_INCOMPATIBLE,
-        STATUS_UPDATE_AVAILABLE,
-        DEFAULT_MANIFEST_URL,
-        check_vehicle_metadata_update,
-        check_vehicle_metadata_update_with_manifest,
-        default_vehicle_metadata_cache_path,
-        download_and_cache_vehicle_metadata,
-        format_update_check_result,
-        gui_update_presentation,
-        select_runtime_vehicle_metadata_path,
-        validate_vehicle_metadata_curation,
-        update_cli_text,
-        update_gui_text,
-    )
-except ImportError:
-    from vehicle_metadata_update import (
-        STATUS_CHECK_FAILED,
-        STATUS_INCOMPATIBLE,
-        STATUS_UPDATE_AVAILABLE,
-        DEFAULT_MANIFEST_URL,
-        check_vehicle_metadata_update,
-        check_vehicle_metadata_update_with_manifest,
-        default_vehicle_metadata_cache_path,
-        download_and_cache_vehicle_metadata,
-        format_update_check_result,
-        gui_update_presentation,
-        select_runtime_vehicle_metadata_path,
-        validate_vehicle_metadata_curation,
-        update_cli_text,
-        update_gui_text,
-    )
+_livery_authorship_audit = _import_sibling_module("livery-authorship-audit")
+assess_decompressed_c_livery = _livery_authorship_audit.assess_decompressed_c_livery
+empty_assessment = _livery_authorship_audit.empty_assessment
+AUTHORSHIP_AUDIT_CALIBRATION_ID = _livery_authorship_audit.CALIBRATION_ID
+
+_vehicle_metadata_update = _import_sibling_module("vehicle-metadata-update")
+STATUS_CHECK_FAILED = _vehicle_metadata_update.STATUS_CHECK_FAILED
+STATUS_INCOMPATIBLE = _vehicle_metadata_update.STATUS_INCOMPATIBLE
+STATUS_UPDATE_AVAILABLE = _vehicle_metadata_update.STATUS_UPDATE_AVAILABLE
+DEFAULT_MANIFEST_URL = _vehicle_metadata_update.DEFAULT_MANIFEST_URL
+check_vehicle_metadata_update = _vehicle_metadata_update.check_vehicle_metadata_update
+check_vehicle_metadata_update_with_manifest = _vehicle_metadata_update.check_vehicle_metadata_update_with_manifest
+default_vehicle_metadata_cache_path = _vehicle_metadata_update.default_vehicle_metadata_cache_path
+download_and_cache_vehicle_metadata = _vehicle_metadata_update.download_and_cache_vehicle_metadata
+format_update_check_result = _vehicle_metadata_update.format_update_check_result
+gui_update_presentation = _vehicle_metadata_update.gui_update_presentation
+select_runtime_vehicle_metadata_path = _vehicle_metadata_update.select_runtime_vehicle_metadata_path
+validate_vehicle_metadata_curation = _vehicle_metadata_update.validate_vehicle_metadata_curation
+update_cli_text = _vehicle_metadata_update.update_cli_text
+update_gui_text = _vehicle_metadata_update.update_gui_text
 
 
 try:
@@ -143,7 +131,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61-r05"
+VERSION = "0.4.61-r06"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -1161,14 +1149,17 @@ class LiveryRecord:
 
 
 def localized_authorship_audit_display(audit: Optional[dict[str, object]]) -> str:
-    band = str((audit or {}).get("band") or "not-assessable")
-    if band == "automation-likely":
-        return tr("audit.display.automation_likely")
-    if band == "review":
-        return tr("audit.display.review")
-    if band == "inconclusive":
-        return tr("audit.display.inconclusive")
-    return tr("audit.display.not_assessable")
+    """利用者向け監査結果は暫定スコアだけを返します。
+
+    内部のbandは将来の再評価と精度改善のため保持しますが、作成者に対する
+    断定的・評価的な印象を避けるため、現行UIでは分類語を表示しません。
+    """
+    state = audit or {}
+    score = state.get("score")
+    max_score = state.get("max_score")
+    if isinstance(score, int) and isinstance(max_score, int) and max_score > 0:
+        return f"{score}/{max_score}"
+    return "—"
 
 
 @dataclass
@@ -2884,6 +2875,121 @@ def parse_header(path: Path) -> tuple[str, str, str, str, str, list[str], list[s
         )
     return title, description, creator, "", "", texts, warnings
 
+AUTHORSHIP_AUDIT_CACHE_SCHEMA_VERSION = 1
+AUTHORSHIP_AUDIT_CACHE_FILENAME = "livery-analysis-cache.json"
+_AUTHORSHIP_AUDIT_CACHE_LOCK = threading.Lock()
+_AUTHORSHIP_AUDIT_CACHE: dict[str, dict[str, object]] = {}
+_AUTHORSHIP_AUDIT_CACHE_LOADED = False
+_AUTHORSHIP_AUDIT_CACHE_DIRTY = False
+
+
+def _authorship_audit_cache_path() -> Path:
+    if os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA")
+        if base:
+            return Path(base) / "Livery-Organizer-for-FH6" / "cache" / AUTHORSHIP_AUDIT_CACHE_FILENAME
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg:
+        return Path(xdg) / "Livery-Organizer-for-FH6" / AUTHORSHIP_AUDIT_CACHE_FILENAME
+    return Path.home() / ".cache" / "Livery-Organizer-for-FH6" / AUTHORSHIP_AUDIT_CACHE_FILENAME
+
+
+def _load_authorship_audit_cache() -> None:
+    global _AUTHORSHIP_AUDIT_CACHE_LOADED, _AUTHORSHIP_AUDIT_CACHE
+    with _AUTHORSHIP_AUDIT_CACHE_LOCK:
+        if _AUTHORSHIP_AUDIT_CACHE_LOADED:
+            return
+        _AUTHORSHIP_AUDIT_CACHE_LOADED = True
+        path = _authorship_audit_cache_path()
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            _AUTHORSHIP_AUDIT_CACHE = {}
+            return
+        if not isinstance(payload, dict):
+            _AUTHORSHIP_AUDIT_CACHE = {}
+            return
+        if payload.get("schema_version") != AUTHORSHIP_AUDIT_CACHE_SCHEMA_VERSION:
+            _AUTHORSHIP_AUDIT_CACHE = {}
+            return
+        if payload.get("calibration") != AUTHORSHIP_AUDIT_CALIBRATION_ID:
+            _AUTHORSHIP_AUDIT_CACHE = {}
+            return
+        entries = payload.get("entries")
+        if not isinstance(entries, dict):
+            _AUTHORSHIP_AUDIT_CACHE = {}
+            return
+        _AUTHORSHIP_AUDIT_CACHE = {
+            str(key): value for key, value in entries.items()
+            if isinstance(key, str) and len(key) == 64 and isinstance(value, dict)
+        }
+
+
+def _save_authorship_audit_cache() -> None:
+    global _AUTHORSHIP_AUDIT_CACHE_DIRTY
+    with _AUTHORSHIP_AUDIT_CACHE_LOCK:
+        if not _AUTHORSHIP_AUDIT_CACHE_DIRTY:
+            return
+        path = _authorship_audit_cache_path()
+        payload = {
+            "schema_version": AUTHORSHIP_AUDIT_CACHE_SCHEMA_VERSION,
+            "calibration": AUTHORSHIP_AUDIT_CALIBRATION_ID,
+            "entries": _AUTHORSHIP_AUDIT_CACHE,
+        }
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = path.with_name(path.name + f".tmp-{os.getpid()}")
+            temp_path.write_text(
+                json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            os.replace(temp_path, path)
+            _AUTHORSHIP_AUDIT_CACHE_DIRTY = False
+        except OSError:
+            # キャッシュ保存失敗はレポート生成を失敗させません。
+            pass
+
+
+def _cached_c_livery_analysis(data: bytes):
+    _load_authorship_audit_cache()
+    digest = hashlib.sha256(data).hexdigest()
+    with _AUTHORSHIP_AUDIT_CACHE_LOCK:
+        entry = _AUTHORSHIP_AUDIT_CACHE.get(digest)
+        if not isinstance(entry, dict):
+            return digest, None
+        try:
+            result = (
+                entry.get("compressed_size"),
+                entry.get("uncompressed_size"),
+                entry.get("car_id"),
+                bool(entry.get("valid")),
+                entry.get("vinyl_count"),
+                dict(entry.get("audit") or {}),
+                list(entry.get("warnings") or []),
+            )
+        except (TypeError, ValueError):
+            return digest, None
+        return digest, result
+
+
+def _store_c_livery_analysis(digest: str, result) -> None:
+    global _AUTHORSHIP_AUDIT_CACHE_DIRTY
+    compressed_size, uncompressed_size, car_id, valid, vinyl_count, audit, warnings = result
+    entry = {
+        "compressed_size": compressed_size,
+        "uncompressed_size": uncompressed_size,
+        "car_id": car_id,
+        "valid": bool(valid),
+        "vinyl_count": vinyl_count,
+        "audit": audit,
+        "warnings": list(warnings),
+    }
+    with _AUTHORSHIP_AUDIT_CACHE_LOCK:
+        if _AUTHORSHIP_AUDIT_CACHE.get(digest) != entry:
+            _AUTHORSHIP_AUDIT_CACHE[digest] = entry
+            _AUTHORSHIP_AUDIT_CACHE_DIRTY = True
+
+
 def inspect_c_livery_with_audit(
     path: Path,
 ) -> tuple[
@@ -2904,6 +3010,10 @@ def inspect_c_livery_with_audit(
     except OSError as e:
         return None, None, None, False, None, audit, [f"C_livery read failed: {e}"]
 
+    cache_digest, cached_result = _cached_c_livery_analysis(data)
+    if cached_result is not None:
+        return cached_result
+
     if len(data) < 8:
         return None, None, None, False, None, audit, ["C_livery shorter than 8-byte size header"]
 
@@ -2919,7 +3029,9 @@ def inspect_c_livery_with_audit(
         dec = zlib.decompress(payload)
     except zlib.error as e:
         warnings.append(f"C_livery zlib decode failed: {e}")
-        return compressed_size, uncompressed_size, None, False, None, audit, warnings
+        result = (compressed_size, uncompressed_size, None, False, None, audit, warnings)
+        _store_c_livery_analysis(cache_digest, result)
+        return result
 
     valid = True
     if len(dec) != uncompressed_size:
@@ -2991,7 +3103,7 @@ def inspect_c_livery_with_audit(
     else:
         audit = empty_assessment()
 
-    return (
+    result = (
         compressed_size,
         uncompressed_size,
         car_id,
@@ -3000,6 +3112,8 @@ def inspect_c_livery_with_audit(
         audit,
         warnings,
     )
+    _store_c_livery_analysis(cache_digest, result)
+    return result
 
 
 def inspect_c_livery(
@@ -3161,6 +3275,7 @@ def scan_liveries(
     raw_records: list[LiveryRecord] = []
     livery_dirs = list(find_livery_dirs(root))
     worker_count = LIVERY_SCAN_WORKERS
+    _load_authorship_audit_cache()
 
     if worker_count == 1:
         for idx, livery_dir in enumerate(livery_dirs, 1):
@@ -3184,6 +3299,8 @@ def scan_liveries(
                     raw_records.append(record)
                 if progress and idx % 25 == 0:
                     progress(tr("progress.livery.parse", current=idx, total=len(livery_dirs)))
+
+    _save_authorship_audit_cache()
 
     # FH6本体の「マイデザイン」は、同じペイントを複数回ダウンロードした場合でも
     # Livery_* フォルダー単位の別スロットとして表示します。Organizerでも整理対象として
@@ -4421,9 +4538,9 @@ def write_report(
     </dl>
 
     <details class="authorship-audit authorship-audit-{html.escape(audit_band)}">
-      <summary>作成方法監査: <span class="authorship-audit-status">{html.escape(audit_display)}</span> <span class="authorship-audit-score">({html.escape(audit_score_label)})</span></summary>
+      <summary>作成方法監査: <span class="authorship-audit-score">{html.escape(audit_score_label)}</span></summary>
       <div class="authorship-audit-body">
-        <p>保存済みC_liveryの構造から、自動生成を含む可能性を暫定監査します。制作方法を断定するものではありません。</p>
+        <p>保存済みC_liveryの構造から暫定スコアを算出します。制作方法を断定するものではありません。</p>
         <div class="authorship-audit-columns">
           <div><b>一致した条件</b><ul>{audit_matched_html}</ul></div>
           <div><b>外れた条件</b><ul>{audit_missed_html}</ul></div>
@@ -16962,10 +17079,9 @@ function compareTitleLabel(card) {{
   return String(card.dataset.titleDisplay || "").trim() || REPORT_FALLBACK_TITLE;
 }}
 function authorshipAuditLabel(card) {{
-  const display = String(card.dataset.authorshipAuditDisplay || "判定材料不足");
   const score = Number(card.dataset.authorshipAuditScore);
   const maxScore = Number(card.dataset.authorshipAuditMaxScore || 5);
-  return Number.isFinite(score) && score >= 0 ? `${{display}} (${{score}}/${{maxScore}})` : display;
+  return Number.isFinite(score) && score >= 0 ? `${{score}}/${{maxScore}}` : "—";
 }}
 function updateCompareSelectionUi() {{
   const count = activeCompareMembers.filter(card => selectedKeys.has(card.dataset.key)).length;

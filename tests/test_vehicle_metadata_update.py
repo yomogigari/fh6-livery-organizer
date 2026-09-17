@@ -11,7 +11,7 @@ import unittest
 
 
 HERE = Path(__file__).resolve().parents[1]
-MODULE_PATH = HERE / "src" / "organizer" / "vehicle_metadata_update.py"
+MODULE_PATH = HERE / "src" / "organizer" / "vehicle-metadata-update.py"
 
 spec = importlib.util.spec_from_file_location(
     "vehicle_metadata_update_test_target",
