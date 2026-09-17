@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from html.parser import HTMLParser
 from string import Formatter
 import ast
 import importlib.util
@@ -893,7 +894,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 783)
+        self.assertGreaterEqual(len(en_locale.REPORT_TEXT), 900)
         self.assertEqual(len(en_locale.REPORT_ATTR), 103)
         self.assertEqual(
             en_locale.REPORT_ATTR.get(
@@ -905,6 +906,58 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
         self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())
         self.assertIn("const rules", i18n.build_report_i18n_script("en"))
+
+    def test_r08_rewritten_help_static_text_is_covered_by_english_locale(self):
+        import locales.en as en_locale
+
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        foot_start = source.index('<div class="fh6-my-design-foot small">')
+        foot_end = source.index('    </div>\n  </section>', foot_start)
+        help_start = source.index('<div id="helpModal" class="modal hidden" aria-hidden="true">')
+        help_end = source.index('\n<div id="tagManagerModal" class="modal hidden" aria-hidden="true">', help_start)
+        html = source[foot_start:foot_end] + source[help_start:help_end]
+        html = re.sub(r'\{stats\.get\([^}]+\)\}', '123', html)
+        html = html.replace('{VERSION}', '0.4.61-r08')
+
+        class HelpTextParser(HTMLParser):
+            def __init__(self) -> None:
+                super().__init__(convert_charrefs=True)
+                self.texts: list[str] = []
+                self.attrs: list[str] = []
+
+            def handle_data(self, data: str) -> None:
+                value = data.strip()
+                if value and japanese_text(value):
+                    self.texts.append(value)
+
+            def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+                for name, value in attrs:
+                    if name in {"title", "aria-label", "placeholder"} and value and japanese_text(value):
+                        self.attrs.append(value)
+
+        parser = HelpTextParser()
+        parser.feed(html)
+        dynamic_version = re.compile(r'^v[^ ]+ 現在仕様 / 操作の流れに沿ったガイド$')
+        dynamic_duplicates = re.compile(
+            r'^から、1 件ずつまたは全件を復元できます。仮削除は現在の生成 HTML 専用の localStorage に保存し、新しい HTML には引き継ぎません。'
+            r'再 DL 完全一致は \d+ 組 / \d+ 件（余分 \d+ 件）です。「再DL重複のみ」から直接絞り込めます。$'
+        )
+        missing_text = sorted({
+            value for value in parser.texts
+            if value not in en_locale.REPORT_TEXT
+            and not dynamic_version.fullmatch(value)
+            and not dynamic_duplicates.fullmatch(value)
+        })
+        missing_attr = sorted({value for value in parser.attrs if value not in en_locale.REPORT_ATTR})
+        self.assertEqual(missing_text, [], msg=f"英語化されないヘルプ本文があります: {missing_text[:5]}")
+        self.assertEqual(missing_attr, [], msg=f"英語化されないヘルプ属性があります: {missing_attr[:5]}")
+        self.assertIn('現在仕様 \\/ 操作の流れに沿ったガイド', en_locale.REPORT_DYNAMIC_RULES_JS)
+        self.assertIn('仮削除は現在の生成 HTML 専用の localStorage', en_locale.REPORT_DYNAMIC_RULES_JS)
+
+        self.assertIn('表示と基本移動', source)
+        self.assertIn('GameSave と安全性', source)
+        self.assertIn('スコアの高低だけでは作成方法を判定できません。', source)
+        self.assertNotIn('v{VERSION} 現在仕様 / 日常の操作順に整理したガイド', source)
 
     def test_r07_authorship_audit_help_terms_are_localized(self):
         import locales.en as en_locale

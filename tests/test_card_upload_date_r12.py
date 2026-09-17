@@ -67,7 +67,7 @@ class CardUploadDateR12Tests(unittest.TestCase):
         self.assertIn('"アップロード日": "Upload date"', self.en)
 
     def test_help_mentions_upload_date_in_both_languages(self) -> None:
-        ja = "各カードにはサムネイル、車両情報、タイトル、説明、作成者、アップロード日、取得日時、バイナル数などを表示します。"
+        ja = "各カードには、サムネイル、車両情報、タイトル、説明、作成者、アップロード日、取得日時、バイナル数などを表示します。"
         self.assertIn(ja, self.source)
         self.assertIn(ja, self.en)
         self.assertIn("creator, upload date, acquired time, vinyl count", self.en)

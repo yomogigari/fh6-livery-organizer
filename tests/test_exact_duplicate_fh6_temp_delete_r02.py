@@ -57,7 +57,7 @@ class ExactDuplicateFh6TempDeleteR02Tests(unittest.TestCase):
 
     def test_help_explains_duplicate_temp_delete_flow(self) -> None:
         self.assertIn(
-            "1件だけ残ったグループは整理済みとして専用画面から外れます。",
+            "1 件だけ残ったグループは整理済みとして専用画面から外れます。",
             self.text,
         )
 

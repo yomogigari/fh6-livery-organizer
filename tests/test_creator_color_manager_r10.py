@@ -80,7 +80,7 @@ class CreatorColorManagerTests(unittest.TestCase):
         self.assertIn('<b>作成者カラー管理</b>：', self.text)
         self.assertIn('<span class="help-path"><span>その他の操作</span> → <span>作成者カラー管理</span></span>', self.text)
         self.assertIn('作成者カラーを一覧から検索・変更・解除できます。', self.text)
-        self.assertIn('「設定済みのみ」で色を設定した作成者だけに絞り込め', self.text)
+        self.assertIn('「設定済みのみ」を選ぶと、色を設定した作成者だけに絞り込め', self.text)
         self.assertIn('「現在0件で保持」として確認できます。', self.text)
 
     def test_english_resources_cover_manager_ui(self) -> None:
@@ -93,7 +93,7 @@ class CreatorColorManagerTests(unittest.TestCase):
             "作成者カラー設定": "Creator color settings",
             "現在のペイントなし": "No current paints",
             "条件に一致する作成者がいません。": "No creators match the current conditions.",
-            "では、作成者カラーを一覧から検索・変更・解除できます。「設定済みのみ」で色を設定した作成者だけに絞り込め、現在のペイントが0件でも保存済みの色設定があれば「現在0件で保持」として確認できます。": "From here, you can search, change, or remove creator colors in one list. Use Colored only to show creators with a saved color, and creators with no current paints remain visible under Saved with 0 current paints when a color setting is stored.",
+            "では、作成者カラーを一覧から検索・変更・解除できます。「設定済みのみ」を選ぶと、色を設定した作成者だけに絞り込めます。現在のペイントが 0 件でも保存済みの色設定があれば、「現在0件で保持」として確認できます。": "From here, you can search, change, or remove creator colors in one list. Use Colored only to show creators with a saved color, and creators with no current paints remain visible under Saved with 0 current paints when a color setting is stored.",
         }
         for source, translated in expected.items():
             self.assertEqual(self.en.REPORT_TEXT.get(source), translated)

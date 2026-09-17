@@ -60,8 +60,8 @@ class Fh6TempDeletedReviewR04Tests(unittest.TestCase):
         self.assertNotIn("fh6TempDeletedSearchQuery", self.text)
 
     def test_help_mentions_searchable_restore_details(self) -> None:
-        self.assertIn("復元画面では車種・タイトル・作成者・元の実スロット番号 / FH6位置で検索でき", self.text)
-        self.assertIn("FH6表示日付と取得日時も確認できます", self.text)
+        self.assertIn("復元画面では、車種・タイトル・作成者・元の実スロット番号 / FH6 位置で検索でき", self.text)
+        self.assertIn("FH6 表示日付と取得日時も確認できます", self.text)
 
 
     def test_english_report_locale_covers_r04_search_ui(self) -> None:

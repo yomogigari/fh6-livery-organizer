@@ -38,7 +38,7 @@ class UploadDateSortR14Tests(unittest.TestCase):
         self.assertIn('direction === "desc" ? "アップロード日:降順" : "アップロード日:昇順";', self.source)
 
     def test_help_explains_missing_date_behavior(self) -> None:
-        text = "作成者がFH6へアップロードした日付でカード単位に並び替えます。日付を取得できなかったカードは昇順 / 降順のどちらでも最後に表示します。"
+        text = "作成者が FH6 へアップロードした日付でカード単位に並び替えます。日付を取得できなかったカードは、昇順 / 降順のどちらでも最後に表示します。"
         self.assertIn(text, self.source)
         self.assertIn(text, self.en)
 

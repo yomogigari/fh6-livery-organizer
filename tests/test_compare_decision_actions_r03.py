@@ -66,7 +66,7 @@ class CompareDecisionActionsR03Tests(unittest.TestCase):
             self.text,
         )
         self.assertIn(
-            "比較画面の整理状態変更は一覧カードと同じ保存・Undo経路を使うため、閉じた後の一覧にも即時反映されます。",
+            "比較画面の変更は一覧カードと同じ保存・Undo 経路を使うため、閉じた後の一覧にも反映します。",
             self.text,
         )
 

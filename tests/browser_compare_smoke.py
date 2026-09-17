@@ -151,6 +151,12 @@ SMOKE_SCRIPT = r"""
     assert(typeof renderCompareMembers === "function", "renderCompareMembers is unavailable");
     assert(typeof renderExactDuplicateModal === "function", "renderExactDuplicateModal is unavailable");
     assert(cards.length === 3, `expected 3 cards, got ${cards.length}`);
+    const helpModal = document.getElementById("helpModal");
+    assert(helpModal?.textContent?.includes("操作の流れに沿ったガイド"), "rewritten built-in help guide is missing");
+    assert(helpModal?.textContent?.includes("GameSave と安全性"), "rewritten GameSave safety help is missing");
+    assert(helpModal?.textContent?.includes("スコアの高低だけでは作成方法を判定できません。"), "audit-score limitation text is missing");
+    const myDesignHelp = document.querySelector(".fh6-my-design-foot");
+    assert(myDesignHelp?.textContent?.includes("表示と基本移動"), "rewritten FH6 My Designs footer help is missing");
 
     const first = cards.find(card => fh6LocationForCard(card)?.slotNumber === 1);
     const second = cards.find(card => fh6LocationForCard(card)?.slotNumber === 2);
@@ -385,7 +391,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             if ok:
                 print(f"PASS — browser compare/FH6 smoke test: {browser}")
-                print("Checked audit score sorting, authorship audit, compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
+                print("Checked rewritten help, audit score sorting, authorship audit, compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
                 return 0
             errors.append(f"{browser}: {detail[-1200:]}")
 

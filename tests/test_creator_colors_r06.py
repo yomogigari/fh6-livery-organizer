@@ -148,8 +148,8 @@ class CreatorColorsR06Tests(unittest.TestCase):
                 self.assertIn(marker, self.en)
 
     def test_help_documents_zero_paint_retention_and_backup(self) -> None:
-        self.assertIn("現在のペイントが0件になっても設定は保持されます", self.text)
-        self.assertIn("判定・メタデータ・作成者カラーに加えてUI状態とスキャン状態をJSONへ保存します", self.text)
+        self.assertIn("現在のペイントが 0 件になっても設定を保持します", self.text)
+        self.assertIn("UI 状態とスキャン状態を JSON へ保存します", self.text)
 
     def test_no_creator_color_whole_card_background_rule(self) -> None:
         marker = "v0.4.60-r06 — 作成者カラーの永続管理"
