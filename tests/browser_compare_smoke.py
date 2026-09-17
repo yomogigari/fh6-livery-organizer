@@ -36,6 +36,32 @@ def load_organizer():
 def make_record(o, *, index: int, fingerprint: str, ui_key: str, car_id: int | None = None):
     timestamp = f"2026010{index}000000"
     car_id = index if car_id is None else car_id
+    score = {1: 5, 2: 2, 3: 1}.get(index, 1)
+    band = "automation-likely" if score >= 3 else ("review" if score == 2 else "inconclusive")
+    display = {
+        "automation-likely": "自動生成を含む可能性が高い",
+        "review": "要確認",
+        "inconclusive": "判別困難",
+    }[band]
+    audit = {
+        "calibration": "lo4fh6-2026-09-provisional-v1",
+        "eligible": True,
+        "score": score,
+        "max_score": 5,
+        "band": band,
+        "display": display,
+        "scan_quality": "high",
+        "scan_ratio_vs_declared": 1.0,
+        "recovered_direct_records": 100 + index,
+        "matched_rules": [f"rule-{n}" for n in range(score)],
+        "missed_rules": [f"rule-{n}" for n in range(score, 5)],
+        "rule_details": [
+            {"id": f"rule-{n}", "label": f"監査条件{n + 1}", "matched": n < score}
+            for n in range(5)
+        ],
+        "features": {"record_count": 100 + index},
+        "note": "ブラウザsmoke用監査データ",
+    }
     return o.LiveryRecord(
         livery_id=f"Livery_{index:04d}_{timestamp}",
         car_id=car_id,
@@ -81,6 +107,7 @@ def make_record(o, *, index: int, fingerprint: str, ui_key: str, car_id: int | N
         applied_state="unknown",
         applied_reference_paths=[],
         parse_warnings=[],
+        authorship_audit=audit,
         ui_key=ui_key,
     )
 
@@ -135,10 +162,14 @@ SMOKE_SCRIPT = r"""
     assert(firstInstance, "first card has no FH6 instance");
     assert(fh6LocationForCard(first)?.slotNumber === 1, "first card is not slot #001");
     assert(fh6LocationForCard(second)?.slotNumber === 2, "second card is not slot #002");
+    assert(first.dataset.authorshipAuditScore === "5", "authorship audit score is missing from card data");
+    assert(first.querySelector(".authorship-audit-status")?.textContent?.includes("自動生成"), "authorship audit summary is missing");
 
     renderCompareMembers([first, second], {mode:"selected", title:"Browser smoke"});
     let grid = document.getElementById("compareGrid");
     assert(grid?.querySelectorAll(".compare-item").length === 2, "compare view did not render 2 cards");
+    assert(grid?.textContent?.includes("作成方法監査"), "authorship audit is missing from compare view");
+    assert(grid?.textContent?.includes("自動生成を含む可能性が高い (5/5)"), "authorship audit score is missing from compare view");
     const deleteButton = [...grid.querySelectorAll('[data-compare-state="delete"]')]
       .find(button => button.dataset.compareKey === first.dataset.key);
     assert(deleteButton, "delete-candidate button is missing");
@@ -348,7 +379,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             if ok:
                 print(f"PASS — browser compare/FH6 smoke test: {browser}")
-                print("Checked compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
+                print("Checked authorship audit, compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
                 return 0
             errors.append(f"{browser}: {detail[-1200:]}")
 

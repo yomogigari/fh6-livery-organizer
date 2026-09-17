@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61-r04
+Livery Organizer for FH6 v0.4.61-r05
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -66,7 +66,7 @@ import webbrowser
 import zlib
 import zipfile
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
@@ -90,6 +90,11 @@ except ImportError:
         DEFAULT_LANGUAGE, available_languages, get_language, language_display_name,
         normalize_language, pseudo_localize, set_language, tr, build_report_i18n_script, locale_for_language,
     )
+
+try:
+    from .livery_authorship_audit import assess_decompressed_c_livery, empty_assessment
+except ImportError:
+    from livery_authorship_audit import assess_decompressed_c_livery, empty_assessment
 
 
 try:
@@ -138,7 +143,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61-r04"
+VERSION = "0.4.61-r05"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -1145,10 +1150,25 @@ class LiveryRecord:
 
     parse_warnings: list[str]
 
+    # C_liveryの構造から算出した作成方法監査。制作方法を断定する情報ではなく、
+    # 自動生成が含まれる可能性を確認するための暫定監査シグナルです。
+    authorship_audit: dict[str, object] = field(default_factory=dict)
+
     # HTML/ブラウザ上で1件の物理Liveryスロットを一意に扱うための安定キー。
     # 通常は内容fingerprintをそのまま使い、同一内容の再ダウンロードだけ
     # Livery ID由来の接尾辞を付けて別カードとして保持します。
     ui_key: str = ""
+
+
+def localized_authorship_audit_display(audit: Optional[dict[str, object]]) -> str:
+    band = str((audit or {}).get("band") or "not-assessable")
+    if band == "automation-likely":
+        return tr("audit.display.automation_likely")
+    if band == "review":
+        return tr("audit.display.review")
+    if band == "inconclusive":
+        return tr("audit.display.inconclusive")
+    return tr("audit.display.not_assessable")
 
 
 @dataclass
@@ -2864,41 +2884,28 @@ def parse_header(path: Path) -> tuple[str, str, str, str, str, list[str], list[s
         )
     return title, description, creator, "", "", texts, warnings
 
-def inspect_c_livery(
+def inspect_c_livery_with_audit(
     path: Path,
 ) -> tuple[
-    Optional[int], Optional[int], Optional[int], bool, Optional[int], list[str]
+    Optional[int], Optional[int], Optional[int], bool, Optional[int], dict[str, object], list[str]
 ]:
-    """
-    C_liveryコンテナ:
-        uint32 compressed_size
-        uint32 uncompressed_size
-        zlib payload
+    """C_liveryの既存メタデータと作成方法監査を、同じ展開結果から一度に取得します。
 
-    展開後ストリーム:
-        vlrc ... yrvl ... gyvl ... yrvl（section counters） ...
-
-    Car IDは展開後オフセット0x10に格納されています。
-
-    バイナル数:
-    ``gyvl``アートワーク直後にある最初の``yrvl``がセクションカウンタレコードです。
-    Front / Back / Top / Left / Right / Spoiler / 5つのwindow sectionに対応する11個のu32占有数と、
-    末尾のu32カウンタ1個を含みます。表示するバイナル数は先頭11カウンタの合計です。
-
-    ForzaLiveryStudioで公開されているFH6 C_livery形式の情報に沿って解析します。
-    誤推定を避けるため厳密に検証し、レコード形状を確認できない場合はvinyl_countを不明のままにします。
+    監査は保存データを書き換えず、C_livery内の直接shapeレコードから暫定的な
+    構造シグナルを計算します。制作方法を断定するものではありません。
     """
     warnings: list[str] = []
+    audit = empty_assessment()
     if not path.exists():
-        return None, None, None, False, None, ["C_livery missing"]
+        return None, None, None, False, None, audit, ["C_livery missing"]
 
     try:
         data = path.read_bytes()
     except OSError as e:
-        return None, None, None, False, None, [f"C_livery read failed: {e}"]
+        return None, None, None, False, None, audit, [f"C_livery read failed: {e}"]
 
     if len(data) < 8:
-        return None, None, None, False, None, ["C_livery shorter than 8-byte size header"]
+        return None, None, None, False, None, audit, ["C_livery shorter than 8-byte size header"]
 
     compressed_size, uncompressed_size = struct.unpack_from("<II", data, 0)
     payload = data[8:]
@@ -2912,7 +2919,7 @@ def inspect_c_livery(
         dec = zlib.decompress(payload)
     except zlib.error as e:
         warnings.append(f"C_livery zlib decode failed: {e}")
-        return compressed_size, uncompressed_size, None, False, None, warnings
+        return compressed_size, uncompressed_size, None, False, None, audit, warnings
 
     valid = True
     if len(dec) != uncompressed_size:
@@ -2931,19 +2938,22 @@ def inspect_c_livery(
         warnings.append("C_livery decompressed data is too short for Car ID at 0x10")
 
     vinyl_count: Optional[int] = None
-    gyvl_off = dec.find(b"gyvl")
+    section_counts: Optional[tuple[int, ...]] = None
+    gyvl_off: Optional[int] = dec.find(b"gyvl")
+    counters_off: Optional[int] = None
     if gyvl_off < 0:
+        gyvl_off = None
         warnings.append("C_livery artwork tag gyvl not found")
     else:
-        counters_off = dec.find(b"yrvl", gyvl_off + 4)
-        if counters_off < 0:
+        candidate = dec.find(b"yrvl", gyvl_off + 4)
+        if candidate < 0:
             warnings.append("C_livery section-counter yrvl not found after gyvl")
-        elif counters_off + 52 > len(dec):
+        elif candidate + 52 > len(dec):
             warnings.append("C_livery section-counter record is truncated")
         else:
             # 4バイトのyrvlタグ + リトルエンディアンu32値×12です。
-            values = struct.unpack_from("<12I", dec, counters_off + 4)
-            next_tag_off = counters_off + 52
+            values = struct.unpack_from("<12I", dec, candidate + 4)
+            next_tag_off = candidate + 52
 
             # 確認済みのFH6レイアウトでは、descriptor-tableのyrvlは
             # この固定長カウンタレコードの直後に続きます。
@@ -2952,7 +2962,8 @@ def inspect_c_livery(
                     "C_livery section-counter record failed next-yrvl validation"
                 )
             else:
-                section_counts = values[:11]
+                counters_off = candidate
+                section_counts = tuple(int(v) for v in values[:11])
                 trailing_counter = values[11]
 
                 # 破損や誤解析で極端に大きな値を表示しないよう、
@@ -2961,6 +2972,8 @@ def inspect_c_livery(
                     warnings.append(
                         "C_livery section counters contain implausibly large values"
                     )
+                    section_counts = None
+                    counters_off = None
                 else:
                     vinyl_count = int(sum(section_counts))
                     if trailing_counter > 1_000_000:
@@ -2968,14 +2981,35 @@ def inspect_c_livery(
                             "C_livery trailing section counter looks implausible"
                         )
 
+    if gyvl_off is not None and counters_off is not None and section_counts is not None:
+        audit = assess_decompressed_c_livery(
+            dec,
+            gyvl_offset=gyvl_off,
+            counters_offset=counters_off,
+            section_counts=section_counts,
+        )
+    else:
+        audit = empty_assessment()
+
     return (
         compressed_size,
         uncompressed_size,
         car_id,
         valid,
         vinyl_count,
+        audit,
         warnings,
     )
+
+
+def inspect_c_livery(
+    path: Path,
+) -> tuple[
+    Optional[int], Optional[int], Optional[int], bool, Optional[int], list[str]
+]:
+    """既存互換のC_liveryメタデータAPI。監査結果を除いた従来6要素を返します。"""
+    c_comp, c_uncomp, c_car_id, valid, vinyl_count, _audit, warnings = inspect_c_livery_with_audit(path)
+    return c_comp, c_uncomp, c_car_id, valid, vinyl_count, warnings
 
 
 JST = timezone(timedelta(hours=9), name="JST")
@@ -3054,7 +3088,7 @@ def _parse_livery_dir(root: Path, livery_dir: Path) -> Optional[LiveryRecord]:
         title, description, creator, fh6_date_raw, fh6_date_display, strings, hw,
     ) = parse_header(header)
     reference_id, rw = extract_livery_reference_id(header)
-    c_comp, c_uncomp, c_car_id, zvalid, vinyl_count, cw = inspect_c_livery(c_livery)
+    c_comp, c_uncomp, c_car_id, zvalid, vinyl_count, authorship_audit, cw = inspect_c_livery_with_audit(c_livery)
     warnings = hw + rw + cw
 
     verified = c_car_id == folder_car_id if c_car_id is not None else False
@@ -3115,6 +3149,7 @@ def _parse_livery_dir(root: Path, livery_dir: Path) -> Optional[LiveryRecord]:
         applied_state="unknown",
         applied_reference_paths=[],
         parse_warnings=warnings,
+        authorship_audit=authorship_audit,
     )
 
 
@@ -3309,7 +3344,7 @@ def _xlsx_localized_column_widths(headers: list[str]) -> tuple[list[float], int]
     qpsのような長い見出しは無制限に列を広げず、ヘッダーの折り返しも利用します。
     """
     base_widths = [
-        24, 12, 10, 34, 18, 24, 9, 24, 20, 12, 26, 40,
+        24, 12, 10, 34, 18, 24, 9, 24, 20, 12, 28, 12, 26, 40,
         20, 22, 36, 12, 12, 20, 30, 24, 32, 48, 40,
     ]
     if len(headers) != len(base_widths):
@@ -3459,7 +3494,8 @@ def write_excel_report(
         tr("excel.header.thumbnail"), tr("excel.header.decision"), tr("excel.header.car_id"),
         tr("excel.header.vehicle"), tr("excel.header.make"), tr("excel.header.model"),
         tr("excel.header.year"), tr("excel.header.vehicle_asset"), tr("excel.header.creator"),
-        tr("excel.header.vinyl_count"), tr("excel.header.title"), tr("excel.header.description"),
+        tr("excel.header.vinyl_count"), tr("excel.header.authorship_audit"), tr("excel.header.authorship_audit_score"),
+        tr("excel.header.title"), tr("excel.header.description"),
         tr("excel.header.acquired_at"), tr("excel.header.tags"), tr("excel.header.notes"),
         tr("excel.header.favorite"), tr("excel.header.review_later"),
         tr("excel.header.livery_reference_id"), tr("excel.header.paint_id"),
@@ -3487,6 +3523,8 @@ def write_excel_report(
             r.vehicle_asset,
             r.creator,
             r.vinyl_count if r.vinyl_count is not None else "",
+            localized_authorship_audit_display(r.authorship_audit),
+            (r.authorship_audit or empty_assessment()).get("score") if isinstance((r.authorship_audit or empty_assessment()).get("score"), int) else "",
             r.title,
             r.description,
             r.timestamp_local_guess,
@@ -3946,7 +3984,7 @@ def write_report(
 
     csv_headers = [
         "整理状態", "Car ID", "車両名", "メーカー", "モデル", "年式",
-        "車両アセット", "作成者", "バイナル数", "タイトル", "説明", "取得日時",
+        "車両アセット", "作成者", "バイナル数", "作成方法監査", "監査スコア", "タイトル", "説明", "取得日時",
         "タグ", "メモ", "お気に入り", "後で確認", "Livery参照ID", "ペイントID",
         "フィンガープリント", "サムネイル元", "保存元", "解析メモ",
     ]
@@ -3979,6 +4017,8 @@ def write_report(
             r.vehicle_asset,
             r.creator,
             r.vinyl_count if r.vinyl_count is not None else "",
+            localized_authorship_audit_display(r.authorship_audit),
+            (r.authorship_audit or empty_assessment()).get("score") if isinstance((r.authorship_audit or empty_assessment()).get("score"), int) else "",
             r.title,
             r.description,
             r.timestamp_local_guess,
@@ -4191,11 +4231,50 @@ def write_report(
         cards: list[str] = []
 
         for r in rs:
+            authorship_audit = r.authorship_audit or empty_assessment()
+            audit_band = str(authorship_audit.get("band") or "not-assessable")
+            audit_display = localized_authorship_audit_display(authorship_audit)
+            audit_score_raw = authorship_audit.get("score")
+            audit_score = int(audit_score_raw) if isinstance(audit_score_raw, int) else -1
+            audit_max_score = int(authorship_audit.get("max_score") or 5)
+            audit_score_label = f"{audit_score}/{audit_max_score}" if audit_score >= 0 else "—"
+            audit_rule_details = authorship_audit.get("rule_details") or []
+            audit_rule_en = {
+                "dominant_shape_ratio_ge_0_90": "A single shape occupies at least 90%",
+                "shape_entropy_bits_le_1_0": "Shape diversity is 1.0 or lower",
+                "color_entropy_bits_ge_11_0": "Color diversity is 11.0 or higher",
+                "dominant_color_ratio_le_0_05": "The most common color occupies at most 5%",
+                "mantissa_low8_zero_ratio_ge_0_28": "Transform quantization signal is at least 28%",
+            }
+            audit_matched_labels = [
+                report_text(str(item.get("label") or ""), audit_rule_en.get(str(item.get("id") or ""), str(item.get("label") or "")))
+                for item in audit_rule_details
+                if isinstance(item, dict) and item.get("matched") and item.get("label")
+            ]
+            audit_missed_labels = [
+                report_text(str(item.get("label") or ""), audit_rule_en.get(str(item.get("id") or ""), str(item.get("label") or "")))
+                for item in audit_rule_details
+                if isinstance(item, dict) and not item.get("matched") and item.get("label")
+            ]
+            audit_note_ja = str(authorship_audit.get("note") or "")
+            audit_note = report_text(
+                audit_note_ja,
+                "This is a provisional structural audit signal and does not determine the creation method as a fact."
+                if bool(authorship_audit.get("eligible"))
+                else "There is not enough scan quality or recovered layer data for the provisional audit score.",
+            )
+            audit_matched_html = "".join(
+                f"<li>{html.escape(label)}</li>" for label in audit_matched_labels
+            ) or f"<li>{html.escape(report_text('一致した条件なし', 'No matched conditions'))}</li>"
+            audit_missed_html = "".join(
+                f"<li>{html.escape(label)}</li>" for label in audit_missed_labels
+            ) or f"<li>{html.escape(report_text('外れた条件なし', 'No unmatched conditions'))}</li>"
             search_text = " ".join([
                 str(r.car_id), r.vehicle_display_name, r.vehicle_make,
                 r.vehicle_model, r.vehicle_asset, r.title, r.description,
                 r.creator, r.applied_state, r.timestamp_raw,
-                str(r.vinyl_count or ""), r.livery_id, r.source_dir
+                str(r.vinyl_count or ""), r.livery_id, r.source_dir,
+                audit_display, "作成方法監査"
             ]).lower()
 
             report_image = report_images.get(r.fingerprint, "")
@@ -4281,6 +4360,13 @@ def write_report(
          data-paint-count="{len(rs)}"
          data-vinyl-count="{r.vinyl_count if r.vinyl_count is not None else -1}"
          data-vinyl-level="{vinyl_level}"
+         data-authorship-audit-band="{html.escape(audit_band)}"
+         data-authorship-audit-score="{audit_score}"
+         data-authorship-audit-max-score="{audit_max_score}"
+         data-authorship-audit-display="{html.escape(audit_display)}"
+         data-authorship-audit-matched="{html.escape(' / '.join(audit_matched_labels))}"
+         data-authorship-audit-missed="{html.escape(' / '.join(audit_missed_labels))}"
+         data-authorship-audit-note="{html.escape(audit_note)}"
          data-similar-count="{similar_count}"
          data-similar-group="{html.escape(similar_group)}"
          data-similar-kind="{html.escape(similar_kind)}"
@@ -4334,6 +4420,18 @@ def write_report(
       <dt class="compact-optional-vinyl compact-detail-label">バイナル数</dt><dd class="compact-optional-vinyl compact-detail-value">{f"{r.vinyl_count:,}" if r.vinyl_count is not None else "—"}</dd>
     </dl>
 
+    <details class="authorship-audit authorship-audit-{html.escape(audit_band)}">
+      <summary>作成方法監査: <span class="authorship-audit-status">{html.escape(audit_display)}</span> <span class="authorship-audit-score">({html.escape(audit_score_label)})</span></summary>
+      <div class="authorship-audit-body">
+        <p>保存済みC_liveryの構造から、自動生成を含む可能性を暫定監査します。制作方法を断定するものではありません。</p>
+        <div class="authorship-audit-columns">
+          <div><b>一致した条件</b><ul>{audit_matched_html}</ul></div>
+          <div><b>外れた条件</b><ul>{audit_missed_html}</ul></div>
+        </div>
+        <p class="small">{html.escape(audit_note)}</p>
+      </div>
+    </details>
+
     <details class="personal-meta compact-optional-personal">
       <summary>タグ・メモ</summary>
       <label>タグ<input class="tag-input" type="text" placeholder="例: 痛車, レーシング"></label>
@@ -4384,6 +4482,11 @@ def write_report(
             "vehicle_asset": r.vehicle_asset or "",
             "creator": r.creator or "",
             "vinyl_count": str(r.vinyl_count) if r.vinyl_count is not None else "",
+            "authorship_audit": localized_authorship_audit_display(r.authorship_audit),
+            "authorship_audit_score": (
+                str((r.authorship_audit or empty_assessment()).get("score"))
+                if isinstance((r.authorship_audit or empty_assessment()).get("score"), int) else ""
+            ),
             "title": r.title or "",
             "description": r.description or "",
             "timestamp": r.timestamp_local_guess or "",
@@ -4515,6 +4618,22 @@ code {{ overflow-wrap:anywhere; }}
 .decision button {{ padding:8px 4px; cursor:pointer; }}
 .decision button.active {{ font-weight:800; border-width:2px; }}
 details {{ font-size:12px; margin-top:8px; }}
+.authorship-audit {{
+  border-top:1px dashed var(--line);
+  padding-top:6px;
+}}
+.authorship-audit summary {{ cursor:pointer; font-weight:700; line-height:1.35; }}
+.authorship-audit-status {{ font-weight:800; }}
+.authorship-audit-score {{ opacity:.72; font-weight:600; }}
+.authorship-audit-body {{ margin-top:7px; line-height:1.45; }}
+.authorship-audit-body p {{ margin:0 0 6px; }}
+.authorship-audit-columns {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }}
+.authorship-audit-columns > div {{ border:1px solid var(--line); border-radius:8px; padding:6px 8px; }}
+.authorship-audit-columns ul {{ margin:5px 0 0; padding-left:18px; }}
+.authorship-audit-automation-likely .authorship-audit-status {{ color:var(--bad); }}
+.authorship-audit-review .authorship-audit-status {{ color:#b7791f; }}
+.authorship-audit-inconclusive .authorship-audit-status,
+.authorship-audit-not-assessable .authorship-audit-status {{ color:var(--muted); }}
 .hidden {{ display:none !important; }}
 .small {{ font-size:12px; opacity:.72; }}
 @media (max-width:600px) {{
@@ -6252,6 +6371,16 @@ body.compact.creator-sort-mode .card-vehicle-sort-only {{
 .card dt,
 .card dd {{
   min-height:16px;
+}}
+
+.card .authorship-audit {{
+  margin-top:4px;
+  padding-top:4px;
+}}
+
+.card .authorship-audit summary {{
+  padding:1px;
+  font-size:11.5px;
 }}
 
 .card .personal-meta {{
@@ -10986,12 +11115,16 @@ body.dark-theme .creator-color-palette {{
           <li><b>お気に入り</b>：残したい・よく使う候補の目印。</li>
           <li><b>後で確認</b>：判断を保留したいカードの目印。</li>
           <li><b>タグ・メモ</b>：任意分類と自由記述。検索対象にもなります。</li>
+          <li><b>作成方法監査</b>：保存済みC_liveryの構造から、自動生成を含む可能性を5条件で暫定監査します。3～5点は「自動生成を含む可能性が高い」、2点は「要確認」、0～1点は「判別困難」です。「手作業」と自動判定する機能ではありません。</li>
           <li><b>作成者カラー</b>：作成者名の横の色ボタンから設定します。同じ作成者名の全カードへ反映し、現在のペイントが0件になっても設定は保持されます。</li>
         </ul>
         <div class="help-tip">
           <b>作成者カラー管理</b>：
           <span class="help-path"><span>その他の操作</span> → <span>作成者カラー管理</span></span>
           では、作成者カラーを一覧から検索・変更・解除できます。「設定済みのみ」で色を設定した作成者だけに絞り込め、現在のペイントが0件でも保存済みの色設定があれば「現在0件で保持」として確認できます。
+        </div>
+        <div class="help-tip help-warning">
+          <b>作成方法監査は制作方法の事実認定ではありません。</b> スコアが低くても「手作業」とは判定せず、解析品質が不足する場合は「判定材料不足」と表示します。カードの監査欄を開くと、一致した条件と外れた条件を確認できます。
         </div>
         <div class="help-tip help-warning">
           <b>「削除候補」はOrganizer内のラベルです。</b> FH6のファイルを削除しません。
@@ -12539,6 +12672,7 @@ function placeFh6TempDeletedReview() {{
   if (host && button.parentElement !== host) host.appendChild(button);
 }}
 
+// v0.4.61-r05 — C_livery構造から作成方法監査を行い、カード・比較・出力へ表示します。
 // v0.4.61-r04 — FH6削除済み（仮）を検索しやすくし、復元対象を特定しやすくします。
 function fh6TempDeletedSearchText(instance, width) {{
   const slot = String(instance.slot_number || 0).padStart(width, "0");
@@ -16827,6 +16961,12 @@ function compareCreatorLabel(card) {{
 function compareTitleLabel(card) {{
   return String(card.dataset.titleDisplay || "").trim() || REPORT_FALLBACK_TITLE;
 }}
+function authorshipAuditLabel(card) {{
+  const display = String(card.dataset.authorshipAuditDisplay || "判定材料不足");
+  const score = Number(card.dataset.authorshipAuditScore);
+  const maxScore = Number(card.dataset.authorshipAuditMaxScore || 5);
+  return Number.isFinite(score) && score >= 0 ? `${{display}} (${{score}}/${{maxScore}})` : display;
+}}
 function updateCompareSelectionUi() {{
   const count = activeCompareMembers.filter(card => selectedKeys.has(card.dataset.key)).length;
   const countEl = document.getElementById("compareSelectionCount");
@@ -16888,6 +17028,7 @@ function renderCompareMembers(members, options = {{}}) {{
         <dt>作成者</dt><dd class="compare-user-data">${{escapeCompareHtml(compareCreatorLabel(member))}}</dd>
         <dt>取得日時</dt><dd>${{escapeCompareHtml(member.dataset.timestampDisplay || member.dataset.timestamp || "—")}}</dd>
         <dt>バイナル数</dt><dd>${{vinyl>=0?vinyl.toLocaleString(REPORT_LOCALE):"—"}}</dd>
+        <dt>作成方法監査</dt><dd>${{escapeCompareHtml(authorshipAuditLabel(member))}}</dd>
         <dt>整理状態</dt><dd>${{escapeCompareHtml(compareDecisionLabel(member))}}</dd>
         <dt>Fingerprint</dt><dd><code title="${{escapeCompareHtml(fingerprint)}}">${{escapeCompareHtml(fingerprint.slice(0,16))}}</code></dd>
       </dl>
@@ -17037,6 +17178,7 @@ function renderExactDuplicateModal(groupId) {{
         <dt>FH6表示日付</dt><dd>${{escapeCompareHtml(member.dataset.fh6DateDisplay || "—")}}</dd>
         <dt>取得日時</dt><dd>${{escapeCompareHtml(member.dataset.timestampDisplay || member.dataset.timestamp || "—")}}</dd>
         <dt>バイナル数</dt><dd>${{vinyl >= 0 ? vinyl.toLocaleString(REPORT_LOCALE) : "—"}}</dd>
+        <dt>作成方法監査</dt><dd>${{escapeCompareHtml(authorshipAuditLabel(member))}}</dd>
         <dt>Livery ID</dt><dd><code>${{escapeCompareHtml(member.dataset.liveryId || "—")}}</code></dd>
       </dl>
       <div class="compare-item-actions">
@@ -18299,7 +18441,7 @@ function exportDecisionCsv(visibleOnly = false) {{
   const decisionLabels = {{undecided:"未決定",keep:"残す",delete:"削除候補"}};
   const rows = [[
     "整理状態","Car ID","車両名","メーカー","モデル","年式",
-    "車両アセット","作成者","バイナル数","タイトル","説明","取得日時",
+    "車両アセット","作成者","バイナル数","作成方法監査","監査スコア","タイトル","説明","取得日時",
     "タグ","メモ","お気に入り","後で確認","Livery参照ID","ペイントID",
     "フィンガープリント","サムネイル元","保存元","解析メモ"
   ]];
@@ -18321,6 +18463,8 @@ function exportDecisionCsv(visibleOnly = false) {{
       record.vehicle_asset,
       record.creator,
       record.vinyl_count,
+      record.authorship_audit,
+      record.authorship_audit_score,
       record.title,
       record.description,
       record.timestamp,

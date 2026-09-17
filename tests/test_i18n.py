@@ -721,7 +721,7 @@ class ExcelLocalizationTests(unittest.TestCase):
         self.assertEqual(snap["language"], "ja-JP")
         self.assertEqual(snap["values"]["A1"], "サムネイル")
         self.assertEqual(snap["values"]["B1"], "整理状態")
-        self.assertEqual(snap["values"]["W1"], "解析メモ")
+        self.assertEqual(snap["values"]["Y1"], "解析メモ")
         self.assertEqual(snap["values"]["A2"], "なし")
         self.assertEqual(snap["values"]["B2"], "未決定")
         self.assertEqual(snap["header_height"], 24.0)
@@ -734,19 +734,19 @@ class ExcelLocalizationTests(unittest.TestCase):
         self.assertEqual(snap["language"], "en-US")
         expected_headers = [
             "Thumbnail", "Decision Status", "Car ID", "Vehicle Name", "Manufacturer", "Model",
-            "Year", "Vehicle Asset", "Creator", "Vinyl Count", "Title", "Description",
-            "Acquired At", "Tags", "Notes", "Favorite", "Review Later", "Livery Reference ID",
+            "Year", "Vehicle Asset", "Creator", "Vinyl Count", "Authorship Audit", "Audit Score",
+            "Title", "Description", "Acquired At", "Tags", "Notes", "Favorite", "Review Later", "Livery Reference ID",
             "Paint ID", "Fingerprint", "Thumbnail Source", "Source Folder", "Analysis Notes",
         ]
-        actual_headers = [snap["values"][f"{self.organizer._xlsx_col_name(i)}1"] for i in range(1, 24)]
+        actual_headers = [snap["values"][f"{self.organizer._xlsx_col_name(i)}1"] for i in range(1, 26)]
         self.assertEqual(actual_headers, expected_headers)
         self.assertEqual(snap["values"]["A2"], "No")
         self.assertEqual(snap["values"]["B2"], "Undecided")
         self.assertEqual(snap["values"]["D2"], "2020 日本語 Sample Car")
         self.assertEqual(snap["values"]["E2"], "日本語 Sample Make")
         self.assertEqual(snap["values"]["I2"], "メーカー Sample Creator")
-        self.assertEqual(snap["values"]["K2"], "お気に入り Sample Title")
-        self.assertEqual(snap["values"]["L2"], "作成者 Sample Description")
+        self.assertEqual(snap["values"]["M2"], "お気に入り Sample Title")
+        self.assertEqual(snap["values"]["N2"], "作成者 Sample Description")
         self.assertFalse(any(japanese_text(value) for value in actual_headers))
         self.assertEqual(snap["app_version"], "")
 
@@ -767,7 +767,7 @@ class ExcelLocalizationTests(unittest.TestCase):
                         data = text.encode("utf-8")
                     dst.writestr(info, data)
             with self.assertRaisesRegex(ValueError, "Invalid XLSX AppVersion"):
-                self.organizer._validate_xlsx_package(broken, expected_rows=2, expected_cols=23)
+                self.organizer._validate_xlsx_package(broken, expected_rows=2, expected_cols=25)
 
     def test_pseudo_excel_expands_headers_without_touching_user_data(self) -> None:
         english = self._generate("en")
@@ -777,7 +777,7 @@ class ExcelLocalizationTests(unittest.TestCase):
         self.assertTrue(pseudo["values"]["A1"].startswith("⟦"))
         self.assertTrue(pseudo["values"]["B2"].startswith("⟦"))
         self.assertEqual(pseudo["values"]["D2"], "2020 日本語 Sample Car")
-        self.assertEqual(pseudo["values"]["K2"], "お気に入り Sample Title")
+        self.assertEqual(pseudo["values"]["M2"], "お気に入り Sample Title")
         self.assertGreaterEqual(max(pseudo["widths"]), max(english["widths"]))
         self.assertGreater(pseudo["widths"][1], english["widths"][1])
         self.assertGreaterEqual(pseudo["header_height"], english["header_height"])
@@ -893,7 +893,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 750)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 762)
         self.assertEqual(len(en_locale.REPORT_ATTR), 103)
         self.assertEqual(
             en_locale.REPORT_ATTR.get(
