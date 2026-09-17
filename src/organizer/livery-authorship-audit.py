@@ -12,6 +12,7 @@ import struct
 from typing import Iterable, Sequence
 
 CALIBRATION_ID = "lo4fh6-2026-09-provisional-v1"
+ALGORITHM_VERSION = "lo4fh6-authorship-audit-v1"
 AUDIT_RULES = (
     ("dominant_shape_ratio_ge_0_90", "dominant_shape_ratio", ">=", 0.90, "単一形状の占有率が90%以上"),
     ("shape_entropy_bits_le_1_0", "shape_entropy_bits", "<=", 1.0, "形状の多様性が1.0以下"),
@@ -157,6 +158,7 @@ def _rule_details(features: dict[str, float | int]) -> tuple[list[str], list[str
 def empty_assessment(note: str = "監査に必要な解析情報がありません") -> dict[str, object]:
     return {
         "calibration": CALIBRATION_ID,
+        "algorithm_version": ALGORITHM_VERSION,
         "eligible": False,
         "score": None,
         "max_score": len(AUDIT_RULES),
@@ -202,6 +204,7 @@ def assess_decompressed_c_livery(
         note = "暫定的な構造監査シグナルです。制作方法を事実認定するものではありません"
     return {
         "calibration": CALIBRATION_ID,
+        "algorithm_version": ALGORITHM_VERSION,
         "eligible": eligible,
         "score": score,
         "max_score": len(AUDIT_RULES),

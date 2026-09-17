@@ -41,6 +41,7 @@ def make_record(o, *, index: int, fingerprint: str, ui_key: str, car_id: int | N
     display = f"{score}/5"
     audit = {
         "calibration": "lo4fh6-2026-09-provisional-v1",
+        "algorithm_version": "lo4fh6-authorship-audit-v1",
         "eligible": True,
         "score": score,
         "max_score": 5,
@@ -160,6 +161,15 @@ SMOKE_SCRIPT = r"""
     assert(fh6LocationForCard(second)?.slotNumber === 2, "second card is not slot #002");
     assert(first.dataset.authorshipAuditScore === "5", "authorship audit score is missing from card data");
     assert(first.querySelector(".authorship-audit-score")?.textContent?.trim() === "5/5", "authorship audit summary score is missing");
+
+    sortOrder.value = "audit-desc";
+    applySort();
+    assert(document.querySelector("#flatSortGrid .card")?.dataset.authorshipAuditScore === "5", "audit score descending sort failed");
+    sortOrder.value = "audit-asc";
+    applySort();
+    assert(document.querySelector("#flatSortGrid .card")?.dataset.authorshipAuditScore === "1", "audit score ascending sort failed");
+    sortOrder.value = "manufacturer";
+    applySort();
 
     renderCompareMembers([first, second], {mode:"selected", title:"Browser smoke"});
     let grid = document.getElementById("compareGrid");
@@ -375,7 +385,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             if ok:
                 print(f"PASS — browser compare/FH6 smoke test: {browser}")
-                print("Checked authorship audit, compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
+                print("Checked audit score sorting, authorship audit, compare decisions, FH6 temp-delete search/restore, slot recompute, and exact-duplicate resolution.")
                 return 0
             errors.append(f"{browser}: {detail[-1200:]}")
 

@@ -79,6 +79,7 @@ class AuthorshipAuditR05Tests(unittest.TestCase):
         self.assertEqual(assessment["score"], 5)
         self.assertEqual(assessment["band"], "automation-likely")
         self.assertEqual(assessment["display"], "5/5")
+        self.assertEqual(assessment["algorithm_version"], self.audit.ALGORITHM_VERSION)
         self.assertEqual(len(assessment["matched_rules"]), 5)
         self.assertFalse(warnings)
 
@@ -146,10 +147,17 @@ class AuthorshipAuditR05Tests(unittest.TestCase):
                 self.assertTrue(self.organizer._authorship_audit_cache_path().is_file())
 
                 self._reset_audit_cache_state()
-                with mock.patch.object(
-                    self.organizer,
-                    "assess_decompressed_c_livery",
-                    side_effect=AssertionError("persistent cache was not used"),
+                with (
+                    mock.patch.object(
+                        self.organizer,
+                        "assess_decompressed_c_livery",
+                        side_effect=AssertionError("persistent cache was not used"),
+                    ),
+                    mock.patch.object(
+                        self.organizer.zlib,
+                        "decompress",
+                        side_effect=AssertionError("persistent cache did not bypass decompression"),
+                    ),
                 ):
                     second = self.organizer.inspect_c_livery_with_audit(c_livery)
                 self.assertEqual(second, first)
@@ -167,6 +175,48 @@ class AuthorshipAuditR05Tests(unittest.TestCase):
                 self._reset_audit_cache_state()
                 self.organizer._load_authorship_audit_cache()
                 self.assertEqual(self.organizer._AUTHORSHIP_AUDIT_CACHE, {})
+
+    def test_r07_cache_rejects_old_schema_and_wrong_algorithm_version(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": str(tmp_path)}, clear=False):
+                cache_path = self.organizer._authorship_audit_cache_path()
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                cache_path.write_text(
+                    '{"schema_version":1,"calibration":"lo4fh6-2026-09-provisional-v1","entries":{}}',
+                    encoding="utf-8",
+                )
+                self._reset_audit_cache_state()
+                self.organizer._load_authorship_audit_cache()
+                self.assertEqual(self.organizer._AUTHORSHIP_AUDIT_CACHE, {})
+
+                cache_path.write_text(
+                    '{"schema_version":2,"calibration":"lo4fh6-2026-09-provisional-v1","algorithm_version":"old","entries":{"' + ('a' * 64) + '":{}}}',
+                    encoding="utf-8",
+                )
+                self._reset_audit_cache_state()
+                self.organizer._load_authorship_audit_cache()
+                self.assertEqual(self.organizer._AUTHORSHIP_AUDIT_CACHE, {})
+
+    def test_r07_audit_sort_and_help_are_numeric_and_non_diagnostic(self):
+        source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        for marker in (
+            '<option value="audit-desc">監査スコア:高い順</option>',
+            '<option value="audit-asc">監査スコア:低い順</option>',
+            'mode === "audit-asc" || mode === "audit-desc"',
+            'if (av < 0 && bv >= 0) return 1;',
+            '監査スコアは 5 項目のうち条件に一致した項目数です。',
+            '監査スコアは作成方法の判定結果ではありません。',
+            '単一形状の占有率',
+            '形状の多様性',
+            '色の多様性',
+            '最多色の占有率',
+            '変形値の量子化傾向',
+            'スコアの高低だけでは作成方法を判定できません。',
+        ):
+            self.assertIn(marker, source)
+        self.assertNotIn('3～5点は「自動生成を含む可能性が高い」', source)
+        self.assertNotIn('「判定材料不足」と表示します', source)
 
 
 if __name__ == "__main__":

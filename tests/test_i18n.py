@@ -893,7 +893,7 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         import locales.ja as ja_locale
         self.assertEqual(ja_locale.REPORT_LOCALE, "ja-JP")
         self.assertEqual(en_locale.REPORT_LOCALE, "en-US")
-        self.assertEqual(len(en_locale.REPORT_TEXT), 762)
+        self.assertEqual(len(en_locale.REPORT_TEXT), 783)
         self.assertEqual(len(en_locale.REPORT_ATTR), 103)
         self.assertEqual(
             en_locale.REPORT_ATTR.get(
@@ -905,6 +905,25 @@ class GuiLocalizationAuditTests(unittest.TestCase):
         self.assertIn("FH6移動:", en_locale.REPORT_TEXT)
         self.assertIn("FH6 move:", en_locale.REPORT_TEXT.values())
         self.assertIn("const rules", i18n.build_report_i18n_script("en"))
+
+    def test_r07_authorship_audit_help_terms_are_localized(self):
+        import locales.en as en_locale
+        expected = {
+            "単一形状の占有率": "Dominant shape ratio",
+            "形状の多様性": "Shape diversity",
+            "色の多様性": "Color diversity",
+            "最多色の占有率": "Dominant color ratio",
+            "変形値の量子化傾向": "Transform-value quantization tendency",
+        }
+        for source, translated in expected.items():
+            self.assertEqual(en_locale.REPORT_TEXT.get(source), translated)
+        self.assertIn(
+            "The creation method cannot be determined from the score alone",
+            en_locale.REPORT_TEXT.get(
+                "この数値は、自動生成の確率、判定の信頼度、ペイントの品質、作者を評価する値ではありません。スコアの高低だけでは作成方法を判定できません。",
+                "",
+            ),
+        )
 
     def test_v0459_english_flat_sort_runtime_headings_are_localized(self):
         import locales.en as en_locale

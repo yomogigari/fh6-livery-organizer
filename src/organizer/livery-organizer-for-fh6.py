@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.61-r06
+Livery Organizer for FH6 v0.4.61-r07
 ================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -103,6 +103,7 @@ _livery_authorship_audit = _import_sibling_module("livery-authorship-audit")
 assess_decompressed_c_livery = _livery_authorship_audit.assess_decompressed_c_livery
 empty_assessment = _livery_authorship_audit.empty_assessment
 AUTHORSHIP_AUDIT_CALIBRATION_ID = _livery_authorship_audit.CALIBRATION_ID
+AUTHORSHIP_AUDIT_ALGORITHM_VERSION = _livery_authorship_audit.ALGORITHM_VERSION
 
 _vehicle_metadata_update = _import_sibling_module("vehicle-metadata-update")
 STATUS_CHECK_FAILED = _vehicle_metadata_update.STATUS_CHECK_FAILED
@@ -131,7 +132,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.61-r06"
+VERSION = "0.4.61-r07"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -2875,7 +2876,7 @@ def parse_header(path: Path) -> tuple[str, str, str, str, str, list[str], list[s
         )
     return title, description, creator, "", "", texts, warnings
 
-AUTHORSHIP_AUDIT_CACHE_SCHEMA_VERSION = 1
+AUTHORSHIP_AUDIT_CACHE_SCHEMA_VERSION = 2
 AUTHORSHIP_AUDIT_CACHE_FILENAME = "livery-analysis-cache.json"
 _AUTHORSHIP_AUDIT_CACHE_LOCK = threading.Lock()
 _AUTHORSHIP_AUDIT_CACHE: dict[str, dict[str, object]] = {}
@@ -2915,6 +2916,9 @@ def _load_authorship_audit_cache() -> None:
         if payload.get("calibration") != AUTHORSHIP_AUDIT_CALIBRATION_ID:
             _AUTHORSHIP_AUDIT_CACHE = {}
             return
+        if payload.get("algorithm_version") != AUTHORSHIP_AUDIT_ALGORITHM_VERSION:
+            _AUTHORSHIP_AUDIT_CACHE = {}
+            return
         entries = payload.get("entries")
         if not isinstance(entries, dict):
             _AUTHORSHIP_AUDIT_CACHE = {}
@@ -2934,6 +2938,7 @@ def _save_authorship_audit_cache() -> None:
         payload = {
             "schema_version": AUTHORSHIP_AUDIT_CACHE_SCHEMA_VERSION,
             "calibration": AUTHORSHIP_AUDIT_CALIBRATION_ID,
+            "algorithm_version": AUTHORSHIP_AUDIT_ALGORITHM_VERSION,
             "entries": _AUTHORSHIP_AUDIT_CACHE,
         }
         try:
@@ -10550,6 +10555,8 @@ body.dark-theme .creator-color-palette {{
         <option value="paint-asc">ペイント件数:少ない順</option>
         <option value="vinyl-desc">バイナル数:多い順</option>
         <option value="vinyl-asc">バイナル数:少ない順</option>
+        <option value="audit-desc">監査スコア:高い順</option>
+        <option value="audit-asc">監査スコア:低い順</option>
       </optgroup>
     </select>
     <button id="filterPanelToggle" class="filter-panel-trigger" type="button"
@@ -11191,6 +11198,7 @@ body.dark-theme .creator-color-palette {{
             <tr><td>タイトル順 / 整理状態順</td><td>車種グループをまたいでカード単位で並び替えます。整理状態は未決定 → 後で確認 → 残す → 削除候補の作業順です。</td></tr>
             <tr><td>整理進捗順</td><td>車種単位で未着手（0%）/ 整理中（1〜99%）/ 完了（100%）を昇順または逆順にします。</td></tr>
             <tr><td>ペイント件数順</td><td>車種ごとのペイント件数で車種グループを並び替えます。</td></tr>
+            <tr><td>監査スコア順</td><td>作成方法監査のスコアでカードを並べ替えます。スコアを算出できないカードは、高い順と低い順のどちらでも最後に表示します。</td></tr>
             <tr><td>アップロード日順</td><td>作成者がFH6へアップロードした日付でカード単位に並び替えます。日付を取得できなかったカードは昇順 / 降順のどちらでも最後に表示します。</td></tr>
             <tr><td>バイナル数順 / 取得日時順</td><td>カード単位で昇順 / 降順に並び替えます。取得日時はフォルダ名のUTC時刻をJST（UTC+9）へ変換して表示します。</td></tr>
           </tbody>
@@ -11232,7 +11240,7 @@ body.dark-theme .creator-color-palette {{
           <li><b>お気に入り</b>：残したい・よく使う候補の目印。</li>
           <li><b>後で確認</b>：判断を保留したいカードの目印。</li>
           <li><b>タグ・メモ</b>：任意分類と自由記述。検索対象にもなります。</li>
-          <li><b>作成方法監査</b>：保存済みC_liveryの構造から、自動生成を含む可能性を5条件で暫定監査します。3～5点は「自動生成を含む可能性が高い」、2点は「要確認」、0～1点は「判別困難」です。「手作業」と自動判定する機能ではありません。</li>
+          <li><b>作成方法監査</b>：保存済みの C_livery から 5 項目の統計的特徴を確認し、条件に一致した項目数を <b>0/5～5/5</b> で表示します。監査スコアは作成方法の判定結果ではありません。次回以降は解析結果をキャッシュから読み込み、監査ロジックのバージョンが変わった場合は再計算します。</li>
           <li><b>作成者カラー</b>：作成者名の横の色ボタンから設定します。同じ作成者名の全カードへ反映し、現在のペイントが0件になっても設定は保持されます。</li>
         </ul>
         <div class="help-tip">
@@ -11241,10 +11249,30 @@ body.dark-theme .creator-color-palette {{
           では、作成者カラーを一覧から検索・変更・解除できます。「設定済みのみ」で色を設定した作成者だけに絞り込め、現在のペイントが0件でも保存済みの色設定があれば「現在0件で保持」として確認できます。
         </div>
         <div class="help-tip help-warning">
-          <b>作成方法監査は制作方法の事実認定ではありません。</b> スコアが低くても「手作業」とは判定せず、解析品質が不足する場合は「判定材料不足」と表示します。カードの監査欄を開くと、一致した条件と外れた条件を確認できます。
+          <b>監査スコアは 5 項目のうち条件に一致した項目数です。</b> 数値だけでは作成方法を判定できません。解析に必要な情報が不足する場合は <b>—</b> を表示します。カードの監査欄を開くと、一致した条件と外れた条件を確認できます。
         </div>
         <div class="help-tip help-warning">
           <b>「削除候補」はOrganizer内のラベルです。</b> FH6のファイルを削除しません。
+        </div>
+      </section>
+
+      <section class="help-section help-section-wide">
+        <h4>作成方法監査</h4>
+        <p>作成方法監査は、ペイントデータに含まれる形状、色、配置、変形値の統計的特徴を 5 項目で確認します。</p>
+        <p>監査スコアは、5 項目の監査条件に一致した項目数を 0/5～5/5 で示します。</p>
+        <p>この数値は、自動生成の確率、判定の信頼度、ペイントの品質、作者を評価する値ではありません。スコアの高低だけでは作成方法を判定できません。</p>
+        <table class="help-mini-table">
+          <thead><tr><th>項目</th><th>確認している特徴</th></tr></thead>
+          <tbody>
+            <tr><td>単一形状の占有率</td><td>最も多く使われている 1 種類の形状が、形状全体に占める割合です。同じ形状を多数配置する構成では、この値が高くなることがあります。</td></tr>
+            <tr><td>形状の多様性</td><td>形状の種類と使用頻度の偏りをまとめた指標です。同じ形状に使用が集中すると低くなりやすく、複数の形状を比較的均等に使うと高くなりやすくなります。</td></tr>
+            <tr><td>色の多様性</td><td>色の種類と使用頻度の偏りをまとめた指標です。陰影や細かな色の変化を多数の形状で表現すると、高くなることがあります。</td></tr>
+            <tr><td>最多色の占有率</td><td>最も多く使われている 1 色が、色全体に占める割合です。少数の色に使用が集中すると高くなり、多数の色へ分散すると低くなりやすくなります。</td></tr>
+            <tr><td>変形値の量子化傾向</td><td>各形状の位置、拡大率、回転などの値に、一定の刻みで揃う規則性がどの程度あるかを確認します。計算した値を多数の形状へ設定すると規則性が現れることがありますが、ゲーム内部の数値処理や手作業の編集でも似た傾向が生じる場合があります。</td></tr>
+          </tbody>
+        </table>
+        <div class="help-tip help-warning">
+          各項目は、作成方法を直接判定するものではありません。手作業で作成したペイントが条件に一致する場合も、自動生成を含むペイントが条件に一致しない場合もあります。監査スコアは、ペイントデータに見られる統計的特徴を比較するための参考値として使用してください。
         </div>
       </section>
 
@@ -14547,6 +14575,7 @@ function applySort() {{
   if (
     mode === "title" || mode === "decision" ||
     mode === "vinyl-asc" || mode === "vinyl-desc" ||
+    mode === "audit-asc" || mode === "audit-desc" ||
     mode === "upload-asc" || mode === "upload-desc" ||
     mode === "timestamp-asc" || mode === "timestamp-desc"
   ) {{
@@ -14627,6 +14656,22 @@ function applySort() {{
       }});
       if (flatTitle) flatTitle.textContent =
         direction === "desc" ? "バイナル数:降順" : "バイナル数:昇順";
+    }} else if (mode.startsWith("audit-")) {{
+      sortedCards.sort((a, b) => {{
+        const av = Number(a.dataset.authorshipAuditScore ?? -1);
+        const bv = Number(b.dataset.authorshipAuditScore ?? -1);
+
+        // 監査スコアを算出できないカードは、昇順・降順のどちらでも末尾へ配置します。
+        if (av < 0 && bv >= 0) return 1;
+        if (bv < 0 && av >= 0) return -1;
+        if (av < 0 && bv < 0) return 0;
+
+        const result = av - bv;
+        if (result !== 0) return direction === "desc" ? -result : result;
+        return String(a.dataset.timestamp || "").localeCompare(String(b.dataset.timestamp || ""));
+      }});
+      if (flatTitle) flatTitle.textContent =
+        direction === "desc" ? "監査スコア:高い順" : "監査スコア:低い順";
     }} else if (mode.startsWith("upload-")) {{
       sortedCards.sort((a, b) => {{
         // fh6DateはYYYY-MM-DDなので文字列順がそのまま日付順になります。
