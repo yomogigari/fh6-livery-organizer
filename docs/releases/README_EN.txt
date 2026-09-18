@@ -1,20 +1,24 @@
-Livery Organizer for FH6 v0.4.61 Preview
+Livery Organizer for FH6 v0.4.62 Preview
 ========================================
 
-Release date: 2026-09-11
+Release date: 2026-09-18
 
 Livery Organizer for FH6 is a Windows tool for listing, searching, and organizing
 paint designs (liveries) downloaded in the PC version of Forza Horizon 6.
 
-v0.4.61 adds a creator-color manager, creator upload-date display and sorting,
-and backup/restore support for user data belonging to paints that are outside the
-current report.
+v0.4.62 lets comparison views change organization decisions directly and mark a
+paint as temporarily “Deleted in FH6” from normal comparison or exact re-download
+duplicate review. The temporary-deletion review adds multi-term search and clearer
+restore information for vehicle, title, creator, original slot, FH6 position, and dates.
 
-The bundled vehicle metadata follows the FH6 official car-list update dated
-2026-09-08 and now contains 647 vehicles with metadata package revision 2.
-The optional Navigator Bridge for FH6 is updated to v0.0.28. It verifies both the
-exact FH6 window title and owning forzahorizon6.exe process, refuses ambiguous
-multiple candidates, and revalidates the same target before every movement key.
+A numeric creation-method audit score now checks five statistical characteristics
+of saved C_livery structure and displays only 0/5 through 5/5. It is not a creation-
+method determination, an automatic-generation probability or confidence value, a
+paint-quality score, or an evaluation of the creator. Audit results are cached outside
+the GameSave by C_livery content SHA-256 so identical content can reuse the result.
+
+Navigator Bridge for FH6 remains v0.0.28. The bundled vehicle metadata also remains
+at the 2026-09-08 update with 647 vehicles and metadata package revision 2.
 
 
 ■ Release files
@@ -26,9 +30,10 @@ README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0461.py
+python\livery-organizer-for-fh6-v0462.py
 python\i18n.py
-python\vehicle_metadata_update.py
+python\livery-authorship-audit.py
+python\vehicle-metadata-update.py
 python\fh6-vehicle-metadata.json
 python\fh6-vehicle-metadata-manifest.json
 python\navigator-bridge-for-fh6-v028.py
@@ -113,10 +118,10 @@ Livery-Organizer-for-FH6.exe
 
 Python:
 From the folder where you extracted the release ZIP, run:
-python python\livery-organizer-for-fh6-v0461.py
+python python\livery-organizer-for-fh6-v0462.py
 
 With uv:
-uv run python\livery-organizer-for-fh6-v0461.py
+uv run python\livery-organizer-for-fh6-v0462.py
 
 Keep python\i18n.py and the python\locales folder in place. They contain the
 Japanese/English UI resources required by the Python Organizer.

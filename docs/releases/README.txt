@@ -1,21 +1,25 @@
-Livery Organizer for FH6 v0.4.61 Preview
+Livery Organizer for FH6 v0.4.62 Preview
 =========================================
 
-公開日: 2026-09-11
+公開日: 2026-09-18
 
 Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 ペイント（Livery）を、ローカル環境で一覧化・検索・整理するためのツールです。
 
 このリリースはプレビュー版です。
 
-v0.4.61では、作成者カラーを一覧で管理できる画面を追加し、カードに作成者アップロード日を
-表示して「新しい順 / 古い順」で並び替えられるようにしました。バックアップ / 復元では、
-現在のレポートに含まれないペイントのユーザーデータも保持し、次のバックアップへ引き継げます。
+v0.4.62では、比較画面から整理状態を直接変更できるようにし、通常の比較画面と
+再ダウンロード完全一致の整理画面から「FH6で削除済み（仮）」へ反映できるようにしました。
+仮削除済み一覧では、車種・タイトル・作成者・元スロット・FH6位置・日付等を検索し、
+対象を確認しながら1件ずつ復元できます。
 
-同梱車両メタデータは2026-09-08更新のFH6公式車種リストへ追随し、647車種・package revision 2へ
-更新しました。任意の補助ツール Navigator Bridge for FH6 は v0.0.28 となり、タイトル完全一致に
-加えて所有プロセスがforzahorizon6.exeであることを確認し、各移動キーの直前にも同じ対象を
-再検証します。条件を満たす候補が複数ある場合は自動選択しません。
+保存済みC_liveryの構造から5項目の統計的特徴を確認する作成方法監査スコアも追加しました。
+表示は0/5～5/5の数値のみで、作成方法の判定結果、自動生成の確率や信頼度、ペイント品質、
+作者を評価する値ではありません。監査結果はC_liveryの内容SHA-256単位でGameSave外へ
+キャッシュし、同一内容の再ダウンロード等では同じ結果を再利用します。
+
+Navigator Bridge for FH6 は v0.0.28 を継続します。
+同梱車両メタデータも2026-09-08更新・647車種・package revision 2を継続します。
 
 
 ■ 配布ファイル
@@ -27,9 +31,10 @@ README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0461.py
+python\livery-organizer-for-fh6-v0462.py
 python\i18n.py
-python\vehicle_metadata_update.py
+python\livery-authorship-audit.py
+python\vehicle-metadata-update.py
 python\fh6-vehicle-metadata.json
 python\fh6-vehicle-metadata-manifest.json
 python\navigator-bridge-for-fh6-v028.py
@@ -121,13 +126,13 @@ EXE版:
 Livery-Organizer-for-FH6.exe を起動してください。
 
 Python版:
-配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0461.py を実行してください。
+配布ZIPを展開したフォルダーで、python\livery-organizer-for-fh6-v0462.py を実行してください。
 
 例:
-python python\livery-organizer-for-fh6-v0461.py
+python python\livery-organizer-for-fh6-v0462.py
 
 uvを利用している場合:
-uv run python\livery-organizer-for-fh6-v0461.py
+uv run python\livery-organizer-for-fh6-v0462.py
 
 python\i18n.py と python\locales フォルダーは多言語表示に必要です。
 Organizer本体と同じpythonフォルダー構成のまま使用してください。

@@ -6,20 +6,26 @@
 
 It reads information from the local FH6 GameSave and game assets and generates an HTML report with thumbnails, plus an Excel report. The generated HTML provides search, filtering, sorting, organization states, tags, notes, backups, FH6 My Designs ordering, and optional integration with **Navigator Bridge for FH6**.
 
-**v0.4.61 Preview** (released 2026-09-11) adds a creator-color manager, creator upload-date display and sorting, and backup/restore support for user data belonging to paints that are not in the current report. The bundled vehicle metadata now follows the FH6 official car-list update dated 2026-09-08 and contains 647 vehicles. The optional **Navigator Bridge for FH6 v0.0.28** now verifies both the FH6 window title and owning process and revalidates the target immediately before every movement key.
+**v0.4.62 Preview** (released 2026-09-18) improves the comparison and temporary “Deleted in FH6” workflows and adds a **creation-method audit score** based on five structural/statistical signals in saved `C_livery` data. Cards, comparison views, CSV, and Excel can show the numeric score as `0/5` through `5/5`. The score is not a determination of the creation method, a probability or confidence value, a paint-quality score, or an evaluation of the creator.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data.
 
-## What's new in v0.4.61 Preview
+## What's new in v0.4.62 Preview
 
-Creator colors can now be reviewed and changed from a dedicated manager. Normal cards show the creator upload date used by FH6, and reports can sort those dates newest-first or oldest-first.
+Comparison dialogs can now change Keep / Delete candidate / Undecided directly. A paint deleted manually in FH6 can also be marked as temporarily “Deleted in FH6” from both normal comparison and exact re-download duplicate review.
 
-User-data backup/restore now preserves organization data for paints that are not present in the current HTML report, so data restored from an older report can be included again in later backups.
+The temporary-deletion review now has search and clearer restore information. Vehicle, title, creator, original slot, FH6 position, displayed date, acquisition time, and related values are searchable with multi-term AND matching, with visible result counts and per-item restore.
 
-The bundled vehicle metadata follows the FH6 official car-list update dated 2026-09-08 and grows from 636 to 647 vehicles. Its metadata package revision is 2. Startup still performs no automatic network access or forced update.
+Creation-method audit checks five statistical characteristics derived from saved `C_livery` structure and displays only how many conditions matched, from `0/5` through `5/5`. Reports can sort the score high-to-low or low-to-high, while paints without a calculable score remain at the end in either direction. The score alone does not classify a paint as manual or automatically generated.
 
-For the Python version, keep `i18n.py`, `vehicle-metadata-update.py`, `fh6-vehicle-metadata.json`, `fh6-vehicle-metadata-manifest.json`, and `locales/` together with the Organizer script in the `python/` folder.
+Audit results are cached outside the GameSave by the SHA-256 of the `C_livery` content. Re-downloaded or duplicated data with identical content can reuse the same result, reducing later report-generation time. Old entries are not reused when the audit algorithm, calibration ID, or cache schema changes.
+
+The built-in Help has been rewritten for clearer operation and safety guidance, including the audit explanation, with Japanese and English coverage kept in sync.
+
+**Navigator Bridge for FH6 v0.0.28** is unchanged in this release. The bundled vehicle metadata also remains at **2026-09-08 / 647 vehicles / package revision 2**.
+
+For the Python version, keep `i18n.py`, `livery-authorship-audit.py`, `vehicle-metadata-update.py`, `fh6-vehicle-metadata.json`, `fh6-vehicle-metadata-manifest.json`, and `locales/` together with the Organizer script in the `python/` folder.
 
 ## Main features
 
@@ -40,7 +46,8 @@ For the Python version, keep `i18n.py`, `vehicle-metadata-update.py`, `fh6-vehic
 - Similar-thumbnail candidate review
 - Re-download duplicate comparison and organization
 - Per-vehicle organization progress
-- Temporary “Deleted in FH6” state with current-position recalculation
+- Temporary “Deleted in FH6” state with search, restore, and current-position recalculation
+- Numeric creation-method audit score with high-to-low / low-to-high sorting
 - Undo / Redo
 - User-data and decision backups/restores, including data outside the current report
 - CSV export
@@ -131,7 +138,7 @@ See [docs/I18N_EN.md](docs/I18N_EN.md) for the translation and internationalizat
 
 ## Release package
 
-GitHub Releases for v0.4.61 Preview contain the EXE versions, Python versions, and Japanese/English documentation in one ZIP:
+GitHub Releases for v0.4.62 Preview contain the EXE versions, Python versions, and Japanese/English documentation in one ZIP:
 
 ```text
 Livery-Organizer-for-FH6.exe
@@ -142,8 +149,9 @@ NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 python/
-  livery-organizer-for-fh6-v0461.py
+  livery-organizer-for-fh6-v0462.py
   i18n.py
+  livery-authorship-audit.py
   vehicle-metadata-update.py
   fh6-vehicle-metadata.json
   fh6-vehicle-metadata-manifest.json
@@ -197,13 +205,13 @@ Run:
 From the folder where you extracted the release ZIP, run:
 
 ```powershell
-python python\livery-organizer-for-fh6-v0461.py
+python python\livery-organizer-for-fh6-v0462.py
 ```
 
 With `uv`:
 
 ```powershell
-uv run python\livery-organizer-for-fh6-v0461.py
+uv run python\livery-organizer-for-fh6-v0462.py
 ```
 
 Keep `python\i18n.py` and the `python\locales` folder in place; they contain the Japanese/English UI resources used by the Python Organizer.
