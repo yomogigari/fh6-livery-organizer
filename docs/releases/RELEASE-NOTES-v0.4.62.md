@@ -1,6 +1,6 @@
 # Livery Organizer for FH6 v0.4.62 Preview — Release Notes
 
-公開日: 2026-09-18
+公開日: 2026-09-19
 
 Livery Organizer for FH6 v0.4.62 Previewでは、FH6上での整理作業とHTML上の整理状態をつなぎやすくするため、比較画面と「FH6で削除済み（仮）」の操作を拡張しました。あわせて、保存済み `C_livery` の構造を5項目で確認する作成方法監査スコアを追加し、同一内容の解析結果を再利用するキャッシュでレポート生成時間を抑えます。
 

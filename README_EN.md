@@ -6,7 +6,7 @@
 
 It reads information from the local FH6 GameSave and game assets and generates an HTML report with thumbnails, plus an Excel report. The generated HTML provides search, filtering, sorting, organization states, tags, notes, backups, FH6 My Designs ordering, and optional integration with **Navigator Bridge for FH6**.
 
-**v0.4.62 Preview** (released 2026-09-18) improves the comparison and temporary “Deleted in FH6” workflows and adds a **creation-method audit score** based on five structural/statistical signals in saved `C_livery` data. Cards, comparison views, CSV, and Excel can show the numeric score as `0/5` through `5/5`. The score is not a determination of the creation method, a probability or confidence value, a paint-quality score, or an evaluation of the creator.
+**v0.4.62 Preview** (released 2026-09-19) improves the comparison and temporary “Deleted in FH6” workflows and adds a **creation-method audit score** based on five structural/statistical signals in saved `C_livery` data. Cards, comparison views, CSV, and Excel can show the numeric score as `0/5` through `5/5`. The score is not a determination of the creation method, a probability or confidence value, a paint-quality score, or an evaluation of the creator.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data.

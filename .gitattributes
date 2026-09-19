@@ -15,4 +15,4 @@
 *.exe binary
 
 # Generated demo HTML: preserve generated line endings
-/fh6-livery-organizer-demo.html -text
+/fh6-livery-organizer-demo.html -text whitespace=cr-at-eol
