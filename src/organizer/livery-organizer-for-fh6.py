@@ -16927,7 +16927,7 @@ async function runSelfDiagnostics() {{
       ["Excel", Boolean(document.getElementById("downloadExcel")), "livery-organizer-for-fh6.xlsx"],
       ["固定UI要素", requiredIds.every(id => document.getElementById(id)), `${{requiredIds.filter(id => !document.getElementById(id)).length}}件不足`],
       ["複数絞り込み", multiFilterSelects.every(select => select.multiple), `${{multiFilterSelects.filter(select => !select.multiple).length}}件未対応`],
-      ["UI state schema", UI_STATE_VERSION === 3, `v${{UI_STATE_VERSION}}`],
+      ["UI state schema", UI_STATE_VERSION === 4, `v${{UI_STATE_VERSION}}`],
       ["絞り込みプリセット", Boolean(document.getElementById("filterPresetSelect")), "localStorage"],
       ["作成者ボタン", document.querySelectorAll(".creator-chip").length === Math.max(0, creatorFilter.options.length - 1),
         `${{document.querySelectorAll(".creator-chip").length}} / ${{Math.max(0, creatorFilter.options.length - 1)}}人`],
@@ -18808,7 +18808,7 @@ function restoreUiState() {{
       creatorQuickSearch.value = state.creatorSearch;
       applyCreatorSearch();
     }}
-    // 移行済みv2状態を、明示的なv3スキーマキーへ保存します。
+    // 移行済み旧状態を、明示的なv4スキーマキーへ保存します。
     saveUiState();
   }} catch (_) {{}}
 }}
