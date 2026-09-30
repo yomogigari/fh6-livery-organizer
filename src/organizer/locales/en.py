@@ -442,6 +442,8 @@ REPORT_TEXT = {
     "未完了車種のみ": "Unfinished vehicles only",
     "整理完了": "Organization complete",
     "バックアップ 未保存": "Backup not saved",
+    "3Dプレビュー（実験）": "3D Preview (Experimental)",
+    "FH6本体パスを確認できたレポートでは、各カードから研究用3D Viewerを起動できます。この機能は研究段階で、研究プロトタイプ側のPreview Bridgeを事前登録した環境だけで動作します。GameSaveやFH6本体へ書き込みません。": "When the FH6 installation path is available, each card can launch the research 3D Viewer. This experimental feature requires the Preview Bridge from the research prototype to be registered first. It does not write to GameSave or the FH6 installation.",
     "FH6移動:": "FH6 move:",
     "未選択": "Not selected",
     "FH6で選択デザインへ移動": "Move to Selected Design in FH6",

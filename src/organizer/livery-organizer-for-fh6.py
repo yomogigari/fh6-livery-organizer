@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.62
-================================
+Livery Organizer for FH6 v0.4.62-r04
+====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
 Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承認・後援を
@@ -74,6 +74,11 @@ from xml.sax.saxutils import escape as xml_escape
 from typing import Callable, Iterable, Optional
 
 try:
+    from .organizer_preview_report_integration import build_report_preview_manifest
+except ImportError:
+    from organizer_preview_report_integration import build_report_preview_manifest
+
+try:
     from .i18n import (
         DEFAULT_LANGUAGE,
         get_language,
@@ -132,7 +137,7 @@ except Exception:
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.62"
+VERSION = "0.4.62-r04"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -4331,6 +4336,29 @@ def write_report(
     fh6_instance_json = json.dumps(
         fh6_instance_payload, ensure_ascii=False, separators=(",", ":")
     ).replace("<", "\\u003c")
+
+    # v0.4.62-r01 — 3Dプレビュー（実験）
+    # 通常のレポート生成を優先し、Viewer連携の準備に失敗してもHTML/Excel生成は継続します。
+    preview_launch_uris: dict[str, str] = {}
+    preview_manifest_path: Optional[Path] = None
+    stats["experimental_3d_preview_enabled"] = False
+    stats.pop("experimental_3d_preview_error", None)
+    if game_root is not None and Path(game_root).exists():
+        try:
+            preview_manifest_path, preview_launch_uris = build_report_preview_manifest(
+                records=records,
+                game_root=game_root,
+                report_path=html_path,
+                fh6_instances=fh6_instance_payload,
+            )
+            stats["experimental_3d_preview_enabled"] = bool(preview_launch_uris)
+            stats["experimental_3d_preview_manifest"] = normpath(preview_manifest_path)
+        except Exception as preview_exc:
+            preview_launch_uris = {}
+            preview_manifest_path = None
+            stats["experimental_3d_preview_enabled"] = False
+            stats["experimental_3d_preview_error"] = f"{type(preview_exc).__name__}: {preview_exc}"
+
     # 仮削除状態は生成したHTML単位で分離します。新しくHTMLを生成すれば別スコープになり、
     # 古い仮削除状態を意図せず引き継ぎません。同じHTMLの再読込ではlocalStorageから復元します。
     fh6_temp_delete_scope = os.urandom(10).hex()
@@ -4422,6 +4450,18 @@ def write_report(
             similar_reason = similar_reason_by_key.get(record_key, "")
             exact_duplicate_count = exact_duplicate_count_by_key.get(record_key, 0)
             exact_duplicate_group = exact_duplicate_group_by_key.get(record_key, "")
+            preview_uri = preview_launch_uris.get(record_key, "")
+            preview_link_html = ""
+            if preview_uri:
+                preview_label = report_text("3Dプレビュー（実験）", "3D Preview (Experimental)")
+                preview_title = report_text(
+                    "研究用Viewerでこのペイントを開きます。事前に研究プロトタイプ側で連携登録が必要です。",
+                    "Open this paint in the research Viewer. Register the research preview bridge first.",
+                )
+                preview_link_html = (
+                    f'<a class="pill preview-3d-link" href="{html.escape(preview_uri, quote=True)}" '
+                    f'title="{html.escape(preview_title, quote=True)}">{html.escape(preview_label)}</a>'
+                )
             similar_badge_label = {
                 "image": "画像一致",
                 "creator-title": "同一作者・同名",
@@ -4496,6 +4536,8 @@ def write_report(
          data-exact-duplicate="{1 if exact_duplicate_count >= 2 else 0}"
          data-exact-duplicate-count="{exact_duplicate_count}"
          data-exact-duplicate-group="{html.escape(exact_duplicate_group)}"
+         data-preview-3d="{1 if preview_uri else 0}"
+         data-preview-uri="{html.escape(preview_uri, quote=True)}"
          data-is-new="0"
          data-tags=""
          data-applied="{html.escape(r.applied_state)}">
@@ -4510,6 +4552,7 @@ def write_report(
       </span>
       <span class="fh6-secondary-badges">
         <span class="pill new-badge hidden">新規</span>
+        {preview_link_html}
         <button class="pill flag-toggle favorite-toggle compact-optional-flags" type="button">☆ お気に入り</button>
         <button class="pill flag-toggle review-toggle compact-optional-flags" type="button">後で確認</button>
         {f'<button class="pill exact-duplicate open-exact-duplicate" type="button" title="再DL重複グループを比較して残す1件を選択">再DL重複 {exact_duplicate_count}件</button>' if exact_duplicate_count >= 2 else ''}
@@ -5405,6 +5448,16 @@ body.creator-sort-mode #creatorGroupedSections {{
 .pill.similar {{
   border-color:color-mix(in srgb, #d97706 45%, transparent);
   background:color-mix(in srgb, #d97706 13%, Canvas);
+}}
+.pill.preview-3d-link {{
+  text-decoration:none;
+  border-color:color-mix(in srgb, var(--accent) 52%, transparent);
+  background:color-mix(in srgb, var(--accent) 14%, Canvas);
+  font-weight:750;
+}}
+.pill.preview-3d-link:hover {{
+  text-decoration:none;
+  background:color-mix(in srgb, var(--accent) 22%, Canvas);
 }}
 .pill.my-design-index {{
   display:none;
@@ -11058,6 +11111,7 @@ body.dark-theme .creator-color-palette {{
       <p><b class="fh6-foot-label">重複と仮削除</b>完全一致の再ダウンロードも別ペイントとして表示し、FH6 本体の実スロット位置を維持します。FH6 で削除したデザインをカードの <b>FH6で削除済み</b> で一時的に非表示にすると、残りの実スロット番号と FH6 位置をその場で詰め直します。上部の <b>FH6削除済み（仮）</b> から、1 件ずつまたは全件を復元できます。仮削除は現在の生成 HTML 専用の localStorage に保存し、新しい HTML には引き継ぎません。再 DL 完全一致は {stats.get("fh6_exact_duplicate_groups", 0)} 組 / {stats.get("fh6_exact_duplicate_cards", 0)} 件（余分 {stats.get("fh6_exact_duplicate_instances", 0)} 件）です。「再DL重複のみ」から直接絞り込めます。</p>
       <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カードの実スロット番号 <b>#603</b> または FH6 位置 <b>#302U</b> をクリックすると、そのデザインを Organizer 全体の FH6 移動対象に設定します。メーカー順・車名順・作成者順などの他の並び順や、類似ペイント比較・再 DL 重複整理画面からも同じ対象を選択できます。選択後は「FH6で選択デザインへ移動」または <b>F</b> キーを実行します。Bridge は対象位置までのカーソル移動だけを補助し、読み込み・選択・削除・確定を行いません。目的の位置へ移動した後、利用者が FH6 で「デザインを読み込み」を実行すると、現在運転しているマシンへそのペイントを適用できます。FH6 で不要なペイントを削除した場合は「FH6で削除済み（仮）」へ反映すると、残りの実スロット番号と FH6 位置を再計算して次の整理へ進めます。</p>
       <p><b class="fh6-foot-label">#001Uへ戻す</b>このオプションを ON にした場合だけ、移動前に <b>ESC → RET</b> を各 1 回、固定順序で送って「マイデザイン」を開き直します。標準待ち時間は <b>ESC 後 500 ms / RET 後 800 ms</b> です。任意のキーコード・キー名・キー順序は指定できず、上キー、文字キー、ファンクションキーなどは送信しません。</p>
+      <p><b class="fh6-foot-label">3Dプレビュー（実験）</b>FH6本体パスを確認できたレポートでは、各カードから研究用3D Viewerを起動できます。この機能は研究段階で、研究プロトタイプ側のPreview Bridgeを事前登録した環境だけで動作します。GameSaveやFH6本体へ書き込みません。</p>
       <p><b class="fh6-foot-label">Bridge連携</b>Navigator Bridge v0.0.28 はシングルインスタンスで動作し、Organizer から Bridge モードで起動した場合は GUI を表示しません。初回だけ Navigator Bridge 側で「連携を登録」を実行し、ブラウザが外部アプリを開く確認を表示した場合は許可してください。Bridge 本体を別フォルダへ移動した場合やファイル名を変更した場合は、移動後の場所から再登録します。Bridge は FH6 の画面内容やゲーム内部のペイント位置・カーソル位置を読み取らず、設定した間隔で固定キー入力を送信します。PC や FH6 の処理負荷で入力が取りこぼされると指定位置からずれる場合があるため、その場合はキー間隔や各待ち時間を長くしてください。</p>
     </div>
   </section>
@@ -11776,6 +11830,8 @@ const REPORT_LABEL_OLDEST = {json.dumps(report_label_oldest, ensure_ascii=False)
 const REPORT_BASELINE_NOT_SET = {json.dumps(report_baseline_not_set, ensure_ascii=False)};
 const REPORT_BASELINE_PREFIX = {json.dumps(report_baseline_prefix, ensure_ascii=False)};
 const REPORT_ITEM_SUFFIX = {json.dumps(report_item_suffix, ensure_ascii=False)};
+const REPORT_PREVIEW_3D_LABEL = {json.dumps(report_text("3Dプレビュー（実験）", "3D Preview (Experimental)"), ensure_ascii=False)};
+const REPORT_PREVIEW_3D_TITLE = {json.dumps(report_text("研究用Viewerでこのペイントを開きます。", "Open this paint in the research Viewer."), ensure_ascii=False)};
 
 function reportRuntimeError(message) {{
   const status = document.getElementById("uiStatus");
@@ -13779,6 +13835,12 @@ function fh6LocationButtonsHtml(card) {{
     <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="${{title}}">${{escapeCompareHtml(location.slotLabel)}}</button>
     <button type="button" class="fh6-location-button" data-fh6-move-target-instance="${{escapeCompareHtml(location.instanceId)}}" aria-pressed="${{pressed}}" title="${{title}}">${{escapeCompareHtml(location.position)}}</button>
   </div>`;
+}}
+
+function preview3dLinkHtml(card) {{
+  const uri = String(card?.dataset.previewUri || "").trim();
+  if (!uri) return "";
+  return `<a class="pill preview-3d-link" href="${{escapeCompareHtml(uri)}}" title="${{escapeCompareHtml(REPORT_PREVIEW_3D_TITLE)}}">${{escapeCompareHtml(REPORT_PREVIEW_3D_LABEL)}}</a>`;
 }}
 
 // =======================================================================
@@ -17194,6 +17256,7 @@ function renderCompareMembers(members, options = {{}}) {{
     const locationHtml = fh6LocationButtonsHtml(member);
     const decisionButtonsHtml = compareDecisionButtonsHtml(member);
     const tempDeleteHtml = fh6CompareTempDeleteButtonHtml(member);
+    const preview3dHtml = preview3dLinkHtml(member);
     item.innerHTML=`
       ${{img?`<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src")||"")}}" alt="">`:""}}
       ${{badges ? `<div class="compare-badges">${{badges}}</div>` : ""}}
@@ -17212,6 +17275,7 @@ function renderCompareMembers(members, options = {{}}) {{
       ${{decisionButtonsHtml}}
       <div class="compare-item-actions">
         <button type="button" data-compare-toggle="${{escapeCompareHtml(member.dataset.key)}}">${{selectedKeys.has(member.dataset.key)?"選択解除":"選択"}}</button>
+        ${{preview3dHtml}}
         ${{tempDeleteHtml}}
       </div>`;
     grid.appendChild(item);
@@ -17343,6 +17407,7 @@ function renderExactDuplicateModal(groupId) {{
     item.classList.toggle("is-keeper", state === "keep");
     const locationHtml = fh6LocationButtonsHtml(member);
     const tempDeleteHtml = fh6CompareTempDeleteButtonHtml(member);
+    const preview3dHtml = preview3dLinkHtml(member);
     const vinyl = Number(member.dataset.vinylCount);
     item.innerHTML = `
       ${{img ? `<img loading="lazy" decoding="async" src="${{escapeCompareHtml(img.getAttribute("src") || "")}}" alt="">` : ""}}
@@ -17360,6 +17425,7 @@ function renderExactDuplicateModal(groupId) {{
       </dl>
       <div class="compare-item-actions">
         <button class="keeper-action" type="button" data-exact-duplicate-keeper="${{escapeCompareHtml(member.dataset.key || "")}}">${{state === "keep" ? "この1件を残しています" : "これを残す"}}</button>
+        ${{preview3dHtml}}
         ${{tempDeleteHtml}}
       </div>`;
     grid.appendChild(item);
