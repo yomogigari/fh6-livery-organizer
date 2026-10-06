@@ -43,7 +43,7 @@ DEFAULT_METADATA_URL = (
 DEFAULT_MANIFEST_URL = (
     "https://raw.githubusercontent.com/yomogigari/"
     "fh6-livery-organizer/main/src/organizer/"
-    "fh6-vehicle-metadata-manifest.json"
+    "fh6-vehicle-metadata-manifest-current.json"
 )
 
 DEFAULT_TIMEOUT_SECONDS = 10.0
@@ -199,18 +199,51 @@ def validate_vehicle_metadata_curation(
     }
 
 
-def _require_iso_date(value: object, *, label: str) -> str:
+def _require_source_updated(value: object, *, label: str) -> str:
     if not isinstance(value, str):
-        raise VehicleMetadataUpdateError(f"{label}: expected YYYY-MM-DD")
+        raise VehicleMetadataUpdateError(
+            f"{label}: expected YYYY-MM or YYYY-MM-DD"
+        )
+    if re.fullmatch(r"\d{4}-\d{2}", value):
+        year, month = (int(part) for part in value.split("-"))
+        if 1 <= year <= 9999 and 1 <= month <= 12:
+            return value
+        raise VehicleMetadataUpdateError(
+            f"{label}: expected YYYY-MM or YYYY-MM-DD"
+        )
     try:
         parsed = date.fromisoformat(value)
     except ValueError as exc:
         raise VehicleMetadataUpdateError(
-            f"{label}: expected YYYY-MM-DD"
+            f"{label}: expected YYYY-MM or YYYY-MM-DD"
         ) from exc
     if parsed.isoformat() != value:
-        raise VehicleMetadataUpdateError(f"{label}: expected YYYY-MM-DD")
+        raise VehicleMetadataUpdateError(
+            f"{label}: expected YYYY-MM or YYYY-MM-DD"
+        )
     return value
+
+
+def _source_updated_parts(value: str) -> tuple[int, int, int | None]:
+    checked = _require_source_updated(value, label="source.updated")
+    parts = [int(part) for part in checked.split("-")]
+    return parts[0], parts[1], parts[2] if len(parts) == 3 else None
+
+
+def _compare_source_updated(left: str, right: str) -> int:
+    left_year, left_month, left_day = _source_updated_parts(left)
+    right_year, right_month, right_day = _source_updated_parts(right)
+    left_month_key = (left_year, left_month)
+    right_month_key = (right_year, right_month)
+    if left_month_key < right_month_key:
+        return -1
+    if left_month_key > right_month_key:
+        return 1
+    # A month-only source does not claim an artificial day.  When precision is
+    # mixed inside the same month, neither side is ordered ahead of the other.
+    if left_day is None or right_day is None:
+        return 0
+    return (left_day > right_day) - (left_day < right_day)
 
 
 def _metadata_records_fingerprint(records: dict[str, Any]) -> str:
@@ -271,7 +304,7 @@ def inspect_local_metadata(path: Path) -> dict[str, Any]:
         payload.get("package_revision"),
         label="local metadata",
     )
-    source_updated = _require_iso_date(
+    source_updated = _require_source_updated(
         source.get("updated"),
         label="local metadata source.updated",
     )
@@ -376,7 +409,7 @@ def validate_manifest_bytes(data: bytes) -> dict[str, Any]:
         metadata.get("package_revision"),
         label="manifest metadata",
     )
-    source_updated = _require_iso_date(
+    source_updated = _require_source_updated(
         metadata.get("source_updated"),
         label="manifest metadata.source_updated",
     )
@@ -508,7 +541,7 @@ def inspect_metadata_bytes(data: bytes, *, label: str = "metadata") -> dict[str,
         payload.get("package_revision"),
         label=label,
     )
-    source_updated = _require_iso_date(
+    source_updated = _require_source_updated(
         source.get("updated"),
         label=f"{label} source.updated",
     )
@@ -1073,12 +1106,11 @@ def select_runtime_vehicle_metadata_path(
                 return cache
             return bundled
 
-        cache_date = date.fromisoformat(cache_state["source_updated"])
-        bundled_date = date.fromisoformat(
-            bundled_state["source_updated"]
+        source_order = _compare_source_updated(
+            cache_state["source_updated"],
+            bundled_state["source_updated"],
         )
-
-        if cache_date <= bundled_date:
+        if source_order <= 0:
             return bundled
 
         return cache
@@ -1226,23 +1258,32 @@ def compare_local_metadata_with_manifest(
             **common,
         )
 
-    local_date = date.fromisoformat(local_state["source_updated"])
-    remote_date = date.fromisoformat(manifest_state["source_updated"])
-
-    if remote_date > local_date:
+    source_order = _compare_source_updated(
+        manifest_state["source_updated"],
+        local_state["source_updated"],
+    )
+    if source_order > 0:
         return VehicleMetadataUpdateResult(
             STATUS_UPDATE_AVAILABLE,
             **common,
         )
-    if remote_date < local_date:
+    if source_order < 0:
         return VehicleMetadataUpdateResult(
             STATUS_REMOTE_OLDER,
             **common,
         )
 
+    same_period = (
+        len(local_state["source_updated"]) != 10
+        or len(manifest_state["source_updated"]) != 10
+    )
     return VehicleMetadataUpdateResult(
         STATUS_REVIEW_REQUIRED,
-        detail="same source date but metadata file SHA-256 differs",
+        detail=(
+            "same source period but metadata file SHA-256 differs"
+            if same_period
+            else "same source date but metadata file SHA-256 differs"
+        ),
         **common,
     )
 

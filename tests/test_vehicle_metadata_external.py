@@ -1,4 +1,4 @@
-# Locks the bundled vehicle metadata to the human-reviewed Series 5 mapping.
+# Locks the bundled vehicle metadata to the human-reviewed October 2026 mapping.
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 METADATA_PATH = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata.json"
 ORGANIZER_PATH = REPO_ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
 
-EXPECTED_RECORD_COUNT = 647
-EXPECTED_MAPPING_SHA256 = "b7063310d800b9de3be27b11f7b10f231822cd7f4c768a156c6fe2f657a73b5d"
+EXPECTED_RECORD_COUNT = 657
+EXPECTED_MAPPING_SHA256 = "0d4b201f4949e34407f32af073bc9245413ca858d6e515948178dafe3c1c7a6c"
 EXPECTED_SOURCE_URL = 'https://forza.net/fh6cars'
-EXPECTED_SOURCE_UPDATED = '2026-09-08'
+EXPECTED_SOURCE_UPDATED = '2026-10'
 
 
 def _payload() -> dict:
@@ -43,8 +43,8 @@ def test_vehicle_metadata_baseline_equivalence():
     payload = _payload()
     assert payload["schema_version"] == 1
     assert payload["dataset"] == "fh6-official-vehicle-metadata"
-    assert payload["package_revision"] == 2
-    assert payload["generated_from"] == "Vehicle DB Generator for FH6 v0.6.2"
+    assert payload["package_revision"] == 3
+    assert payload["generated_from"] == "Vehicle DB Generator for FH6 0.6.3"
     assert payload["source"]["name"] == "Forza official car list"
     assert payload["source"]["url"] == EXPECTED_SOURCE_URL
     assert payload["source"]["updated"] == EXPECTED_SOURCE_UPDATED

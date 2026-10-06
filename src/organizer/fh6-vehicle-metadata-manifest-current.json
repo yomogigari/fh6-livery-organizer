@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "dataset": "fh6-vehicle-metadata-manifest",
+  "metadata": {
+    "dataset": "fh6-official-vehicle-metadata",
+    "schema_version": 1,
+    "package_revision": 3,
+    "source_updated": "2026-10",
+    "record_count": 657,
+    "records_sha256": "0d4b201f4949e34407f32af073bc9245413ca858d6e515948178dafe3c1c7a6c",
+    "file_sha256": "4e91c455243043ceecf6b2b12e74692eda216dc3e6bb64776cc08af774b05b1c",
+    "file_size": 99262,
+    "generated_from": "Vehicle DB Generator for FH6 0.6.3",
+    "curation": {
+      "in_game_vehicle_name_overrides": {
+        "record_count": 1,
+        "records_sha256": "37b01e0da16e3ef88188e01f4cceb634eede87ad35afe444f703de6aad9e64be",
+        "scope": "display_name",
+        "basis": "FH6 in-game vehicle UI"
+      }
+    },
+    "url": "https://raw.githubusercontent.com/yomogigari/fh6-livery-organizer/main/src/organizer/fh6-vehicle-metadata.json"
+  },
+  "compatibility": {
+    "metadata_schema_version": 1
+  },
+  "update_policy": {
+    "mode": "optional"
+  }
+}

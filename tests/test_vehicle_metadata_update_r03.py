@@ -13,7 +13,7 @@ import unittest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = REPO_ROOT / "src" / "organizer" / "vehicle-metadata-update.py"
 BUNDLED_METADATA = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata.json"
-BUNDLED_MANIFEST = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata-manifest.json"
+BUNDLED_MANIFEST = REPO_ROOT / "src" / "organizer" / "fh6-vehicle-metadata-manifest-current.json"
 
 spec = importlib.util.spec_from_file_location("vehicle_metadata_update_r03_target", MODULE_PATH)
 assert spec and spec.loader
@@ -77,8 +77,8 @@ class PackageRevisionTests(unittest.TestCase):
         manifest = BUNDLED_MANIFEST.read_bytes()
         metadata_state = mod.inspect_metadata_bytes(metadata, label="bundled metadata")
         manifest_state = mod.validate_manifest_bytes(manifest)
-        self.assertEqual(metadata_state["package_revision"], 2)
-        self.assertEqual(manifest_state["package_revision"], 2)
+        self.assertEqual(metadata_state["package_revision"], 3)
+        self.assertEqual(manifest_state["package_revision"], 3)
         mod.validate_metadata_bytes_against_manifest(metadata, manifest_state)
 
     def test_same_source_date_higher_package_revision_is_update(self) -> None:

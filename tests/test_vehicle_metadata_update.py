@@ -314,7 +314,7 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
             mod.DEFAULT_MANIFEST_URL,
             "https://raw.githubusercontent.com/yomogigari/"
             "fh6-livery-organizer/main/src/organizer/"
-            "fh6-vehicle-metadata-manifest.json",
+            "fh6-vehicle-metadata-manifest-current.json",
         )
         self.assertTrue(mod._is_https_url(mod.DEFAULT_MANIFEST_URL))
         self.assertTrue(mod._is_https_url(mod.DEFAULT_METADATA_URL))
@@ -393,7 +393,7 @@ class VehicleMetadataUpdateTests(unittest.TestCase):
     def test_repository_manifest_matches_local_metadata(self) -> None:
         metadata_path = HERE / "src" / "organizer" / "fh6-vehicle-metadata.json"
         manifest_path = (
-            HERE / "src" / "organizer" / "fh6-vehicle-metadata-manifest.json"
+            HERE / "src" / "organizer" / "fh6-vehicle-metadata-manifest-current.json"
         )
         manifest_bytes = manifest_path.read_bytes()
         state = mod.validate_manifest_bytes(manifest_bytes)

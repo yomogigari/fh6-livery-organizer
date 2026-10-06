@@ -19,7 +19,7 @@
         "basis": "FH6 in-game vehicle UI"
       }
     },
-    "url": "https://raw.githubusercontent.com/yomogigari/fh6-livery-organizer/main/src/organizer/fh6-vehicle-metadata.json"
+    "url": "https://raw.githubusercontent.com/yomogigari/fh6-livery-organizer/main/src/organizer/fh6-vehicle-metadata-rev2.json"
   },
   "compatibility": {
     "metadata_schema_version": 1

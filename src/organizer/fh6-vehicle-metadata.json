@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "dataset": "fh6-official-vehicle-metadata",
-  "package_revision": 2,
+  "package_revision": 3,
   "source": {
     "name": "Forza official car list",
     "url": "https://forza.net/fh6cars",
-    "updated": "2026-09-08"
+    "updated": "2026-10"
   },
-  "generated_from": "Vehicle DB Generator for FH6 v0.6.2",
+  "generated_from": "Vehicle DB Generator for FH6 0.6.3",
   "records": {
     "247": {
       "year": 1969,
@@ -204,8 +204,8 @@
     "335": {
       "year": 2002,
       "make": "Lotus",
-      "model": "Esprit",
-      "display_name": "2002 Lotus Esprit"
+      "model": "Esprit V8",
+      "display_name": "2002 Lotus Esprit V8"
     },
     "336": {
       "year": 1961,
@@ -392,6 +392,12 @@
       "make": "Honda",
       "model": "S2000",
       "display_name": "2003 Honda S2000"
+    },
+    "432": {
+      "year": 2004,
+      "make": "Saleen",
+      "model": "S7",
+      "display_name": "2004 Saleen S7"
     },
     "433": {
       "year": 2005,
@@ -1107,6 +1113,12 @@
       "model": "C 63 AMG Coupé Black Series",
       "display_name": "2012 Mercedes-Benz C 63 AMG Coupé Black Series"
     },
+    "1511": {
+      "year": 1968,
+      "make": "Holden",
+      "model": "Monaro GTS 327",
+      "display_name": "1968 Holden Monaro GTS 327"
+    },
     "1513": {
       "year": 1997,
       "make": "Maserati",
@@ -1466,6 +1478,12 @@
       "make": "BMW",
       "model": "M4 Coupé",
       "display_name": "2014 BMW M4 Coupé"
+    },
+    "2157": {
+      "year": 1970,
+      "make": "Citroën",
+      "model": "2CV",
+      "display_name": "1970 Citroën 2CV"
     },
     "2161": {
       "year": 1965,
@@ -2007,6 +2025,12 @@
       "model": "#11 Tomica Skyline Turbo Super Silhouette",
       "display_name": "1983 Nissan #11 Tomica Skyline Turbo Super Silhouette"
     },
+    "2817": {
+      "year": 2000,
+      "make": "Honda",
+      "model": "Prelude Type SH",
+      "display_name": "2000 Honda Prelude Type SH"
+    },
     "2822": {
       "year": 1985,
       "make": "Nissan",
@@ -2205,6 +2229,12 @@
       "model": "MC12 Versione Corsa",
       "display_name": "2008 Maserati MC12 Versione Corsa"
     },
+    "3085": {
+      "year": 2018,
+      "make": "DeBerti",
+      "model": "Ford Mustang GT",
+      "display_name": "2018 DeBerti Ford Mustang GT"
+    },
     "3087": {
       "year": 2014,
       "make": "McLaren",
@@ -2280,8 +2310,8 @@
     "3132": {
       "year": 2018,
       "make": "MINI",
-      "model": "X-raid John Cooper Works Buggy",
-      "display_name": "2018 MINI X-raid John Cooper Works Buggy"
+      "model": "X-Raid John Cooper Works Buggy",
+      "display_name": "2018 MINI X-Raid John Cooper Works Buggy"
     },
     "3134": {
       "year": 2018,
@@ -2805,6 +2835,12 @@
       "model": "K-10 Custom",
       "display_name": "1972 Chevrolet K-10 Custom"
     },
+    "3593": {
+      "year": 2024,
+      "make": "Ferrari",
+      "model": "Purosangue",
+      "display_name": "2024 Ferrari Purosangue"
+    },
     "3594": {
       "year": 2020,
       "make": "Ferrari",
@@ -3243,6 +3279,12 @@
       "model": "N Vision 74",
       "display_name": "2022 Hyundai N Vision 74"
     },
+    "3839": {
+      "year": 2024,
+      "make": "Mercedes-AMG",
+      "model": "GT 63 4Matic+",
+      "display_name": "2024 Mercedes-AMG GT 63 4Matic+"
+    },
     "3840": {
       "year": 2022,
       "make": "Lamborghini",
@@ -3308,6 +3350,12 @@
       "make": "Nissan",
       "model": "Be-1",
       "display_name": "1987 Nissan Be-1"
+    },
+    "3857": {
+      "year": 1990,
+      "make": "Eunos",
+      "model": "Cosmos",
+      "display_name": "1990 Eunos Cosmos"
     },
     "3858": {
       "year": 1997,
@@ -3585,6 +3633,12 @@
       "model": "Skyline GT-R 40th Anniversary",
       "display_name": "1998 Nissan Skyline GT-R 40th Anniversary"
     },
+    "4122": {
+      "year": 2025,
+      "make": "BMW",
+      "model": "M4 CS",
+      "display_name": "2025 BMW M4 CS"
+    },
     "4144": {
       "year": 1992,
       "make": "Mazda",
@@ -3686,6 +3740,12 @@
       "make": "Nissan",
       "model": "#12 Skyline GT-R (BNR32 Gr.A) JTC",
       "display_name": "1990 Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC"
+    },
+    "4188": {
+      "year": 1972,
+      "make": "Datsun",
+      "model": "240Z #5 Rallye",
+      "display_name": "1972 Datsun 240Z #5 Rallye"
     },
     "4197": {
       "year": 1994,
