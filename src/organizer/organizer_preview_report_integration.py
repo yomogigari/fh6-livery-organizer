@@ -13,6 +13,7 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from organizer_preview_database import resolve_database_path
 from organizer_preview_handoff import (
     build_launch_uri,
     build_manifest,
@@ -80,13 +81,12 @@ def _instance_by_ui_key(instances: Iterable[Mapping[str, Any]]) -> dict[str, Map
 
 
 def resolve_preview_game_folder(game_root: str | Path) -> Path:
-    """Return the FH6 asset root expected by the research Preview Bridge.
+    """Return the FH6 asset root expected by the Preview Bridge.
 
-    Organizer's normal vehicle-asset scan may receive the installation root
-    (for example an installation root ending in ``Forza Horizon 6``), while the Preview Viewer resolves
-    ``media/livery/Vinyls.zip`` relative to the asset root under ``Content``.
-    Preserve an already-resolved Content path and only descend once when the
-    installation root actually contains a Content directory.
+    Preserve an already-resolved ``Content`` path.  When Organizer receives the
+    installation root, descend into its existing ``Content`` directory exactly
+    once.  If neither condition applies, keep the caller-provided root so the
+    existing fail-soft behavior remains unchanged.
     """
 
     root = Path(game_root).resolve()
@@ -107,6 +107,10 @@ def build_report_preview_manifest(
     preview_output_root: str | Path | None = None,
     fh6_instances: Iterable[Mapping[str, Any]] = (),
     quality: str = "4",
+    database_path: str | Path | None = None,
+    gamedb_car_body_ids: Mapping[int, int] | None = None,
+    wheel_placement: str = "gamedb",
+    resolve_saved_database: bool = True,
 ) -> tuple[Path, dict[str, str]]:
     """Write one preview manifest and return launch URIs indexed by Organizer UI key.
 
@@ -130,6 +134,13 @@ def build_report_preview_manifest(
         if preview_output_root is not None
         else report.parent / DEFAULT_CACHE_DIR_NAME
     )
+
+    resolved_database = None
+    if database_path not in (None, ""):
+        resolved_database = resolve_database_path(database_path)
+    elif resolve_saved_database:
+        resolved_database = resolve_database_path()
+    effective_database_path = resolved_database.path if resolved_database is not None else None
 
     instance_map = _instance_by_ui_key(fh6_instances)
     request_records: list[dict[str, Any]] = []
@@ -158,6 +169,8 @@ def build_report_preview_manifest(
             list_name="Livery Organizer for FH6 report",
             output_key=key,
             quality=quality,
+            gamedb_car_body_id=(gamedb_car_body_ids or {}).get(car_id),
+            wheel_placement=wheel_placement,
         )
         request_records.append(request)
         ui_to_record_id[key] = request["record_id"]
@@ -167,6 +180,8 @@ def build_report_preview_manifest(
         records=request_records,
         report_path=report,
         output_root=cache_root,
+        database=effective_database_path,
+        wheel_placement=wheel_placement,
     )
     write_manifest(destination, manifest)
 

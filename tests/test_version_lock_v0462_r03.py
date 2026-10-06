@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
 PYPROJECT = ROOT / "pyproject.toml"
 UV_LOCK = ROOT / "uv.lock"
-EXPECTED = "0.4.62-r04"
+EXPECTED = "0.4.62-r05"
 
 
 class VersionLockR03Tests(unittest.TestCase):

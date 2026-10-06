@@ -10,6 +10,7 @@ URI_SCHEME = "liveryorganizerpreviewforfh6"
 URI_HOST = "open"
 MANIFEST_FORMAT = "lo4fh6_organizer_preview_manifest_v1"
 REQUEST_FORMAT = "lo4fh6_organizer_preview_request_v2"
+DEFAULT_WHEEL_PLACEMENT = "gamedb"
 
 
 def _text(value: Any) -> str:
@@ -39,10 +40,18 @@ def request_record(
     list_name: str = "",
     output_key: str = "",
     quality: str = "4",
+    gamedb_car_body_id: int | None = None,
+    wheel_placement: str = DEFAULT_WHEEL_PLACEMENT,
 ) -> dict[str, Any]:
     source_path = str(Path(source))
     resolved_record_id = stable_record_id(source=source_path, car_id=car_id, explicit=record_id)
     stable_output_key = _text(output_key) or resolved_record_id
+    placement = (_text(wheel_placement) or DEFAULT_WHEEL_PLACEMENT).casefold()
+    if placement not in {"gamedb", "carbin"}:
+        raise ValueError(f"Unsupported wheel placement: {wheel_placement}")
+    viewer: dict[str, Any] = {"quality": _text(quality) or "4", "wheel_placement": placement}
+    if gamedb_car_body_id not in (None, ""):
+        viewer["gamedb_car_body_id"] = int(gamedb_car_body_id)
     return {
         "record_id": resolved_record_id,
         "source": {"path": source_path},
@@ -62,7 +71,7 @@ def request_record(
             "list_name": _text(list_name),
             "output_key": stable_output_key,
         },
-        "viewer": {"quality": _text(quality) or "4"},
+        "viewer": viewer,
     }
 
 
@@ -72,6 +81,8 @@ def build_manifest(
     records: Iterable[dict[str, Any]],
     report_path: str | Path | None = None,
     output_root: str | Path | None = None,
+    database: str | Path | None = None,
+    wheel_placement: str = DEFAULT_WHEEL_PLACEMENT,
 ) -> dict[str, Any]:
     normalized_records: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -83,15 +94,22 @@ def build_manifest(
             raise ValueError(f"Duplicate preview record_id: {record_id}")
         seen.add(record_id)
         normalized_records.append(record)
+    placement = (_text(wheel_placement) or DEFAULT_WHEEL_PLACEMENT).casefold()
+    if placement not in {"gamedb", "carbin"}:
+        raise ValueError(f"Unsupported wheel placement: {wheel_placement}")
+    environment: dict[str, Any] = {"game_folder": str(Path(game_folder))}
+    if database not in (None, ""):
+        environment["database"] = str(Path(database))
     manifest: dict[str, Any] = {
         "format": MANIFEST_FORMAT,
-        "environment": {"game_folder": str(Path(game_folder))},
+        "environment": environment,
         "records": normalized_records,
+        "preview": {"wheel_placement": placement},
     }
     if report_path:
         manifest["report"] = {"path": str(Path(report_path))}
     if output_root:
-        manifest["preview"] = {"output_root": str(Path(output_root))}
+        manifest["preview"]["output_root"] = str(Path(output_root))
     return manifest
 
 
@@ -128,15 +146,29 @@ def request_from_manifest(path: str | Path, record_id: str) -> tuple[dict[str, A
         display = record.get("display") if isinstance(record.get("display"), dict) else {}
         organizer = record.get("organizer") if isinstance(record.get("organizer"), dict) else {}
         viewer = record.get("viewer") if isinstance(record.get("viewer"), dict) else {}
+        preview = manifest.get("preview") if isinstance(manifest.get("preview"), dict) else {}
+        environment = manifest.get("environment") if isinstance(manifest.get("environment"), dict) else {}
+        placement = (_text(viewer.get("wheel_placement")) or _text(preview.get("wheel_placement")) or DEFAULT_WHEEL_PLACEMENT).casefold()
+        if placement not in {"gamedb", "carbin"}:
+            raise ValueError(f"Unsupported wheel placement in manifest: {placement}")
+        request_environment: dict[str, Any] = {
+            "game_folder": _text(environment.get("game_folder")),
+        }
+        if _text(environment.get("database")):
+            request_environment["database"] = _text(environment.get("database"))
         request = {
             "format": REQUEST_FORMAT,
             "source": {"path": _text(source.get("path"))},
-            "environment": {"game_folder": _text(manifest["environment"].get("game_folder"))},
+            "environment": request_environment,
             "vehicle": {
                 "car_id": int(vehicle.get("car_id")),
                 "vehicle_name": _text(vehicle.get("vehicle_name")),
             },
-            "viewer": {"quality": _text(viewer.get("quality")) or "4"},
+            "viewer": {
+                "quality": _text(viewer.get("quality")) or "4",
+                "wheel_placement": placement,
+                **({"gamedb_car_body_id": int(viewer["gamedb_car_body_id"])} if viewer.get("gamedb_car_body_id") not in (None, "") else {}),
+            },
             "display": {
                 "title": _text(display.get("title")),
                 "creator_name": _text(display.get("creator_name")),
