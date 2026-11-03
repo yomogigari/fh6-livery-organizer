@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "dataset": "fh6-official-vehicle-metadata",
-  "package_revision": 3,
+  "package_revision": 4,
   "source": {
     "name": "Forza official car list",
     "url": "https://forza.net/fh6cars",
-    "updated": "2026-10"
+    "updated": "2026-11"
   },
   "generated_from": "Vehicle DB Generator for FH6 0.6.3",
   "records": {
@@ -915,6 +915,12 @@
       "model": "WRX STI",
       "display_name": "2011 Subaru WRX STI"
     },
+    "1325": {
+      "year": 2011,
+      "make": "Alfa Romeo",
+      "model": "Giulietta Quadrifoglio Verde",
+      "display_name": "2011 Alfa Romeo Giulietta Quadrifoglio Verde"
+    },
     "1330": {
       "year": 1970,
       "make": "Chevrolet",
@@ -1749,6 +1755,12 @@
       "model": "RXC Turbo",
       "display_name": "2015 Radical RXC Turbo"
     },
+    "2487": {
+      "year": 2016,
+      "make": "Honda",
+      "model": "S660 Alpha",
+      "display_name": "2016 Honda S660 Alpha"
+    },
     "2489": {
       "year": 2016,
       "make": "Abarth",
@@ -2229,6 +2241,12 @@
       "model": "MC12 Versione Corsa",
       "display_name": "2008 Maserati MC12 Versione Corsa"
     },
+    "3084": {
+      "year": 1966,
+      "make": "Hillman",
+      "model": "Imp",
+      "display_name": "1966 Hillman Imp"
+    },
     "3085": {
       "year": 2018,
       "make": "DeBerti",
@@ -2396,6 +2414,12 @@
       "make": "Ford",
       "model": "F-150 SVT Lightning",
       "display_name": "2003 Ford F-150 SVT Lightning"
+    },
+    "3191": {
+      "year": 1973,
+      "make": "Lamborghini",
+      "model": "Espada 400 GT",
+      "display_name": "1973 Lamborghini Espada 400 GT"
     },
     "3198": {
       "year": 1984,
@@ -3354,8 +3378,8 @@
     "3857": {
       "year": 1990,
       "make": "Eunos",
-      "model": "Cosmos",
-      "display_name": "1990 Eunos Cosmos"
+      "model": "Cosmo",
+      "display_name": "1990 Eunos Cosmo"
     },
     "3858": {
       "year": 1997,
@@ -3525,6 +3549,12 @@
       "model": "Prius Prime XSE Premium",
       "display_name": "2024 Toyota Prius Prime XSE Premium"
     },
+    "3978": {
+      "year": 1987,
+      "make": "Fiat",
+      "model": "Panda",
+      "display_name": "1987 Fiat Panda"
+    },
     "3980": {
       "year": 1998,
       "make": "Renault",
@@ -3602,6 +3632,12 @@
       "make": "Mitsubishi",
       "model": "#269 Attacking the Clock Racing Minicab Time Attack",
       "display_name": "1990 Mitsubishi #269 Attacking the Clock Racing Minicab Time Attack"
+    },
+    "4086": {
+      "year": 2025,
+      "make": "Porsche",
+      "model": "Macan GTS",
+      "display_name": "2025 Porsche Macan GTS"
     },
     "4090": {
       "year": 2001,
@@ -3740,6 +3776,12 @@
       "make": "Nissan",
       "model": "#12 Skyline GT-R (BNR32 Gr.A) JTC",
       "display_name": "1990 Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC"
+    },
+    "4181": {
+      "year": 1983,
+      "make": "Nissan",
+      "model": "240RS",
+      "display_name": "1983 Nissan 240RS"
     },
     "4188": {
       "year": 1972,
@@ -3903,6 +3945,12 @@
       "model": "F-150 Raptor R Welcome Pack",
       "display_name": "2023 Ford F-150 Raptor R Welcome Pack"
     },
+    "4270": {
+      "year": 2025,
+      "make": "Ford",
+      "model": "Mustang GTD",
+      "display_name": "2025 Ford Mustang GTD"
+    },
     "4277": {
       "year": 1992,
       "make": "Honda",
@@ -3915,11 +3963,23 @@
       "model": "Land Cruiser",
       "display_name": "2025 Toyota Land Cruiser"
     },
+    "4282": {
+      "year": 2025,
+      "make": "Volkswagen",
+      "model": "Electric Buzz",
+      "display_name": "2025 Volkswagen Electric Buzz"
+    },
     "4287": {
       "year": 1994,
       "make": "Subaru",
       "model": "Vivio RX-R Forza Edition",
       "display_name": "1994 Subaru Vivio RX-R Forza Edition"
+    },
+    "4311": {
+      "year": 2025,
+      "make": "Citroën",
+      "model": "Ami",
+      "display_name": "2025 Citroën Ami"
     },
     "4313": {
       "year": 1970,

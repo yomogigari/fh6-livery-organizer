@@ -39,15 +39,15 @@ def _state(updated: str, sha: str) -> dict[str, object]:
 class MonthPrecisionTests(unittest.TestCase):
     def test_bundled_metadata_accepts_month_precision(self) -> None:
         state = mod.inspect_local_metadata(METADATA)
-        self.assertEqual(state["source_updated"], "2026-10")
-        self.assertEqual(state["package_revision"], 3)
-        self.assertEqual(state["record_count"], 657)
+        self.assertEqual(state["source_updated"], "2026-11")
+        self.assertEqual(state["package_revision"], 4)
+        self.assertEqual(state["record_count"], 667)
 
     def test_current_manifest_accepts_month_precision(self) -> None:
         state = mod.validate_manifest_bytes(CURRENT_MANIFEST.read_bytes())
-        self.assertEqual(state["source_updated"], "2026-10")
-        self.assertEqual(state["package_revision"], 3)
-        self.assertEqual(state["record_count"], 657)
+        self.assertEqual(state["source_updated"], "2026-11")
+        self.assertEqual(state["package_revision"], 4)
+        self.assertEqual(state["record_count"], 667)
 
     def test_invalid_month_is_rejected(self) -> None:
         payload = json.loads(METADATA.read_text(encoding="utf-8"))

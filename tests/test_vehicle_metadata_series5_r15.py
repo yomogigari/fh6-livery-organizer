@@ -31,17 +31,17 @@ def test_current_metadata_package_identity() -> None:
     metadata = _load(METADATA)
     manifest = _load(MANIFEST)
 
-    assert metadata["package_revision"] == 3
-    assert metadata["source"]["updated"] == "2026-10"
+    assert metadata["package_revision"] == 4
+    assert metadata["source"]["updated"] == "2026-11"
     assert metadata["generated_from"] == "Vehicle DB Generator for FH6 0.6.3"
-    assert len(metadata["records"]) == 657
+    assert len(metadata["records"]) == 667
 
     manifest_metadata = manifest["metadata"]
-    assert manifest_metadata["package_revision"] == 3
-    assert manifest_metadata["source_updated"] == "2026-10"
-    assert manifest_metadata["record_count"] == 657
+    assert manifest_metadata["package_revision"] == 4
+    assert manifest_metadata["source_updated"] == "2026-11"
+    assert manifest_metadata["record_count"] == 667
     assert manifest_metadata["records_sha256"] == (
-        "0d4b201f4949e34407f32af073bc9245413ca858d6e515948178dafe3c1c7a6c"
+        "010a1dc08d6284af14e7f125f1e0fd45a36ec6b64886fab76f84637ce6c8bafd"
     )
 
 

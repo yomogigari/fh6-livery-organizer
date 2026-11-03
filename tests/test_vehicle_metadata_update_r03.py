@@ -77,8 +77,8 @@ class PackageRevisionTests(unittest.TestCase):
         manifest = BUNDLED_MANIFEST.read_bytes()
         metadata_state = mod.inspect_metadata_bytes(metadata, label="bundled metadata")
         manifest_state = mod.validate_manifest_bytes(manifest)
-        self.assertEqual(metadata_state["package_revision"], 3)
-        self.assertEqual(manifest_state["package_revision"], 3)
+        self.assertEqual(metadata_state["package_revision"], 4)
+        self.assertEqual(manifest_state["package_revision"], 4)
         mod.validate_metadata_bytes_against_manifest(metadata, manifest_state)
 
     def test_same_source_date_higher_package_revision_is_update(self) -> None:
