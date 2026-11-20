@@ -4,6 +4,7 @@
 # Windows command scripts use CRLF
 *.bat text eol=crlf
 *.cmd text eol=crlf
+*.vbs text eol=crlf
 
 # Binary files
 *.png binary
