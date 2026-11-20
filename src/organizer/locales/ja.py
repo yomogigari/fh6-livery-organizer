@@ -60,6 +60,10 @@ STRINGS = {
 
 # v0.4.58-r03: デスクトップGUI、実行前チェック、サポート情報、実行ログ。
 STRINGS.update({
+    "theme.label": "表示テーマ",
+    "theme.system": "システム設定",
+    "theme.light": "ライト",
+    "theme.dark": "ダーク",
     "language.label": "言語",
     "language.note": "変更は次回起動時に反映されます。",
     "language.saved_title": "言語設定",

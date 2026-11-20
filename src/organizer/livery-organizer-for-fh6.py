@@ -136,6 +136,32 @@ except Exception:
     filedialog = messagebox = ttk = tkfont = None
 
 
+def _load_desktop_suite():
+    """Viewer・Navigator Bridge と共有する設定と見た目の部品（src/viewer/lo4fh6_desktop_suite）を読み込みます。
+
+    通常の実行では src/viewer を検索の最後に足します（Organizer 自身の同名のモジュールを優先するため）。
+    EXE では同梱した部品を読み込みます。見つからない場合は (None, None) を返し、共有せずに従来どおり動きます。
+    """
+    for attempt in range(2):
+        try:
+            from lo4fh6_desktop_suite import settings as suite_settings
+            from lo4fh6_desktop_suite import tk_theme as suite_tk_theme
+            return suite_settings, suite_tk_theme
+        except ImportError:
+            if attempt:
+                return None, None
+            viewer_dir = Path(__file__).resolve().parents[1] / "viewer"
+            if not (viewer_dir / "lo4fh6_desktop_suite" / "__init__.py").is_file():
+                return None, None
+            if str(viewer_dir) not in sys.path:
+                sys.path.append(str(viewer_dir))
+    return None, None
+
+
+SUITE_SETTINGS, SUITE_TK_THEME = _load_desktop_suite()
+THEME_CODES = ("system", "light", "dark")
+
+
 APP_NAME = "Livery Organizer for FH6"
 VERSION = "0.4.62-r05"
 
@@ -999,6 +1025,9 @@ GUI_SMALL_FONT_SIZE = 10
 GUI_MONO_FONT_CANDIDATES = ("Cascadia Mono", "Consolas")
 GUI_MONO_FONT_FAMILY = GUI_MONO_FONT_CANDIDATES[-1]
 GUI_MONO_FONT_SIZE = 11
+# 見出しの大きさ（画面の題名・案内などの子ウィンドウの見出し）
+GUI_TITLE_FONT_SIZE = 18
+GUI_HEADING_FONT_SIZE = 15
 
 
 def _preferred_tk_font_family(root, candidates: tuple[str, ...], fallback: str) -> str:
@@ -1018,8 +1047,16 @@ def _preferred_tk_font_family(root, candidates: tuple[str, ...], fallback: str) 
 def configure_gui_fonts(root) -> None:
     """HTMLへ影響を与えず、Windows 11らしい読みやすいGUIフォントを設定します。"""
     global GUI_FONT_FAMILY, GUI_MONO_FONT_FAMILY
+    global GUI_FONT_SIZE, GUI_SMALL_FONT_SIZE, GUI_MONO_FONT_SIZE, GUI_TITLE_FONT_SIZE, GUI_HEADING_FONT_SIZE
     if tkfont is None:
         return
+    if SUITE_TK_THEME is not None:
+        # Viewer と同じ大きさ（本文 12px ≒ 9 ポイント、見出し 19px ≒ 14 ポイント）
+        GUI_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_BODY
+        GUI_SMALL_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_SMALL
+        GUI_MONO_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_MONO
+        GUI_TITLE_FONT_SIZE = 14
+        GUI_HEADING_FONT_SIZE = 12
 
     try:
         default_family = str(tkfont.nametofont("TkDefaultFont", root=root).actual("family"))
@@ -1062,8 +1099,19 @@ def configure_gui_fonts(root) -> None:
         pass
 
 
+def apply_child_window_theme(win) -> None:
+    """子ウィンドウのタイトルバーを、今のテーマ（ライト・ダーク）に合わせます。"""
+    if SUITE_TK_THEME is None or ACTIVE_GUI_PALETTE is None:
+        return
+    try:
+        SUITE_TK_THEME.apply_title_bar(win, ACTIVE_GUI_PALETTE.get("name") == "dark")
+    except Exception:
+        pass
+
+
 def position_child_window(win, parent, width: int, height: int) -> None:
     """子ウィンドウを画面原点ではなく、親ウィンドウ中央付近へ配置します。"""
+    apply_child_window_theme(win)
     try:
         parent.update_idletasks()
         win.update_idletasks()
@@ -2129,6 +2177,68 @@ def save_settings(settings: dict) -> None:
     }
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
+
+
+# 今の画面の色（apply_gui_theme が設定）。子ウィンドウのタイトルバーに使います。
+ACTIVE_GUI_PALETTE: Optional[dict] = None
+
+
+def load_suite_preferences() -> Optional[dict]:
+    """Viewer・Navigator Bridge と共有する設定を読みます。部品が無い・読めない場合は None。
+
+    読めない（壊れている）共有設定は上書きしないよう、writable を False にします。
+    """
+    if SUITE_SETTINGS is None:
+        return None
+    try:
+        path = SUITE_SETTINGS.settings_path()
+        data = SUITE_SETTINGS.load_settings()
+        return {"exists": path.exists(), "writable": True, "path": path,
+                "ui": dict(data.get("ui") or {}), "paths": dict(data.get("paths") or {})}
+    except Exception as exc:
+        return {"exists": True, "writable": False, "error": str(exc), "ui": {}, "paths": {}}
+
+
+def merge_suite_into_settings(saved: dict, suite: Optional[dict]) -> dict:
+    """共有設定があれば、言語・ゲームのフォルダー・セーブデータのフォルダーはそちらを優先します。"""
+    merged = dict(saved or {})
+    if not suite or not suite.get("exists") or not suite.get("writable"):
+        return merged
+    language = suite["ui"].get("language")
+    if isinstance(language, str) and language in {code for code, _ in available_languages()}:
+        merged["language"] = language
+    for key, shared in (("save_root", "save_folder"), ("game_root", "game_folder")):
+        value = suite["paths"].get(shared)
+        if isinstance(value, str) and value.strip():
+            merged[key] = value
+    return merged
+
+
+def save_suite_preferences(language: str, theme: str, save_root: str, game_root: str) -> Optional[str]:
+    """共有設定へ言語・テーマ・フォルダーを保存します。失敗した場合は理由を返します。"""
+    if SUITE_SETTINGS is None:
+        return None
+    try:
+        SUITE_SETTINGS.update_settings({
+            "ui": {"language": language, "theme": theme},
+            "paths": {"save_folder": save_root, "game_folder": game_root},
+        })
+        return None
+    except Exception as exc:
+        return str(exc)
+
+
+def apply_gui_theme(root, theme: str) -> Optional[dict]:
+    """Viewer と同じ配色を画面へ当てます（共有の部品が無い場合は何もしません）。"""
+    global ACTIVE_GUI_PALETTE
+    if SUITE_TK_THEME is None:
+        return None
+    try:
+        ACTIVE_GUI_PALETTE = SUITE_TK_THEME.apply_tk_theme(root, theme if theme in THEME_CODES else "system",
+                                                           fonts=False)
+    except Exception:
+        ACTIVE_GUI_PALETTE = None
+    return ACTIVE_GUI_PALETTE
 
 
 def initialize_ui_language(settings: Optional[dict] = None) -> str:
@@ -19187,7 +19297,11 @@ class App:
 
         self._first_run = not settings_path().exists()
         self._quick_start_window = None
-        saved = load_settings()
+        self._suite = load_suite_preferences()
+        saved = merge_suite_into_settings(load_settings(), self._suite)
+        suite_theme = (self._suite or {}).get("ui", {}).get("theme")
+        self._theme = suite_theme if suite_theme in THEME_CODES else "system"
+        apply_gui_theme(self.master, self._theme)
         self._settings_language = normalize_language(saved.get("language") or DEFAULT_LANGUAGE)
         if self._settings_language == "qps":
             self._settings_language = DEFAULT_LANGUAGE
@@ -19209,7 +19323,7 @@ class App:
         frm = ttk.Frame(master, padding=14)
         frm.pack(fill="both", expand=True)
 
-        ttk.Label(frm, text=f"{APP_NAME} v{VERSION}", font=(GUI_FONT_FAMILY, 18, "bold")).pack(anchor="w")
+        ttk.Label(frm, text=f"{APP_NAME} v{VERSION}", font=(GUI_FONT_FAMILY, GUI_TITLE_FONT_SIZE, "bold")).pack(anchor="w")
         ttk.Label(
             frm,
             text=tr("app.subtitle"),
@@ -19255,7 +19369,7 @@ class App:
         ttk.Label(
             frm,
             text=tr("settings.auto_saved", path=display_path_text(settings_path())),
-            foreground="#666666",
+            style="Muted.TLabel",
             wraplength=930,
             justify="left",
         ).pack(anchor="w", pady=(2, 2))
@@ -19272,10 +19386,29 @@ class App:
         )
         language_combo.pack(side="left", padx=(8, 8))
         language_combo.bind("<<ComboboxSelected>>", self._on_language_selected)
+        if SUITE_TK_THEME is not None:
+            # 表示テーマ（Viewer・Navigator Bridge と共有。すぐに反映）
+            self._theme_labels = {
+                "system": tr("theme.system"),
+                "light": tr("theme.light"),
+                "dark": tr("theme.dark"),
+            }
+            self._theme_codes = {label: code for code, label in self._theme_labels.items()}
+            self.theme_var = tk.StringVar(value=self._theme_labels[self._theme])
+            ttk.Label(language_row, text=tr("theme.label")).pack(side="left", padx=(8, 0))
+            theme_combo = ttk.Combobox(
+                language_row,
+                textvariable=self.theme_var,
+                values=[self._theme_labels[code] for code in THEME_CODES],
+                state="readonly",
+                width=12,
+            )
+            theme_combo.pack(side="left", padx=(8, 8))
+            theme_combo.bind("<<ComboboxSelected>>", self._on_theme_selected)
         ttk.Label(
             language_row,
             text=tr("language.env_override") if self._language_env_override else tr("language.note"),
-            foreground="#666666",
+            style="Muted.TLabel",
             wraplength=650,
             justify="left",
         ).pack(side="left", fill="x", expand=True)
@@ -19380,6 +19513,9 @@ class App:
             screen_limit = max(840, self.master.winfo_screenheight() - 80)
             self.master.geometry(f"1000x{min(requested_height, screen_limit)}")
 
+        if self._suite and self._suite.get("writable") and not self._suite.get("exists") and not self._first_run:
+            self.master.after(500, self._save_suite_now)
+
         if self._first_run:
             self.master.after(300, self.show_quick_start_guide)
 
@@ -19394,6 +19530,32 @@ class App:
         if os.environ.get("FH6_ORGANIZER_LANG"):
             message += "\n\n" + tr("language.env_override")
         messagebox.showinfo(tr("language.saved_title"), message)
+
+    def _on_theme_selected(self, *_):
+        code = self._theme_codes.get(self.theme_var.get(), "system")
+        if code == self._theme:
+            return
+        self._theme = code
+        apply_gui_theme(self.master, self._theme)
+        self._save_settings_now()
+
+    def _save_suite_now(self) -> None:
+        """言語・テーマ・ゲーム／セーブデータのフォルダーを、Viewer・Navigator Bridge と共有する設定へ保存します。"""
+        if not self._suite or not self._suite.get("writable"):
+            return
+        error = save_suite_preferences(
+            self._settings_language,
+            self._theme,
+            native_path_text(self.root_var.get().strip()),
+            native_path_text(self.game_root_var.get().strip()),
+        )
+        if error:
+            try:
+                self.log(tr("settings.save_warning", error=error))
+            except Exception:
+                pass
+        else:
+            self._suite["exists"] = True
 
     def current_settings(self) -> dict:
         return {
@@ -19417,6 +19579,7 @@ class App:
 
     def _save_settings_now(self):
         self._settings_save_job = None
+        self._save_suite_now()
         try:
             save_settings(self.current_settings())
         except Exception as e:
@@ -19470,7 +19633,7 @@ class App:
         ttk.Label(
             outer,
             text=tr("quick.heading"),
-            font=(GUI_FONT_FAMILY, 16, "bold"),
+            font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold"),
         ).pack(anchor="w")
         ttk.Label(
             outer,
@@ -19557,7 +19720,7 @@ class App:
         ttk.Label(
             outer,
             text=tr("support.title"),
-            font=(GUI_FONT_FAMILY, 15, "bold"),
+            font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold"),
         ).pack(anchor="w")
         ttk.Label(
             outer,
@@ -20071,7 +20234,7 @@ class App:
         ttk.Label(
             outer,
             text=tr("complete.heading", version=VERSION),
-            font=(GUI_FONT_FAMILY, 14, "bold"),
+            font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold"),
         ).pack(anchor="w", pady=(0, 8))
 
         body = tk.Text(

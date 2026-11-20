@@ -50,6 +50,10 @@ STRINGS = {
 
 # v0.4.58-r03: desktop GUI, pre-run check, support information, and run log.
 STRINGS.update({
+    "theme.label": "Theme",
+    "theme.system": "Follow system",
+    "theme.light": "Light",
+    "theme.dark": "Dark",
     "language.label": "Language",
     "language.note": "Changes take effect the next time the Organizer starts.",
     "language.saved_title": "Language Setting",

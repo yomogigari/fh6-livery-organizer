@@ -99,6 +99,273 @@ GUI_FONT_CANDIDATES = ("Segoe UI Variable", "Segoe UI", "Yu Gothic UI")
 GUI_FONT_FAMILY = GUI_FONT_CANDIDATES[0]
 GUI_FONT_SIZE = 11
 GUI_SMALL_FONT_SIZE = 10
+# 見出しの大きさ（画面の題名・移動計画の操作・ダイアログの見出し）
+GUI_TITLE_FONT_SIZE = 16
+GUI_HEADING_FONT_SIZE = 14
+
+
+def _load_desktop_suite():
+    """Viewer・Organizer と共有する設定と見た目の部品（src/viewer/lo4fh6_desktop_suite）を読み込みます。
+
+    通常の実行では src/viewer を検索の最後に足します。EXE では同梱した部品を読み込みます。
+    見つからない場合は (None, None) を返し、共有せずに従来どおり動きます。
+    """
+    for attempt in range(2):
+        try:
+            from lo4fh6_desktop_suite import settings as suite_settings
+            from lo4fh6_desktop_suite import tk_theme as suite_tk_theme
+            return suite_settings, suite_tk_theme
+        except ImportError:
+            if attempt:
+                return None, None
+            viewer_dir = Path(__file__).resolve().parents[1] / "viewer"
+            if not (viewer_dir / "lo4fh6_desktop_suite" / "__init__.py").is_file():
+                return None, None
+            if str(viewer_dir) not in sys.path:
+                sys.path.append(str(viewer_dir))
+    return None, None
+
+
+SUITE_SETTINGS, SUITE_TK_THEME = _load_desktop_suite()
+THEME_CODES = ("system", "light", "dark")
+THEME_LABELS = {"system": "システム設定", "light": "ライト", "dark": "ダーク"}
+
+# 画面・メッセージの言語。Viewer・Organizer と共有の設定（ui.language）から起動時に決めます。
+# 日本語の文をそのまま鍵にして英語の表 BRIDGE_EN を引きます（表に無い文は日本語のまま）。
+BRIDGE_LANGUAGES = (("ja", "日本語"), ("en", "English"))
+BRIDGE_LANGUAGE = "ja"
+
+
+def _(text: str) -> str:
+    """日本語の文を、今の言語の文にします。"""
+    if BRIDGE_LANGUAGE == "en":
+        return BRIDGE_EN.get(text, text)
+    return text
+
+
+def load_suite_language() -> str:
+    """共有設定の言語（ja・en）を返します。読めない・未対応の場合は ja。"""
+    if SUITE_SETTINGS is None:
+        return "ja"
+    try:
+        language = SUITE_SETTINGS.load_settings().get("ui", {}).get("language")
+    except Exception:
+        return "ja"
+    return language if language in {code for code, _label in BRIDGE_LANGUAGES} else "ja"
+
+
+def set_bridge_language(code: str) -> None:
+    global BRIDGE_LANGUAGE
+    BRIDGE_LANGUAGE = code if code in {c for c, _label in BRIDGE_LANGUAGES} else "ja"
+
+
+def save_suite_language(code: str) -> str | None:
+    """共有設定へ言語を保存します。失敗した場合は理由を返します。"""
+    if SUITE_SETTINGS is None:
+        return None
+    try:
+        SUITE_SETTINGS.update_settings({"ui": {"language": code}})
+        return None
+    except Exception as exc:
+        return str(exc)
+
+
+BRIDGE_EN = {
+    " / 初期位置リセット ESC→RET（{0:g}ms / {1:g}ms）": " / Reset to start ESC→RET ({0:g}ms / {1:g}ms)",
+    " / 初期位置リセット OFF": " / Reset to start OFF",
+    " / 左循環後 +{0:g}ms": " / +{0:g}ms after wrapping left",
+    "001→最終列の左循環後追加待ちms（default: {0:g}）": "Extra wait in ms after wrapping from 001 to the last column (default: {0:g})",
+    "001→最終列の直後だけ。初期値400": "Only right after 001 → last column. Default 400",
+    "ESC後の待ち時間": "Wait after ESC",
+    "ESC後の待ち時間は 0～5000 ms の範囲で指定してください。": "Enter a wait after ESC between 0 and 5000 ms.",
+    "ESC後の待ち時間は数値で入力してください。": "Enter the wait after ESC as a number.",
+    "FH6として前面確認できないため、安全のため移動キーを送信しません。": "FH6 could not be confirmed as the foreground window, so no movement keys are sent for safety.",
+    "FH6のタイトルとプロセス条件に一致するウィンドウが複数見つかりました。\n誤送信防止のため、Bridgeは移動先を自動選択しません。\nFH6以外の同名ウィンドウを閉じてから再実行してください。": "More than one window matches the FH6 title and process.\nTo avoid sending keys to the wrong window, Bridge does not choose one automatically.\nClose the other windows with the same name and try again.",
+    "FH6の前面化に失敗したため、キー入力は行いませんでした。": "FH6 could not be brought to the front, so no keys were sent.",
+    "FH6への移動を実行できませんでした。\n\n{0}": "Could not run the move in FH6.\n\n{0}",
+    "FH6へ移動": "Move in FH6",
+    "FH6を前面へ切り替えられませんでした。\n{0}": "Could not bring FH6 to the front.\n{0}",
+    "FH6を前面化しました。{0:.0f}ms 待機しています…": "FH6 is in front. Waiting {0:.0f} ms…",
+    "FH6を検出: {0}。前面へ切り替えています…": "Found FH6: {0}. Bringing it to the front…",
+    "FH6ウィンドウのハンドルが無効です。": "The FH6 window handle is not valid.",
+    "FH6ウィンドウの切り替えはWindows上でのみ利用できます。": "Switching to the FH6 window works only on Windows.",
+    "FH6ウィンドウを一意に確認できなかったため、キー入力は行いませんでした。": "A single FH6 window could not be identified, so no keys were sent.",
+    "FH6切替後の待ち時間": "Wait after switching to FH6",
+    "FH6切替後の待ち時間は 0～5000 ms の範囲で指定してください。": "Enter a wait after switching to FH6 between 0 and 5000 ms.",
+    "FH6切替後の待ち時間は数値で入力してください。": "Enter the wait after switching to FH6 as a number.",
+    "FH6切替後の待機中にFH6として前面確認できなくなりました。\n安全のためキー入力は送信していません。": "FH6 stopped being the foreground window while waiting after the switch.\nNo keys were sent for safety.",
+    "FH6前面化後の待ち時間ms（default: {0:g}）": "Wait in ms after bringing FH6 to the front (default: {0:g})",
+    "Forza Horizon 6 をフォアグラウンドへ切り替えられませんでした。\n安全のためキー入力は送信していません。\n\n診断ログ: {0}": "Could not bring Forza Horizon 6 to the foreground.\nNo keys were sent for safety.\n\nDiagnostic log: {0}",
+    "Livery Organizer for FH6 連携": "Livery Organizer for FH6 integration",
+    "Livery Organizer for FH6 連携URI": "Livery Organizer for FH6 integration URI",
+    "Navigator BridgeはWindows専用です。": "Navigator Bridge works only on Windows.",
+    "Organizerから新しい移動指示を受信しました。現在の移動完了後に実行します。": "Received a new move request from the Organizer. It will run after the current move finishes.",
+    "Organizer連携: Windows専用": "Organizer integration: Windows only",
+    "Organizer連携: 再登録が必要": "Organizer integration: needs to be registered again",
+    "Organizer連携: 旧スキーム登録あり（再登録が必要）": "Organizer integration: an old scheme is registered (register again)",
+    "Organizer連携: 未登録": "Organizer integration: not registered",
+    "Organizer連携: 登録済み": "Organizer integration: registered",
+    "Organizer連携: 確認中": "Organizer integration: checking",
+    "Organizer連携の引数を読み取れませんでした。\n{0}": "Could not read the Organizer integration arguments.\n{0}",
+    "Organizer連携の登録はWindows専用です。": "Registering the Organizer integration works only on Windows.",
+    "Organizer連携の解除はWindows専用です。": "Removing the Organizer integration works only on Windows.",
+    "Organizer連携を登録しました。\nLivery Organizer for FH6 のHTMLで「FH6で選択デザインへ移動」を実行すると、このBridgeへ位置を渡せます。\n\nBridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から再度「連携を登録」してください。": "The Organizer integration is registered.\nUse “Move to the selected design in FH6” in the Livery Organizer for FH6 HTML report to send the position to this Bridge.\n\nIf you move or rename Bridge, run “Register integration” again from the new location.",
+    "Organizer連携を登録できませんでした。\n{0}": "Could not register the Organizer integration.\n{0}",
+    "Organizer連携を解除できませんでした。\n{0}": "Could not remove the Organizer integration.\n{0}",
+    "RET後の待ち時間": "Wait after RET",
+    "RET後の待ち時間は 0～5000 ms の範囲で指定してください。": "Enter a wait after RET between 0 and 5000 ms.",
+    "RET後の待ち時間は数値で入力してください。": "Enter the wait after RET as a number.",
+    "RET送信前にFH6として前面確認できなくなったため、安全のため中止しました。": "Stopped for safety: FH6 was no longer the foreground window before sending RET.",
+    "SendInput が {0}/2 イベントしか送信できませんでした。": "SendInput sent only {0} of 2 events.",
+    "schemeなし": "no scheme",
+    "{0} {1}/{2}（全体 {3}/{4}）": "{0} {1}/{2} (total {3}/{4})",
+    "{0} が許容範囲外です。": "{0} is out of range.",
+    "◀ 1/{0}：最終列への循環後 {1:.0f}ms 追加待機": "◀ 1/{0}: extra {1:.0f} ms wait after wrapping to the last column",
+    "「FH6へ移動」でFH6を前面化します。通常移動は左・右・下のみ、リセットON時だけ固定の ESC → RET を移動前に1回実行します。\nFH6の画面内容や内部のカーソル位置は読み取らず、設定された間隔でキー入力を送るだけです。\nPCやFH6の負荷などで入力が取りこぼされると指定位置からずれる場合があります。ずれる場合は待ち時間を長めにしてください。\n共通設定は自動保存されます: {0}": "“Move in FH6” brings FH6 to the front. Normal moves use only Left, Right and Down; when reset is on, a fixed ESC → RET is sent once before moving.\nBridge does not read the FH6 screen or the cursor position. It only sends keys at the set intervals.\nIf PC or FH6 load makes inputs drop, the cursor may end up in a different slot. If that happens, use longer waits.\nShared settings are saved automatically: {0}",
+    "お知らせ": "Information",
+    "このユーティリティはWindows専用です。": "This utility works only on Windows.",
+    "なし": "none",
+    "エラー": "Error",
+    "エラー: {0}": "Error: {0}",
+    "キー送信はWindows上でのみ利用できます。": "Sending keys works only on Windows.",
+    "キー間隔": "Key interval",
+    "キー間隔ms（default: {0:g}）": "Key interval in ms (default: {0:g})",
+    "キー間隔は 10～2000 ms の範囲で指定してください。": "Enter a key interval between 10 and 2000 ms.",
+    "キー間隔は数値で入力してください。": "Enter the key interval as a number.",
+    "タイトルが「Forza Horizon 6」と完全一致し、所有プロセスが forzahorizon6.exe のウィンドウが見つかりません。\nFH6を起動し、「マイデザイン」画面を開いてから再実行してください。": "No window titled exactly “Forza Horizon 6” and owned by forzahorizon6.exe was found.\nStart FH6, open the “My Designs” screen and try again.",
+    "マイデザイン再入場後にFH6として前面確認できなくなったため、安全のため中止しました。": "Stopped for safety: FH6 was no longer the foreground window after reopening My Designs.",
+    "リセットOFF時はFH6「マイデザイン」のカーソルを 001U にしてから実行してください。": "When reset is off, put the cursor on 001U in FH6 “My Designs” before running.",
+    "一度登録すると、Organizerの「FH6で選択デザインへ移動」から現在位置と最終実スロット数を受け取れます。\nBridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から「連携を登録」を再実行してください。": "Once registered, Bridge receives the position and the last used slot from the Organizer's “Move to the selected design in FH6”.\nIf you move or rename Bridge, run “Register integration” again from the new location.",
+    "上下移動前にFH6として前面確認できなくなったため、安全のため中止しました。": "Stopped for safety: FH6 was no longer the foreground window before the up/down move.",
+    "中止": "Stop",
+    "中止しました。": "Stopped.",
+    "中止しました。{0}/{1}キー送信済み。": "Stopped. {0} of {1} keys sent.",
+    "中止要求を受け付けました…": "Stop requested…",
+    "仮想キー 0x{0:02X} のスキャンコードを取得できませんでした。": "Could not get the scan code for virtual key 0x{0:02X}.",
+    "例: 200": "e.g. 200",
+    "例: 810（最大1000）": "e.g. 810 (up to 1000)",
+    "入力・共通移動設定": "Input and shared move settings",
+    "内部エラー: INPUT構造体サイズが不正です ({0} bytes / expected {1} bytes)。": "Internal error: wrong INPUT structure size ({0} bytes / expected {1} bytes).",
+    "列番号は1以上で指定してください。": "Enter a column number of 1 or more.",
+    "初期位置リセット: ESC を送信…": "Reset to start: sending ESC…",
+    "初期位置リセット: RET を送信…": "Reset to start: sending RET…",
+    "初期位置リセットのESC後待ち時間ms（default: {0:g}）": "Wait in ms after ESC when resetting to start (default: {0:g})",
+    "初期位置リセットのRET後待ち時間ms（default: {0:g}）": "Wait in ms after RET when resetting to start (default: {0:g})",
+    "初期位置リセットを行わない": "Do not reset to start",
+    "初期位置リセット前にFH6として前面確認できなくなったため、安全のため中止しました。": "Stopped for safety: FH6 was no longer the foreground window before resetting to start.",
+    "初期値500": "Default 500",
+    "初期値800。再入場後の待機": "Default 800. Wait after reopening",
+    "前面化後に待機。初期値500": "Wait after bringing FH6 to the front. Default 500",
+    "安全のため中止: RET送信前にFH6として前面確認できなくなりました。": "Stopped for safety: FH6 was no longer the foreground window before sending RET.",
+    "安全のため中止: 「{0}」をFH6として前面確認できないためキー入力を送信しませんでした。": "Stopped for safety: “{0}” could not be confirmed as FH6 in the foreground, so no keys were sent.",
+    "安全のため中止: マイデザイン再入場後にFH6として前面確認できなくなりました。": "Stopped for safety: FH6 was no longer the foreground window after reopening My Designs.",
+    "安全のため中止: 初期位置リセット前にFH6として前面確認できなくなりました。": "Stopped for safety: FH6 was no longer the foreground window before resetting to start.",
+    "安全境界により初期位置リセットでは送信できないキーです: {0}": "This key cannot be sent when resetting to start (safety limit): {0}",
+    "安全境界により移動キーとして送信できません: 0x{0:02X}": "This key cannot be sent as a movement key (safety limit): 0x{0:02X}",
+    "安全境界により移動キーとして送信できません: {0}": "This key cannot be sent as a movement key (safety limit): {0}",
+    "安全境界により送信できない仮想キーです: 0x{0:02X}": "This virtual key cannot be sent (safety limit): 0x{0:02X}",
+    "安定性を優先した初期値50": "Default 50 for stability",
+    "完了: #{0} / #{1:03d}{2}（{3}キー送信）": "Done: #{0} / #{1:03d}{2} ({3} keys sent)",
+    "実スロット番号は1以上で指定してください。": "Enter a slot number of 1 or more.",
+    "実行形式: {0}": "Running as: {0}",
+    "左循環後の追加待ち": "Extra wait after wrapping left",
+    "左循環後の追加待ちは 0～5000 ms の範囲で指定してください。": "Enter an extra wait after wrapping left between 0 and 5000 ms.",
+    "左循環後の追加待ちは数値で入力してください。": "Enter the extra wait after wrapping left as a number.",
+    "待機中（タイトルが「Forza Horizon 6」と完全一致するウィンドウだけを検出します）": "Waiting (only a window titled exactly “Forza Horizon 6” is detected)",
+    "操作: {0}{1}{2}": "Keys: {0}{1}{2}",
+    "操作: —": "Keys: —",
+    "最終実スロット番号": "Last used slot",
+    "最終実スロット番号が指定されていません。": "The last used slot is not set.",
+    "最終実スロット番号は 1～1000 の範囲で指定してください。": "Enter a last used slot between 1 and 1000.",
+    "最終実スロット番号は整数で入力してください。": "Enter the last used slot as a whole number.",
+    "最終実スロット番号（最大1000）": "Last used slot (up to 1000)",
+    "未対応の連携URIです: {0}": "Unsupported integration URI: {0}",
+    "未対応の連携操作です: {0}": "Unsupported integration action: {0}",
+    "未指定": "not set",
+    "未登録": "not registered",
+    "横→上下の待ち時間": "Wait between sideways and up/down",
+    "横→上下の待ち時間ms（default: {0:g}）": "Wait in ms between sideways and up/down moves (default: {0:g})",
+    "横→上下の待ち時間は 0～5000 ms の範囲で指定してください。": "Enter a wait between sideways and up/down between 0 and 5000 ms.",
+    "横→上下の待ち時間は数値で入力してください。": "Enter the wait between sideways and up/down as a number.",
+    "横移動なし": "No sideways move",
+    "横移動完了。上下移動まで待機中…": "Sideways move done. Waiting before the up/down move…",
+    "移動中にFH6として前面確認できなくなったため、安全のため中止しました。": "Stopped for safety: FH6 was no longer the foreground window during the move.",
+    "移動先": "Target",
+    "移動先 #{0} / #{1:03d}{2} は、最終実スロット #{3} を超えています。": "Target #{0} / #{1:03d}{2} is past the last used slot #{3}.",
+    "移動先: #{0} / #{1:03d}{2}\n最終位置: #{3} / {4}\n送信キー数: {5}回 / 推定入力時間: 約 {6:.2f} 秒{7}{8}": "Target: #{0} / #{1:03d}{2}\nLast slot: #{3} / {4}\nKeys to send: {5} / Estimated input time: about {6:.2f} s{7}{8}",
+    "移動先。例: 537 / 269U": "Target, e.g. 537 / 269U",
+    "移動先と最終実スロット番号を入力してください。": "Enter the target and the last used slot.",
+    "移動先は 537 / #537 / 269U / #269D の形式で入力してください。": "Enter the target as 537, #537, 269U or #269D.",
+    "移動先を入力してください。": "Enter the target.",
+    "移動前にマイデザインを開き直して #001U へ戻す（ESC → RET）": "Reopen My Designs before moving to return to #001U (ESC → RET)",
+    "移動前に固定の ESC → RET でマイデザインを開き直し #001U へ戻す": "Before moving, reopen My Designs with a fixed ESC → RET and return to #001U",
+    "移動計画": "Move plan",
+    "移動計画を確認": "Check move plan",
+    "行は U または D で指定してください。": "Enter the row as U or D.",
+    "表示テーマ": "Theme",
+    "表示テーマを共有設定へ保存できませんでした: {0}": "Could not save the theme to the shared settings: {0}",
+    "解除": "Remove",
+    "起動中のNavigator Bridgeへ指示を渡せませんでした。\n{0}": "Could not pass the request to the running Navigator Bridge.\n{0}",
+    "通常移動は左・右・下だけです。画面内容や内部位置は読み取らず、指定間隔でキー入力を送るため、PC/FH6の負荷で位置がずれる場合があります。": "Normal moves use only Left, Right and Down. Bridge does not read the screen or the position and sends keys at set intervals, so PC or FH6 load may shift the result.",
+    "連携を登録": "Register integration",
+    "連携登録先: Windows専用": "Registered to: Windows only",
+    "連携登録先: {0}": "Registered to: {0}",
+    "連携登録先: 確認中": "Registered to: checking",
+    "システム設定": "Follow system",
+    "ライト": "Light",
+    "ダーク": "Dark",
+    "言語": "Language",
+    "言語の設定": "Language",
+    "言語の設定を保存しました。次回起動時に反映されます。": "The language setting was saved and will take effect the next time Bridge starts.",
+    "言語の設定を共有設定へ保存できませんでした: {0}": "Could not save the language to the shared settings: {0}",
+}
+# 今の画面の色（apply_gui_theme が設定）。ダイアログのタイトルバーに使います。
+ACTIVE_GUI_PALETTE: dict | None = None
+
+
+def load_suite_theme() -> tuple[str, bool]:
+    """共有設定のテーマと、共有設定へ書き込めるか（壊れていないか）を返します。"""
+    if SUITE_SETTINGS is None:
+        return "system", False
+    try:
+        theme = SUITE_SETTINGS.load_settings().get("ui", {}).get("theme")
+        return (theme if theme in THEME_CODES else "system"), True
+    except Exception:
+        return "system", False
+
+
+def save_suite_theme(theme: str) -> str | None:
+    """共有設定へテーマを保存します。失敗した場合は理由を返します。"""
+    if SUITE_SETTINGS is None:
+        return None
+    try:
+        SUITE_SETTINGS.update_settings({"ui": {"theme": theme}})
+        return None
+    except Exception as exc:
+        return str(exc)
+
+
+def apply_gui_theme(root, theme: str) -> dict | None:
+    """Viewer・Organizer と同じ配色を画面へ当てます（共有の部品が無い場合は何もしません）。"""
+    global ACTIVE_GUI_PALETTE
+    if SUITE_TK_THEME is None:
+        return None
+    try:
+        ACTIVE_GUI_PALETTE = SUITE_TK_THEME.apply_tk_theme(root, theme if theme in THEME_CODES else "system",
+                                                           fonts=False)
+    except Exception:
+        ACTIVE_GUI_PALETTE = None
+    return ACTIVE_GUI_PALETTE
+
+
+def apply_child_window_theme(win) -> None:
+    """ダイアログのタイトルバーを、今のテーマ（ライト・ダーク）に合わせます。"""
+    if SUITE_TK_THEME is None or ACTIVE_GUI_PALETTE is None:
+        return
+    try:
+        SUITE_TK_THEME.apply_title_bar(win, ACTIVE_GUI_PALETTE.get("name") == "dark")
+    except Exception:
+        pass
 
 
 def _preferred_tk_font_family(root: tk.Misc, candidates: tuple[str, ...], fallback: str) -> str:
@@ -114,8 +381,16 @@ def _preferred_tk_font_family(root: tk.Misc, candidates: tuple[str, ...], fallba
 
 
 def configure_gui_fonts(root: tk.Misc) -> None:
-    """Organizerと同等のSegoe UI Variable系・11ptをBridge GUIへ適用します。"""
-    global GUI_FONT_FAMILY
+    """Organizerと同等のSegoe UI Variable系・11ptをBridge GUIへ適用します。
+
+    共有の部品がある場合は、Viewer・Organizer と同じ大きさ（本文 12px ≒ 9 ポイント）にします。
+    """
+    global GUI_FONT_FAMILY, GUI_FONT_SIZE, GUI_SMALL_FONT_SIZE, GUI_TITLE_FONT_SIZE, GUI_HEADING_FONT_SIZE
+    if SUITE_TK_THEME is not None:
+        GUI_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_BODY
+        GUI_SMALL_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_SMALL
+        GUI_TITLE_FONT_SIZE = 14
+        GUI_HEADING_FONT_SIZE = 12
     try:
         default_family = str(tkfont.nametofont("TkDefaultFont", root=root).actual("family"))
     except Exception:
@@ -150,6 +425,7 @@ def configure_gui_fonts(root: tk.Misc) -> None:
 
 
 def position_app_dialog(win: tk.Toplevel, parent: tk.Misc | None, width: int, height: int) -> None:
+    apply_child_window_theme(win)
     """Place a dialog near the parent window instead of letting Tk map it at the top-left.
 
     The dialog is kept withdrawn until this positioning is complete, which also prevents
@@ -222,11 +498,11 @@ def show_app_dialog(parent: tk.Misc | None, title: str, text: str, *, kind: str 
 
         frame = ttk.Frame(win, padding=(18, 16, 18, 14))
         frame.grid(sticky="nsew")
-        heading = "エラー" if kind == "error" else "お知らせ"
+        heading = _("エラー") if kind == "error" else _("お知らせ")
         ttk.Label(
             frame,
             text=heading,
-            font=(GUI_FONT_FAMILY, 14, "bold"),
+            font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold"),
         ).grid(row=0, column=0, sticky="w", pady=(0, 8))
         ttk.Label(
             frame,
@@ -337,7 +613,7 @@ def save_shared_move_settings(settings: dict) -> None:
     for name, (minimum, maximum) in validators.items():
         value = float(clean[name])
         if not minimum <= value <= maximum:
-            raise ValueError(f"{name} が許容範囲外です。")
+            raise ValueError(_("{0} が許容範囲外です。").format(name))
         clean[name] = value
     clean["reset_origin"] = bool(clean["reset_origin"])
 
@@ -592,15 +868,15 @@ def select_unique_fh6_window(windows: list[tuple[int, str]]) -> tuple[int, str]:
     candidates = list(windows or [])
     if not candidates:
         raise RuntimeError(
-            "タイトルが「Forza Horizon 6」と完全一致し、所有プロセスが "
+            _("タイトルが「Forza Horizon 6」と完全一致し、所有プロセスが "
             "forzahorizon6.exe のウィンドウが見つかりません。\n"
-            "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。"
+            "FH6を起動し、「マイデザイン」画面を開いてから再実行してください。")
         )
     if len(candidates) != 1:
         raise RuntimeError(
-            "FH6のタイトルとプロセス条件に一致するウィンドウが複数見つかりました。\n"
+            _("FH6のタイトルとプロセス条件に一致するウィンドウが複数見つかりました。\n"
             "誤送信防止のため、Bridgeは移動先を自動選択しません。\n"
-            "FH6以外の同名ウィンドウを閉じてから再実行してください。"
+            "FH6以外の同名ウィンドウを閉じてから再実行してください。")
         )
     return candidates[0]
 
@@ -608,9 +884,9 @@ def select_unique_fh6_window(windows: list[tuple[int, str]]) -> tuple[int, str]:
 def activate_fh6_window(hwnd: int) -> None:
     """Best-effort foreground activation. Caller must verify foreground before SendInput."""
     if not IS_WINDOWS or user32 is None or kernel32 is None:
-        raise RuntimeError("FH6ウィンドウの切り替えはWindows上でのみ利用できます。")
+        raise RuntimeError(_("FH6ウィンドウの切り替えはWindows上でのみ利用できます。"))
     if not hwnd:
-        raise RuntimeError("FH6ウィンドウのハンドルが無効です。")
+        raise RuntimeError(_("FH6ウィンドウのハンドルが無効です。"))
 
     if user32.IsIconic(hwnd):
         user32.ShowWindow(hwnd, SW_RESTORE)
@@ -669,7 +945,7 @@ class MovePlan:
 
 def slot_to_position(slot: int) -> TargetPosition:
     if slot < 1:
-        raise ValueError("実スロット番号は1以上で指定してください。")
+        raise ValueError(_("実スロット番号は1以上で指定してください。"))
     column = (slot + 1) // 2
     row = "U" if slot % 2 == 1 else "D"
     return TargetPosition(slot=slot, column=column, row=row)
@@ -677,10 +953,10 @@ def slot_to_position(slot: int) -> TargetPosition:
 
 def position_to_slot(column: int, row: str) -> int:
     if column < 1:
-        raise ValueError("列番号は1以上で指定してください。")
+        raise ValueError(_("列番号は1以上で指定してください。"))
     row = row.upper()
     if row not in {"U", "D"}:
-        raise ValueError("行は U または D で指定してください。")
+        raise ValueError(_("行は U または D で指定してください。"))
     return column * 2 - (1 if row == "U" else 0)
 
 
@@ -984,7 +1260,7 @@ def protocol_registration_target_display(command: str) -> str:
     """Extract the Bridge file target from a registered protocol command."""
     text = str(command or "").strip()
     if not text:
-        return "未登録"
+        return _("未登録")
 
     quoted = re.findall(r'"([^"]+)"', text)
 
@@ -1003,7 +1279,7 @@ def protocol_registration_target_display(command: str) -> str:
 
 def register_protocol() -> None:
     if not IS_WINDOWS or winreg is None:
-        raise RuntimeError("Organizer連携の登録はWindows専用です。")
+        raise RuntimeError(_("Organizer連携の登録はWindows専用です。"))
     command = protocol_handler_command()
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, PROTOCOL_ROOT) as key:
         winreg.SetValueEx(key, None, 0, winreg.REG_SZ, f"URL:{APP_NAME} Protocol")
@@ -1038,7 +1314,7 @@ def _delete_registry_tree(root, subkey: str) -> None:
 
 def unregister_protocol() -> None:
     if not IS_WINDOWS or winreg is None:
-        raise RuntimeError("Organizer連携の解除はWindows専用です。")
+        raise RuntimeError(_("Organizer連携の解除はWindows専用です。"))
     _delete_registry_tree(winreg.HKEY_CURRENT_USER, PROTOCOL_ROOT)
     for legacy_scheme in LEGACY_PROTOCOL_SCHEMES:
         legacy_command = read_registered_protocol_command(legacy_scheme)
@@ -1052,10 +1328,10 @@ def apply_protocol_uri(args: argparse.Namespace) -> argparse.Namespace:
         return args
     parsed = urllib.parse.urlparse(uri)
     if parsed.scheme.casefold() != PROTOCOL_SCHEME:
-        raise ValueError(f"未対応の連携URIです: {parsed.scheme or 'schemeなし'}")
+        raise ValueError(_("未対応の連携URIです: {0}").format(parsed.scheme or _('schemeなし')))
     action = (parsed.netloc or parsed.path.lstrip("/")).casefold()
     if action not in {"move", "open", "settings"}:
-        raise ValueError(f"未対応の連携操作です: {action or 'なし'}")
+        raise ValueError(_("未対応の連携操作です: {0}").format(action or _('なし')))
     args.protocol_action = action
     query = urllib.parse.parse_qs(parsed.query)
     target = (query.get("target") or [""])[0].strip()
@@ -1185,7 +1461,7 @@ def parse_target(text: str) -> TargetPosition:
     s = normalize_ascii_digits(text).strip().upper()
     s = re.sub(r"\s+", "", s)
     if not s:
-        raise ValueError("移動先を入力してください。")
+        raise ValueError(_("移動先を入力してください。"))
 
     # 537 / #537 = 実スロット番号
     m = re.fullmatch(r"#?(\d+)", s)
@@ -1200,18 +1476,17 @@ def parse_target(text: str) -> TargetPosition:
         slot = position_to_slot(column, row)
         return TargetPosition(slot=slot, column=column, row=row)
 
-    raise ValueError("移動先は 537 / #537 / 269U / #269D の形式で入力してください。")
+    raise ValueError(_("移動先は 537 / #537 / 269U / #269D の形式で入力してください。"))
 
 
 def build_plan(target_text: str, last_slot: int) -> MovePlan:
     if not 1 <= last_slot <= 1000:
-        raise ValueError("最終実スロット番号は 1～1000 の範囲で指定してください。")
+        raise ValueError(_("最終実スロット番号は 1～1000 の範囲で指定してください。"))
 
     target = parse_target(target_text)
     if target.slot > last_slot:
         raise ValueError(
-            f"移動先 #{target.slot} / #{target.column:03d}{target.row} は、"
-            f"最終実スロット #{last_slot} を超えています。"
+            _("移動先 #{0} / #{1:03d}{2} は、最終実スロット #{3} を超えています。").format(target.slot, target.column, target.row, last_slot)
         )
 
     last_column = (last_slot + 1) // 2
@@ -1250,7 +1525,7 @@ def key_name_to_vk(name: str) -> int:
     """Map only the three explicitly permitted FH6 movement keys."""
     key = str(name or "").upper()
     if key not in ALLOWED_MOVEMENT_KEY_NAMES:
-        raise ValueError(f"安全境界により移動キーとして送信できません: {key or '未指定'}")
+        raise ValueError(_("安全境界により移動キーとして送信できません: {0}").format(key or _('未指定')))
     return {
         "LEFT": VK_LEFT,
         "RIGHT": VK_RIGHT,
@@ -1261,21 +1536,20 @@ def key_name_to_vk(name: str) -> int:
 def _send_allowed_vk(vk: int) -> None:
     """Low-level sender restricted to the five internally permitted VKs."""
     if vk not in ALLOWED_INTERNAL_SEND_VKS:
-        raise ValueError(f"安全境界により送信できない仮想キーです: 0x{int(vk):02X}")
+        raise ValueError(_("安全境界により送信できない仮想キーです: 0x{0:02X}").format(int(vk)))
     if not IS_WINDOWS or user32 is None:
-        raise RuntimeError("キー送信はWindows上でのみ利用できます。")
+        raise RuntimeError(_("キー送信はWindows上でのみ利用できます。"))
 
     expected_input_size = 40 if ctypes.sizeof(ctypes.c_void_p) == 8 else 28
     actual_input_size = ctypes.sizeof(INPUT)
     if actual_input_size != expected_input_size:
         raise RuntimeError(
-            f"内部エラー: INPUT構造体サイズが不正です "
-            f"({actual_input_size} bytes / expected {expected_input_size} bytes)。"
+            _("内部エラー: INPUT構造体サイズが不正です ({0} bytes / expected {1} bytes)。").format(actual_input_size, expected_input_size)
         )
 
     scan = user32.MapVirtualKeyW(vk, MAPVK_VK_TO_VSC)
     if not scan:
-        raise RuntimeError(f"仮想キー 0x{vk:02X} のスキャンコードを取得できませんでした。")
+        raise RuntimeError(_("仮想キー 0x{0:02X} のスキャンコードを取得できませんでした。").format(vk))
 
     extended = KEYEVENTF_EXTENDEDKEY if vk in ALLOWED_MOVEMENT_VKS else 0
     down = INPUT(
@@ -1306,13 +1580,13 @@ def _send_allowed_vk(vk: int) -> None:
         err = ctypes.get_last_error()
         if err:
             raise ctypes.WinError(err)
-        raise RuntimeError(f"SendInput が {sent}/2 イベントしか送信できませんでした。")
+        raise RuntimeError(_("SendInput が {0}/2 イベントしか送信できませんでした。").format(sent))
 
 
 def send_movement_key(vk: int) -> None:
     """Send only LEFT / RIGHT / DOWN as a position-movement key."""
     if vk not in ALLOWED_MOVEMENT_VKS:
-        raise ValueError(f"安全境界により移動キーとして送信できません: 0x{int(vk):02X}")
+        raise ValueError(_("安全境界により移動キーとして送信できません: 0x{0:02X}").format(int(vk)))
     _send_allowed_vk(vk)
 
 
@@ -1320,7 +1594,7 @@ def send_fh6_movement_key(hwnd: int, vk: int) -> None:
     """Re-confirm foreground + exact title + FH6 process immediately before SendInput."""
     if not is_foreground_fh6_window(hwnd):
         raise RuntimeError(
-            "FH6として前面確認できないため、安全のため移動キーを送信しません。"
+            _("FH6として前面確認できないため、安全のため移動キーを送信しません。")
         )
     send_movement_key(vk)
 
@@ -1330,7 +1604,7 @@ def send_origin_reset_step(step: str) -> None:
     key = str(step or "").upper()
     mapping = {"ESC": VK_ESCAPE, "RET": VK_RETURN}
     if key not in mapping:
-        raise ValueError(f"安全境界により初期位置リセットでは送信できないキーです: {key or '未指定'}")
+        raise ValueError(_("安全境界により初期位置リセットでは送信できないキーです: {0}").format(key or _('未指定')))
     _send_allowed_vk(mapping[key])
 
 
@@ -1340,6 +1614,9 @@ class NavigatorApp:
         self.root = root
         self.root.title(f"{APP_NAME} {APP_VERSION}")
         self.root.resizable(False, False)
+        # Viewer・Organizer と共有するテーマ（ライト・ダーク・システム設定）
+        self._theme, self._suite_writable = load_suite_theme()
+        apply_gui_theme(self.root, self._theme)
 
         self.running = False
         self.abort_requested = False
@@ -1355,13 +1632,13 @@ class NavigatorApp:
         self.reset_origin_var = tk.BooleanVar(value=bool(getattr(args, "reset_origin", False)))
         self.reset_esc_delay_var = tk.StringVar(value=str(getattr(args, "reset_esc_delay_ms", 500.0)))
         self.reset_ret_delay_var = tk.StringVar(value=str(getattr(args, "reset_ret_delay_ms", 800.0)))
-        self.plan_var = tk.StringVar(value="移動先と最終実スロット番号を入力してください。")
-        self.operation_var = tk.StringVar(value="操作: —")
-        self.status_var = tk.StringVar(value="待機中（タイトルが「Forza Horizon 6」と完全一致するウィンドウだけを検出します）")
+        self.plan_var = tk.StringVar(value=_("移動先と最終実スロット番号を入力してください。"))
+        self.operation_var = tk.StringVar(value=_("操作: —"))
+        self.status_var = tk.StringVar(value=_("待機中（タイトルが「Forza Horizon 6」と完全一致するウィンドウだけを検出します）"))
         # Organizer連携欄で _build_ui() 中に参照するため、UI構築前に初期化する。
-        self.protocol_status_var = tk.StringVar(value="Organizer連携: 確認中")
-        self.execution_format_var = tk.StringVar(value=f"実行形式: {execution_format_label()}")
-        self.protocol_target_var = tk.StringVar(value="連携登録先: 確認中")
+        self.protocol_status_var = tk.StringVar(value=_("Organizer連携: 確認中"))
+        self.execution_format_var = tk.StringVar(value=_("実行形式: {0}").format(execution_format_label()))
+        self.protocol_target_var = tk.StringVar(value=_("連携登録先: 確認中"))
 
         self._build_ui()
         self._bind_events()
@@ -1411,7 +1688,7 @@ class NavigatorApp:
         if self.running:
             # Do not interrupt a sequence already being sent to FH6. Keep only the newest request.
             self.pending_ipc_payload = payload
-            self.status_var.set("Organizerから新しい移動指示を受信しました。現在の移動完了後に実行します。")
+            self.status_var.set(_("Organizerから新しい移動指示を受信しました。現在の移動完了後に実行します。"))
             return
         self._apply_ipc_move_payload(payload)
 
@@ -1452,17 +1729,45 @@ class NavigatorApp:
             pass
         header_text = ttk.Frame(header)
         header_text.pack(side="left", fill="x", expand=True)
+        if SUITE_TK_THEME is not None:
+            # 表示テーマ（Viewer・Organizer と共有。すぐに反映）
+            theme_box = ttk.Frame(header)
+            theme_box.pack(side="right", anchor="ne")
+            # 言語（Viewer・Organizer と共有。次回の起動で反映）
+            ttk.Label(theme_box, text=_("言語")).pack(side="left")
+            self._language_labels = dict(BRIDGE_LANGUAGES)
+            self.language_var = tk.StringVar(value=self._language_labels[BRIDGE_LANGUAGE])
+            language_combo = ttk.Combobox(
+                theme_box,
+                textvariable=self.language_var,
+                values=[label for _code, label in BRIDGE_LANGUAGES],
+                state="readonly",
+                width=9,
+            )
+            language_combo.pack(side="left", padx=(8, 12))
+            language_combo.bind("<<ComboboxSelected>>", self._on_language_selected)
+            ttk.Label(theme_box, text=_("表示テーマ")).pack(side="left")
+            self.theme_var = tk.StringVar(value=_(THEME_LABELS[self._theme]))
+            theme_combo = ttk.Combobox(
+                theme_box,
+                textvariable=self.theme_var,
+                values=[_(THEME_LABELS[code]) for code in THEME_CODES],
+                state="readonly",
+                width=12,
+            )
+            theme_combo.pack(side="left", padx=(8, 0))
+            theme_combo.bind("<<ComboboxSelected>>", self._on_theme_selected)
         ttk.Label(
             header_text,
             text=f"{APP_NAME} {APP_VERSION}",
-            font=(GUI_FONT_FAMILY, 16, "bold"),
+            font=(GUI_FONT_FAMILY, GUI_TITLE_FONT_SIZE, "bold"),
         ).pack(anchor="w")
         ttk.Label(
             header_text,
-            text="リセットOFF時はFH6「マイデザイン」のカーソルを 001U にしてから実行してください。",
+            text=_("リセットOFF時はFH6「マイデザイン」のカーソルを 001U にしてから実行してください。"),
         ).pack(anchor="w", pady=(2, 0))
 
-        settings = ttk.LabelFrame(outer, text="入力・共通移動設定", padding=10)
+        settings = ttk.LabelFrame(outer, text=_("入力・共通移動設定"), padding=10)
         settings.grid(row=1, column=0, sticky="ew")
 
         def setting_row(row: int, label: str, variable: tk.StringVar, width: int, unit: str, note: str):
@@ -1474,18 +1779,18 @@ class NavigatorApp:
             if unit:
                 ttk.Label(group, text=unit).pack(side="left", padx=(6, 0))
             if note:
-                ttk.Label(group, text=note, foreground="#555555").pack(side="left", padx=(8, 0))
+                ttk.Label(group, text=note, style="Muted.TLabel").pack(side="left", padx=(8, 0))
             return entry
 
-        self.target_entry = setting_row(0, "移動先", self.target_var, 18, "", "537 / #269U")
-        setting_row(1, "最終実スロット番号", self.last_slot_var, 18, "", "例: 810（最大1000）")
+        self.target_entry = setting_row(0, _("移動先"), self.target_var, 18, "", "537 / #269U")
+        setting_row(1, _("最終実スロット番号"), self.last_slot_var, 18, "", _("例: 810（最大1000）"))
         ttk.Separator(settings, orient="horizontal").grid(
             row=2, column=0, columnspan=2, sticky="ew", pady=8
         )
-        setting_row(3, "FH6切替後の待ち時間", self.switch_delay_var, 10, "ms", "前面化後に待機。初期値500")
-        setting_row(4, "キー間隔", self.interval_var, 10, "ms", "安定性を優先した初期値50")
-        setting_row(5, "横→上下の待ち時間", self.turn_delay_var, 10, "ms", "例: 200")
-        setting_row(6, "左循環後の追加待ち", self.wrap_delay_var, 10, "ms", "001→最終列の直後だけ。初期値400")
+        setting_row(3, _("FH6切替後の待ち時間"), self.switch_delay_var, 10, "ms", _("前面化後に待機。初期値500"))
+        setting_row(4, _("キー間隔"), self.interval_var, 10, "ms", _("安定性を優先した初期値50"))
+        setting_row(5, _("横→上下の待ち時間"), self.turn_delay_var, 10, "ms", _("例: 200"))
+        setting_row(6, _("左循環後の追加待ち"), self.wrap_delay_var, 10, "ms", _("001→最終列の直後だけ。初期値400"))
         ttk.Separator(settings, orient="horizontal").grid(
             row=7, column=0, columnspan=2, sticky="ew", pady=8
         )
@@ -1493,74 +1798,71 @@ class NavigatorApp:
         reset_group.grid(row=8, column=0, columnspan=2, sticky="w", pady=(0, 3))
         ttk.Checkbutton(
             reset_group,
-            text="移動前にマイデザインを開き直して #001U へ戻す（ESC → RET）",
+            text=_("移動前にマイデザインを開き直して #001U へ戻す（ESC → RET）"),
             variable=self.reset_origin_var,
         ).pack(side="left")
-        setting_row(9, "ESC後の待ち時間", self.reset_esc_delay_var, 10, "ms", "初期値500")
-        setting_row(10, "RET後の待ち時間", self.reset_ret_delay_var, 10, "ms", "初期値800。再入場後の待機")
+        setting_row(9, _("ESC後の待ち時間"), self.reset_esc_delay_var, 10, "ms", _("初期値500"))
+        setting_row(10, _("RET後の待ち時間"), self.reset_ret_delay_var, 10, "ms", _("初期値800。再入場後の待機"))
 
         ttk.Label(
             settings,
             text=(
-                "「FH6へ移動」でFH6を前面化します。通常移動は左・右・下のみ、リセットON時だけ固定の ESC → RET を移動前に1回実行します。\n"
-                "FH6の画面内容や内部のカーソル位置は読み取らず、設定された間隔でキー入力を送るだけです。\n"
-                "PCやFH6の負荷などで入力が取りこぼされると指定位置からずれる場合があります。ずれる場合は待ち時間を長めにしてください。\n"
-                f"共通設定は自動保存されます: {shared_move_settings_path()}"
+                _("「FH6へ移動」でFH6を前面化します。通常移動は左・右・下のみ、リセットON時だけ固定の ESC → RET を移動前に1回実行します。\nFH6の画面内容や内部のカーソル位置は読み取らず、設定された間隔でキー入力を送るだけです。\nPCやFH6の負荷などで入力が取りこぼされると指定位置からずれる場合があります。ずれる場合は待ち時間を長めにしてください。\n共通設定は自動保存されます: {0}").format(shared_move_settings_path())
             ),
-            foreground="#555555",
+            style="Muted.TLabel",
             wraplength=650,
         ).grid(row=11, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
-        integration = ttk.LabelFrame(outer, text="Livery Organizer for FH6 連携", padding=9)
+        integration = ttk.LabelFrame(outer, text=_("Livery Organizer for FH6 連携"), padding=9)
         integration.grid(row=2, column=0, sticky="ew", pady=(10, 0))
         integration.columnconfigure(0, weight=1)
         ttk.Label(integration, textvariable=self.protocol_status_var).grid(row=0, column=0, sticky="w")
         integration_buttons = ttk.Frame(integration)
         integration_buttons.grid(row=0, column=1, sticky="e", padx=(10, 0))
-        self.protocol_register_button = ttk.Button(integration_buttons, text="連携を登録", command=self.register_organizer_integration)
+        self.protocol_register_button = ttk.Button(integration_buttons, text=_("連携を登録"), command=self.register_organizer_integration)
         self.protocol_register_button.pack(side="left")
-        self.protocol_unregister_button = ttk.Button(integration_buttons, text="解除", command=self.unregister_organizer_integration)
+        self.protocol_unregister_button = ttk.Button(integration_buttons, text=_("解除"), command=self.unregister_organizer_integration)
         self.protocol_unregister_button.pack(side="left", padx=(6, 0))
         ttk.Label(
             integration,
             textvariable=self.execution_format_var,
-            foreground="#555555",
+            style="Muted.TLabel",
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
         ttk.Label(
             integration,
             textvariable=self.protocol_target_var,
-            foreground="#555555",
+            style="Muted.TLabel",
             wraplength=650,
         ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(3, 0))
         ttk.Label(
             integration,
             text=(
-                "一度登録すると、Organizerの「FH6で選択デザインへ移動」から現在位置と最終実スロット数を受け取れます。\n"
-                "Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から「連携を登録」を再実行してください。"
+                _("一度登録すると、Organizerの「FH6で選択デザインへ移動」から現在位置と最終実スロット数を受け取れます。\n"
+                "Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から「連携を登録」を再実行してください。")
             ),
-            foreground="#555555",
+            style="Muted.TLabel",
             wraplength=650,
         ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(5, 0))
 
-        plan_frame = ttk.LabelFrame(outer, text="移動計画", padding=10)
+        plan_frame = ttk.LabelFrame(outer, text=_("移動計画"), padding=10)
         plan_frame.grid(row=3, column=0, sticky="ew", pady=(12, 8))
         ttk.Label(plan_frame, textvariable=self.plan_var, justify="left", wraplength=650).grid(row=0, column=0, sticky="w")
         ttk.Label(
             plan_frame,
             textvariable=self.operation_var,
             justify="left",
-            font=(GUI_FONT_FAMILY, 14, "bold"),
+            font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold"),
         ).grid(row=1, column=0, sticky="w", pady=(6, 0))
 
         btns = ttk.Frame(outer)
         btns.grid(row=4, column=0, sticky="ew", pady=(6, 6))
         btns.columnconfigure(0, weight=1)
 
-        self.preview_button = ttk.Button(btns, text="移動計画を確認", command=self.update_preview)
+        self.preview_button = ttk.Button(btns, text=_("移動計画を確認"), command=self.update_preview)
         self.preview_button.grid(row=0, column=0, sticky="w")
-        self.start_button = ttk.Button(btns, text="FH6へ移動", command=self.start_move)
+        self.start_button = ttk.Button(btns, text=_("FH6へ移動"), command=self.start_move)
         self.start_button.grid(row=0, column=1, padx=(8, 0))
-        self.abort_button = ttk.Button(btns, text="中止", command=self.request_abort, state="disabled")
+        self.abort_button = ttk.Button(btns, text=_("中止"), command=self.request_abort, state="disabled")
         self.abort_button.grid(row=0, column=2, padx=(8, 0))
 
         ttk.Label(
@@ -1573,27 +1875,50 @@ class NavigatorApp:
 
         ttk.Label(
             outer,
-            text="通常移動は左・右・下だけです。画面内容や内部位置は読み取らず、指定間隔でキー入力を送るため、PC/FH6の負荷で位置がずれる場合があります。",
-            foreground="#555555",
+            text=_("通常移動は左・右・下だけです。画面内容や内部位置は読み取らず、指定間隔でキー入力を送るため、PC/FH6の負荷で位置がずれる場合があります。"),
+            style="Muted.TLabel",
+            wraplength=650,
         ).grid(row=6, column=0, sticky="w", pady=(8, 0))
 
+    def _on_language_selected(self, *_args) -> None:
+        code = {label: code for code, label in BRIDGE_LANGUAGES}.get(self.language_var.get(), "ja")
+        if not self._suite_writable:
+            return
+        error = save_suite_language(code)
+        if error:
+            self.status_var.set(_("言語の設定を共有設定へ保存できませんでした: {0}").format(error))
+            return
+        if code != BRIDGE_LANGUAGE:
+            show_app_info(self.root, _("言語の設定を保存しました。次回起動時に反映されます。"), _("言語の設定"))
+
+    def _on_theme_selected(self, *_args) -> None:
+        code = {_(label): code for code, label in THEME_LABELS.items()}.get(self.theme_var.get(), "system")
+        if code == self._theme:
+            return
+        self._theme = code
+        apply_gui_theme(self.root, self._theme)
+        if self._suite_writable:
+            error = save_suite_theme(self._theme)
+            if error:
+                self.status_var.set(_("表示テーマを共有設定へ保存できませんでした: {0}").format(error))
+
     def refresh_protocol_status(self) -> None:
-        self.execution_format_var.set(f"実行形式: {execution_format_label()}")
+        self.execution_format_var.set(_("実行形式: {0}").format(execution_format_label()))
 
         if not IS_WINDOWS:
-            self.protocol_status_var.set("Organizer連携: Windows専用")
-            self.protocol_target_var.set("連携登録先: Windows専用")
+            self.protocol_status_var.set(_("Organizer連携: Windows専用"))
+            self.protocol_target_var.set(_("連携登録先: Windows専用"))
             self.protocol_register_button.configure(state="disabled")
             self.protocol_unregister_button.configure(state="disabled")
             return
 
         current = read_registered_protocol_command()
         self.protocol_target_var.set(
-            f"連携登録先: {protocol_registration_target_display(current)}"
+            _("連携登録先: {0}").format(protocol_registration_target_display(current))
         )
 
         if protocol_is_registered_for_this_build():
-            self.protocol_status_var.set("Organizer連携: 登録済み")
+            self.protocol_status_var.set(_("Organizer連携: 登録済み"))
             self.protocol_register_button.configure(state="disabled")
             self.protocol_unregister_button.configure(state="normal")
         else:
@@ -1602,11 +1927,11 @@ class NavigatorApp:
                 for scheme in LEGACY_PROTOCOL_SCHEMES
             )
             if current:
-                status = "Organizer連携: 再登録が必要"
+                status = _("Organizer連携: 再登録が必要")
             elif legacy_owned:
-                status = "Organizer連携: 旧スキーム登録あり（再登録が必要）"
+                status = _("Organizer連携: 旧スキーム登録あり（再登録が必要）")
             else:
-                status = "Organizer連携: 未登録"
+                status = _("Organizer連携: 未登録")
             self.protocol_status_var.set(status)
             self.protocol_register_button.configure(state="normal")
             self.protocol_unregister_button.configure(state="normal" if (current or legacy_owned) else "disabled")
@@ -1615,21 +1940,21 @@ class NavigatorApp:
         try:
             register_protocol()
         except Exception as exc:
-            show_app_error(self.root, f"Organizer連携を登録できませんでした。\n{exc}")
+            show_app_error(self.root, _("Organizer連携を登録できませんでした。\n{0}").format(exc))
             return
         self.refresh_protocol_status()
         show_app_info(
             self.root,
-            "Organizer連携を登録しました。\n"
+            _("Organizer連携を登録しました。\n"
             "Livery Organizer for FH6 のHTMLで「FH6で選択デザインへ移動」を実行すると、このBridgeへ位置を渡せます。\n\n"
-            "Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から再度「連携を登録」してください。",
+            "Bridge本体を別フォルダへ移動・ファイル名変更した場合は、移動後の場所から再度「連携を登録」してください。"),
         )
 
     def unregister_organizer_integration(self) -> None:
         try:
             unregister_protocol()
         except Exception as exc:
-            show_app_error(self.root, f"Organizer連携を解除できませんでした。\n{exc}")
+            show_app_error(self.root, _("Organizer連携を解除できませんでした。\n{0}").format(exc))
             return
         self.refresh_protocol_status()
 
@@ -1701,48 +2026,48 @@ class NavigatorApp:
         try:
             last_slot = int(normalize_ascii_digits(self.last_slot_var.get()).strip())
         except ValueError:
-            raise ValueError("最終実スロット番号は整数で入力してください。")
+            raise ValueError(_("最終実スロット番号は整数で入力してください。"))
 
         try:
             interval_ms = float(normalize_ascii_digits(self.interval_var.get()).strip())
         except ValueError:
-            raise ValueError("キー間隔は数値で入力してください。")
+            raise ValueError(_("キー間隔は数値で入力してください。"))
 
         try:
             switch_delay_ms = float(normalize_ascii_digits(self.switch_delay_var.get()).strip())
         except ValueError:
-            raise ValueError("FH6切替後の待ち時間は数値で入力してください。")
+            raise ValueError(_("FH6切替後の待ち時間は数値で入力してください。"))
 
         try:
             turn_delay_ms = float(normalize_ascii_digits(self.turn_delay_var.get()).strip())
         except ValueError:
-            raise ValueError("横→上下の待ち時間は数値で入力してください。")
+            raise ValueError(_("横→上下の待ち時間は数値で入力してください。"))
 
         try:
             wrap_delay_ms = float(normalize_ascii_digits(self.wrap_delay_var.get()).strip())
         except ValueError:
-            raise ValueError("左循環後の追加待ちは数値で入力してください。")
+            raise ValueError(_("左循環後の追加待ちは数値で入力してください。"))
         try:
             reset_esc_delay_ms = float(normalize_ascii_digits(self.reset_esc_delay_var.get()).strip())
         except ValueError:
-            raise ValueError("ESC後の待ち時間は数値で入力してください。")
+            raise ValueError(_("ESC後の待ち時間は数値で入力してください。"))
         try:
             reset_ret_delay_ms = float(normalize_ascii_digits(self.reset_ret_delay_var.get()).strip())
         except ValueError:
-            raise ValueError("RET後の待ち時間は数値で入力してください。")
+            raise ValueError(_("RET後の待ち時間は数値で入力してください。"))
 
         if not 10 <= interval_ms <= 2000:
-            raise ValueError("キー間隔は 10～2000 ms の範囲で指定してください。")
+            raise ValueError(_("キー間隔は 10～2000 ms の範囲で指定してください。"))
         if not 0 <= switch_delay_ms <= 5000:
-            raise ValueError("FH6切替後の待ち時間は 0～5000 ms の範囲で指定してください。")
+            raise ValueError(_("FH6切替後の待ち時間は 0～5000 ms の範囲で指定してください。"))
         if not 0 <= turn_delay_ms <= 5000:
-            raise ValueError("横→上下の待ち時間は 0～5000 ms の範囲で指定してください。")
+            raise ValueError(_("横→上下の待ち時間は 0～5000 ms の範囲で指定してください。"))
         if not 0 <= wrap_delay_ms <= 5000:
-            raise ValueError("左循環後の追加待ちは 0～5000 ms の範囲で指定してください。")
+            raise ValueError(_("左循環後の追加待ちは 0～5000 ms の範囲で指定してください。"))
         if not 0 <= reset_esc_delay_ms <= 5000:
-            raise ValueError("ESC後の待ち時間は 0～5000 ms の範囲で指定してください。")
+            raise ValueError(_("ESC後の待ち時間は 0～5000 ms の範囲で指定してください。"))
         if not 0 <= reset_ret_delay_ms <= 5000:
-            raise ValueError("RET後の待ち時間は 0～5000 ms の範囲で指定してください。")
+            raise ValueError(_("RET後の待ち時間は 0～5000 ms の範囲で指定してください。"))
 
         plan = build_plan(self.target_var.get(), last_slot)
         return (plan, interval_ms, switch_delay_ms, turn_delay_ms, wrap_delay_ms,
@@ -1755,11 +2080,11 @@ class NavigatorApp:
             plan, interval_ms, _switch_delay_ms, turn_delay_ms, wrap_delay_ms, reset_origin, reset_esc_delay_ms, reset_ret_delay_ms = self.read_settings()
         except Exception as exc:
             self.plan_var.set(str(exc))
-            self.operation_var.set("操作: —")
+            self.operation_var.set(_("操作: —"))
             return
 
         direction = {
-            None: "横移動なし",
+            None: _("横移動なし"),
             "LEFT": f"◀ × {plan.horizontal_presses}",
             "RIGHT": f"▶ × {plan.horizontal_presses}",
         }[plan.horizontal_key]
@@ -1778,19 +2103,17 @@ class NavigatorApp:
         if reset_origin:
             estimated_ms += reset_esc_delay_ms + reset_ret_delay_ms
 
-        wrap_note = f" / 左循環後 +{wrap_delay_ms:g}ms" if uses_left_wrap and plan.horizontal_presses > 1 else ""
+        wrap_note = _(" / 左循環後 +{0:g}ms").format(wrap_delay_ms) if uses_left_wrap and plan.horizontal_presses > 1 else ""
         reset_note = (
-            f" / 初期位置リセット ESC→RET（{reset_esc_delay_ms:g}ms / {reset_ret_delay_ms:g}ms）"
-            if reset_origin else " / 初期位置リセット OFF"
+            _(" / 初期位置リセット ESC→RET（{0:g}ms / {1:g}ms）").format(reset_esc_delay_ms, reset_ret_delay_ms)
+            if reset_origin else _(" / 初期位置リセット OFF")
         )
         reset_keys = 2 if reset_origin else 0
         self.plan_var.set(
-            f"移動先: #{plan.target.slot} / #{plan.target.column:03d}{plan.target.row}\n"
-            f"最終位置: #{plan.last_slot} / {format_last_position(plan.last_slot)}\n"
-            f"送信キー数: {plan.total_presses + reset_keys}回 / 推定入力時間: 約 {estimated_ms / 1000:.2f} 秒{wrap_note}{reset_note}"
+            _("移動先: #{0} / #{1:03d}{2}\n最終位置: #{3} / {4}\n送信キー数: {5}回 / 推定入力時間: 約 {6:.2f} 秒{7}{8}").format(plan.target.slot, plan.target.column, plan.target.row, plan.last_slot, format_last_position(plan.last_slot), plan.total_presses + reset_keys, estimated_ms / 1000, wrap_note, reset_note)
         )
         prefix = "ESC → RET　" if reset_origin else ""
-        self.operation_var.set(f"操作: {prefix}{direction}{vertical}")
+        self.operation_var.set(_("操作: {0}{1}{2}").format(prefix, direction, vertical))
 
     def set_running(self, running: bool) -> None:
         self.running = running
@@ -1802,13 +2125,13 @@ class NavigatorApp:
     def request_abort(self) -> None:
         if self.running:
             self.abort_requested = True
-            self.status_var.set("中止要求を受け付けました…")
+            self.status_var.set(_("中止要求を受け付けました…"))
 
     def start_move(self) -> None:
         if self.running:
             return
         if not IS_WINDOWS:
-            show_app_error(self.root, "このユーティリティはWindows専用です。")
+            show_app_error(self.root, _("このユーティリティはWindows専用です。"))
             return
 
         try:
@@ -1831,18 +2154,18 @@ class NavigatorApp:
             hwnd, title = select_unique_fh6_window(windows)
         except RuntimeError as exc:
             show_app_error(self.root, str(exc))
-            self.status_var.set("FH6ウィンドウを一意に確認できなかったため、キー入力は行いませんでした。")
+            self.status_var.set(_("FH6ウィンドウを一意に確認できなかったため、キー入力は行いませんでした。"))
             return
         self.abort_requested = False
         self.set_running(True)
-        self.status_var.set(f"FH6を検出: {title}。前面へ切り替えています…")
+        self.status_var.set(_("FH6を検出: {0}。前面へ切り替えています…").format(title))
 
         try:
             activate_fh6_window(hwnd)
         except Exception as exc:
             self.set_running(False)
-            show_app_error(self.root, f"FH6を前面へ切り替えられませんでした。\n{exc}")
-            self.status_var.set("FH6の前面化に失敗したため、キー入力は行いませんでした。")
+            show_app_error(self.root, _("FH6を前面へ切り替えられませんでした。\n{0}").format(exc))
+            self.status_var.set(_("FH6の前面化に失敗したため、キー入力は行いませんでした。"))
             return
 
         threading.Thread(
@@ -1889,22 +2212,22 @@ class NavigatorApp:
         try:
             if switch_delay_s > 0:
                 self._set_status_threadsafe(
-                    f"FH6を前面化しました。{switch_delay_s * 1000:.0f}ms 待機しています…"
+                    _("FH6を前面化しました。{0:.0f}ms 待機しています…").format(switch_delay_s * 1000)
                 )
                 if not self._sleep_abortable(switch_delay_s):
-                    self._finish("中止しました。")
+                    self._finish(_("中止しました。"))
                     return
 
             # Safety check: never send keys if FH6 did not actually become foreground.
             if not is_foreground_fh6_window(hwnd):
                 self._finish(
-                    f"安全のため中止: 「{title}」をFH6として前面確認できないためキー入力を送信しませんでした。",
+                    _("安全のため中止: 「{0}」をFH6として前面確認できないためキー入力を送信しませんでした。").format(title),
                     error=True,
                 )
                 return
 
             if self._should_abort():
-                self._finish("中止しました。")
+                self._finish(_("中止しました。"))
                 return
 
             done = 0
@@ -1912,25 +2235,25 @@ class NavigatorApp:
 
             if reset_origin:
                 if not is_foreground_fh6_window(hwnd):
-                    self._finish("安全のため中止: 初期位置リセット前にFH6として前面確認できなくなりました。", error=True)
+                    self._finish(_("安全のため中止: 初期位置リセット前にFH6として前面確認できなくなりました。"), error=True)
                     return
-                self._set_status_threadsafe("初期位置リセット: ESC を送信…")
+                self._set_status_threadsafe(_("初期位置リセット: ESC を送信…"))
                 send_origin_reset_step("ESC")
                 done += 1
                 if not self._sleep_abortable(reset_esc_delay_s):
-                    self._finish(f"中止しました。{done}/{total}キー送信済み。")
+                    self._finish(_("中止しました。{0}/{1}キー送信済み。").format(done, total))
                     return
                 if not is_foreground_fh6_window(hwnd):
-                    self._finish("安全のため中止: RET送信前にFH6として前面確認できなくなりました。", error=True)
+                    self._finish(_("安全のため中止: RET送信前にFH6として前面確認できなくなりました。"), error=True)
                     return
-                self._set_status_threadsafe("初期位置リセット: RET を送信…")
+                self._set_status_threadsafe(_("初期位置リセット: RET を送信…"))
                 send_origin_reset_step("RET")
                 done += 1
                 if not self._sleep_abortable(reset_ret_delay_s):
-                    self._finish(f"中止しました。{done}/{total}キー送信済み。")
+                    self._finish(_("中止しました。{0}/{1}キー送信済み。").format(done, total))
                     return
                 if not is_foreground_fh6_window(hwnd):
-                    self._finish("安全のため中止: マイデザイン再入場後にFH6として前面確認できなくなりました。", error=True)
+                    self._finish(_("安全のため中止: マイデザイン再入場後にFH6として前面確認できなくなりました。"), error=True)
                     return
 
             if plan.horizontal_key and plan.horizontal_presses:
@@ -1938,13 +2261,13 @@ class NavigatorApp:
                 symbol = "◀" if plan.horizontal_key == "LEFT" else "▶"
                 for i in range(plan.horizontal_presses):
                     if self._should_abort():
-                        self._finish(f"中止しました。{done}/{total}キー送信済み。")
+                        self._finish(_("中止しました。{0}/{1}キー送信済み。").format(done, total))
                         return
 
                     send_fh6_movement_key(hwnd, vk)
                     done += 1
                     self._set_status_threadsafe(
-                        f"{symbol} {i + 1}/{plan.horizontal_presses}（全体 {done}/{total}）"
+                        _("{0} {1}/{2}（全体 {3}/{4}）").format(symbol, i + 1, plan.horizontal_presses, done, total)
                     )
 
                     if i + 1 < plan.horizontal_presses:
@@ -1953,31 +2276,31 @@ class NavigatorApp:
                             delay_s += wrap_delay_s
                             if wrap_delay_s > 0:
                                 self._set_status_threadsafe(
-                                    f"◀ 1/{plan.horizontal_presses}：最終列への循環後 {wrap_delay_s * 1000:.0f}ms 追加待機"
+                                    _("◀ 1/{0}：最終列への循環後 {1:.0f}ms 追加待機").format(plan.horizontal_presses, wrap_delay_s * 1000)
                                 )
                         if not self._sleep_abortable(delay_s):
-                            self._finish(f"中止しました。{done}/{total}キー送信済み。")
+                            self._finish(_("中止しました。{0}/{1}キー送信済み。").format(done, total))
                             return
 
             if plan.horizontal_presses and plan.vertical_presses and turn_delay_s > 0:
-                self._set_status_threadsafe("横移動完了。上下移動まで待機中…")
+                self._set_status_threadsafe(_("横移動完了。上下移動まで待機中…"))
                 if not self._sleep_abortable(turn_delay_s):
-                    self._finish(f"中止しました。{done}/{total}キー送信済み。")
+                    self._finish(_("中止しました。{0}/{1}キー送信済み。").format(done, total))
                     return
 
             if plan.vertical_key and plan.vertical_presses:
                 if self._should_abort():
-                    self._finish(f"中止しました。{done}/{total}キー送信済み。")
+                    self._finish(_("中止しました。{0}/{1}キー送信済み。").format(done, total))
                     return
                 send_fh6_movement_key(hwnd, key_name_to_vk(plan.vertical_key))
                 done += 1
 
             self._finish(
-                f"完了: #{plan.target.slot} / #{plan.target.column:03d}{plan.target.row}（{done}キー送信）"
+                _("完了: #{0} / #{1:03d}{2}（{3}キー送信）").format(plan.target.slot, plan.target.column, plan.target.row, done)
             )
 
         except Exception as exc:
-            self._finish(f"エラー: {exc}", error=True)
+            self._finish(_("エラー: {0}").format(exc), error=True)
 
     def _set_status_threadsafe(self, text: str) -> None:
         self.root.after(0, self.status_var.set, text)
@@ -2020,7 +2343,7 @@ def show_bridge_error(text: str) -> None:
 
 def validate_headless_args(args: argparse.Namespace) -> tuple[MovePlan, float, float, float, float, bool, float, float]:
     if getattr(args, "last_slot", None) is None:
-        raise ValueError("最終実スロット番号が指定されていません。")
+        raise ValueError(_("最終実スロット番号が指定されていません。"))
     plan = build_plan(str(getattr(args, "target", "") or ""), int(args.last_slot))
     interval_ms = float(getattr(args, "interval_ms", 50.0))
     switch_delay_ms = float(getattr(args, "switch_delay_ms", 500.0))
@@ -2030,17 +2353,17 @@ def validate_headless_args(args: argparse.Namespace) -> tuple[MovePlan, float, f
     reset_esc_delay_ms = float(getattr(args, "reset_esc_delay_ms", 500.0))
     reset_ret_delay_ms = float(getattr(args, "reset_ret_delay_ms", 800.0))
     if not 10 <= interval_ms <= 2000:
-        raise ValueError("キー間隔は 10～2000 ms の範囲で指定してください。")
+        raise ValueError(_("キー間隔は 10～2000 ms の範囲で指定してください。"))
     if not 0 <= switch_delay_ms <= 5000:
-        raise ValueError("FH6切替後の待ち時間は 0～5000 ms の範囲で指定してください。")
+        raise ValueError(_("FH6切替後の待ち時間は 0～5000 ms の範囲で指定してください。"))
     if not 0 <= turn_delay_ms <= 5000:
-        raise ValueError("横→上下の待ち時間は 0～5000 ms の範囲で指定してください。")
+        raise ValueError(_("横→上下の待ち時間は 0～5000 ms の範囲で指定してください。"))
     if not 0 <= wrap_delay_ms <= 5000:
-        raise ValueError("左循環後の追加待ちは 0～5000 ms の範囲で指定してください。")
+        raise ValueError(_("左循環後の追加待ちは 0～5000 ms の範囲で指定してください。"))
     if not 0 <= reset_esc_delay_ms <= 5000:
-        raise ValueError("ESC後の待ち時間は 0～5000 ms の範囲で指定してください。")
+        raise ValueError(_("ESC後の待ち時間は 0～5000 ms の範囲で指定してください。"))
     if not 0 <= reset_ret_delay_ms <= 5000:
-        raise ValueError("RET後の待ち時間は 0～5000 ms の範囲で指定してください。")
+        raise ValueError(_("RET後の待ち時間は 0～5000 ms の範囲で指定してください。"))
     return (plan, interval_ms / 1000.0, switch_delay_ms / 1000.0, turn_delay_ms / 1000.0,
             wrap_delay_ms / 1000.0, reset_origin, reset_esc_delay_ms / 1000.0, reset_ret_delay_ms / 1000.0)
 
@@ -2060,7 +2383,7 @@ def activate_fh6_window_confirmed(hwnd: int, timeout_s: float = 1.2) -> bool:
 def execute_headless_move(args: argparse.Namespace) -> str:
     """Execute one Organizer request without creating or hiding a Tk application window."""
     if not IS_WINDOWS:
-        raise RuntimeError("Navigator BridgeはWindows専用です。")
+        raise RuntimeError(_("Navigator BridgeはWindows専用です。"))
     plan, interval_s, switch_delay_s, turn_delay_s, wrap_delay_s, reset_origin, reset_esc_delay_s, reset_ret_delay_s = validate_headless_args(args)
     save_shared_move_settings(move_settings_from_args(args))
     windows = find_fh6_windows()
@@ -2071,42 +2394,41 @@ def execute_headless_move(args: argparse.Namespace) -> str:
     )
     if not activate_fh6_window_confirmed(hwnd):
         raise RuntimeError(
-            f"Forza Horizon 6 をフォアグラウンドへ切り替えられませんでした。\n"
-            f"安全のためキー入力は送信していません。\n\n診断ログ: {bridge_log_path()}"
+            _("Forza Horizon 6 をフォアグラウンドへ切り替えられませんでした。\n安全のためキー入力は送信していません。\n\n診断ログ: {0}").format(bridge_log_path())
         )
     bridge_log("FH6 foreground confirmed")
     if switch_delay_s > 0:
         time.sleep(switch_delay_s)
     if not is_foreground_fh6_window(hwnd):
         raise RuntimeError(
-            "FH6切替後の待機中にFH6として前面確認できなくなりました。\n"
-            "安全のためキー入力は送信していません。"
+            _("FH6切替後の待機中にFH6として前面確認できなくなりました。\n"
+            "安全のためキー入力は送信していません。")
         )
 
     done = 0
     if reset_origin:
         if not is_foreground_fh6_window(hwnd):
-            raise RuntimeError("初期位置リセット前にFH6として前面確認できなくなったため、安全のため中止しました。")
+            raise RuntimeError(_("初期位置リセット前にFH6として前面確認できなくなったため、安全のため中止しました。"))
         bridge_log("origin reset: ESC")
         send_origin_reset_step("ESC")
         done += 1
         if reset_esc_delay_s > 0:
             time.sleep(reset_esc_delay_s)
         if not is_foreground_fh6_window(hwnd):
-            raise RuntimeError("RET送信前にFH6として前面確認できなくなったため、安全のため中止しました。")
+            raise RuntimeError(_("RET送信前にFH6として前面確認できなくなったため、安全のため中止しました。"))
         bridge_log("origin reset: RET")
         send_origin_reset_step("RET")
         done += 1
         if reset_ret_delay_s > 0:
             time.sleep(reset_ret_delay_s)
         if not is_foreground_fh6_window(hwnd):
-            raise RuntimeError("マイデザイン再入場後にFH6として前面確認できなくなったため、安全のため中止しました。")
+            raise RuntimeError(_("マイデザイン再入場後にFH6として前面確認できなくなったため、安全のため中止しました。"))
 
     if plan.horizontal_key and plan.horizontal_presses:
         vk = key_name_to_vk(plan.horizontal_key)
         for i in range(plan.horizontal_presses):
             if not is_foreground_fh6_window(hwnd):
-                raise RuntimeError("移動中にFH6として前面確認できなくなったため、安全のため中止しました。")
+                raise RuntimeError(_("移動中にFH6として前面確認できなくなったため、安全のため中止しました。"))
             send_fh6_movement_key(hwnd, vk)
             done += 1
             if i + 1 < plan.horizontal_presses:
@@ -2121,7 +2443,7 @@ def execute_headless_move(args: argparse.Namespace) -> str:
 
     if plan.vertical_key and plan.vertical_presses:
         if not is_foreground_fh6_window(hwnd):
-            raise RuntimeError("上下移動前にFH6として前面確認できなくなったため、安全のため中止しました。")
+            raise RuntimeError(_("上下移動前にFH6として前面確認できなくなったため、安全のため中止しました。"))
         # key_name_to_vk() + send_fh6_movement_key() both enforce LEFT / RIGHT / DOWN only.
         send_fh6_movement_key(hwnd, key_name_to_vk(plan.vertical_key))
         done += 1
@@ -2176,7 +2498,7 @@ def run_headless_bridge(args: argparse.Namespace) -> None:
         try:
             execute_headless_move(current)
         except Exception as exc:
-            show_bridge_error(f"FH6への移動を実行できませんでした。\n\n{exc}")
+            show_bridge_error(_("FH6への移動を実行できませんでした。\n\n{0}").format(exc))
         # A short grace period lets a near-simultaneous browser launch finish its queue write.
         time.sleep(0.18)
         current = pop_latest_ipc_move()
@@ -2184,19 +2506,19 @@ def run_headless_bridge(args: argparse.Namespace) -> None:
 def parse_args() -> argparse.Namespace:
     shared = load_shared_move_settings()
     p = argparse.ArgumentParser(description=f"{APP_NAME} {APP_VERSION}")
-    p.add_argument("--target", help="移動先。例: 537 / 269U")
-    p.add_argument("--last-slot", type=int, help="最終実スロット番号（最大1000）")
-    p.add_argument("--interval-ms", type=float, default=shared["interval_ms"], help=f"キー間隔ms（default: {shared['interval_ms']:g}）")
-    p.add_argument("--switch-delay-ms", type=float, default=shared["switch_delay_ms"], help=f"FH6前面化後の待ち時間ms（default: {shared['switch_delay_ms']:g}）")
-    p.add_argument("--turn-delay-ms", type=float, default=shared["turn_delay_ms"], help=f"横→上下の待ち時間ms（default: {shared['turn_delay_ms']:g}）")
-    p.add_argument("--wrap-delay-ms", type=float, default=shared["wrap_delay_ms"], help=f"001→最終列の左循環後追加待ちms（default: {shared['wrap_delay_ms']:g}）")
+    p.add_argument("--target", help=_("移動先。例: 537 / 269U"))
+    p.add_argument("--last-slot", type=int, help=_("最終実スロット番号（最大1000）"))
+    p.add_argument("--interval-ms", type=float, default=shared["interval_ms"], help=_("キー間隔ms（default: {0:g}）").format(shared['interval_ms']))
+    p.add_argument("--switch-delay-ms", type=float, default=shared["switch_delay_ms"], help=_("FH6前面化後の待ち時間ms（default: {0:g}）").format(shared['switch_delay_ms']))
+    p.add_argument("--turn-delay-ms", type=float, default=shared["turn_delay_ms"], help=_("横→上下の待ち時間ms（default: {0:g}）").format(shared['turn_delay_ms']))
+    p.add_argument("--wrap-delay-ms", type=float, default=shared["wrap_delay_ms"], help=_("001→最終列の左循環後追加待ちms（default: {0:g}）").format(shared['wrap_delay_ms']))
     reset_group = p.add_mutually_exclusive_group()
-    reset_group.add_argument("--reset-origin", dest="reset_origin", action="store_true", help="移動前に固定の ESC → RET でマイデザインを開き直し #001U へ戻す")
-    reset_group.add_argument("--no-reset-origin", dest="reset_origin", action="store_false", help="初期位置リセットを行わない")
+    reset_group.add_argument("--reset-origin", dest="reset_origin", action="store_true", help=_("移動前に固定の ESC → RET でマイデザインを開き直し #001U へ戻す"))
+    reset_group.add_argument("--no-reset-origin", dest="reset_origin", action="store_false", help=_("初期位置リセットを行わない"))
     p.set_defaults(reset_origin=bool(shared["reset_origin"]))
-    p.add_argument("--reset-esc-delay-ms", type=float, default=shared["reset_esc_delay_ms"], help=f"初期位置リセットのESC後待ち時間ms（default: {shared['reset_esc_delay_ms']:g}）")
-    p.add_argument("--reset-ret-delay-ms", type=float, default=shared["reset_ret_delay_ms"], help=f"初期位置リセットのRET後待ち時間ms（default: {shared['reset_ret_delay_ms']:g}）")
-    p.add_argument("--uri", help="Livery Organizer for FH6 連携URI")
+    p.add_argument("--reset-esc-delay-ms", type=float, default=shared["reset_esc_delay_ms"], help=_("初期位置リセットのESC後待ち時間ms（default: {0:g}）").format(shared['reset_esc_delay_ms']))
+    p.add_argument("--reset-ret-delay-ms", type=float, default=shared["reset_ret_delay_ms"], help=_("初期位置リセットのRET後待ち時間ms（default: {0:g}）").format(shared['reset_ret_delay_ms']))
+    p.add_argument("--uri", help=_("Livery Organizer for FH6 連携URI"))
     p.add_argument("--autostart", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--protocol-self-test-output", help=argparse.SUPPRESS)
     p.add_argument("--protocol-self-test-diagnostics-output", help=argparse.SUPPRESS)
@@ -2207,10 +2529,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    set_bridge_language(load_suite_language())
     try:
         args = parse_args()
     except Exception as exc:
-        show_bridge_error(f"Organizer連携の引数を読み取れませんでした。\n{exc}")
+        show_bridge_error(_("Organizer連携の引数を読み取れませんでした。\n{0}").format(exc))
         return
 
     # Build-kit regression check: exercise the exact protocol command construction
@@ -2239,7 +2562,7 @@ def main() -> None:
             try:
                 enqueue_ipc_command(args)
             except Exception as exc:
-                show_bridge_error(f"起動中のNavigator Bridgeへ指示を渡せませんでした。\n{exc}")
+                show_bridge_error(_("起動中のNavigator Bridgeへ指示を渡せませんでした。\n{0}").format(exc))
             return
 
         clear_stale_ipc_commands()
