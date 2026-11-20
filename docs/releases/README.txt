@@ -116,16 +116,21 @@ Viewerはペイントを読み取って表示するだけで、GameSaveやFH6本
 
 ■ Livery Viewer for FH6 と GameDB
 
-ゲームのロゴのステッカーを使うペイントを表示するには、FH6のGameDB（復号済みのSQLite）が必要です。
-GameDBが無い場合、そのペイントは3D表示できません。
-ロゴのステッカーを使わないペイントは、GameDBが無くても表示できます。
+Livery Viewer for FH6 は、FH6のGameDB（ゲームのデータベースを復号したSQLiteのファイル）があると、
+より正確に表示できます。GameDBが無くても3D表示はできますが、次の部分が変わります。
+
+・ゲームのロゴのステッカー：GameDBで画像を引きます。無いときは省いて表示します。
+・ホイールとタイヤ：GameDBでゲームのホイールとタイヤの位置・寸法・種類を求めます。
+  無いときは簡易の形で表示します。
+GameDBが無いために省いたり簡易にしたりしたときは、Viewerの画面の上に注意を表示します。
 
 GameDBは配布物に含めません。Organizer・ViewerがGameDBを作成・復号・コピー・変更することもありません。
 利用者がローカルに用意したGameDBを、次の場所に置いた場合だけ、読み取り専用で使用します。
 
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 
-GameDBを使用できる場合は、車体の構成やホイールの寸法・配置にも使用します。
+GameDBの用意の方法は案内していません。用意する場合は、利用者自身の責任で、
+ゲームの利用規約等を確認してください。
 
 
 ■ Navigator Bridge for FH6 とは

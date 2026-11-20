@@ -29,7 +29,7 @@ Each card in an Organizer report now has a "3D Preview (Experimental)" link. Cli
 - Switching to another livery of the same car happens in the open window (about 1 second on the development PC).
 - The first time a car is shown, preparation takes a while (about 10-20 seconds on the development PC). The prepared data is kept in `preview-cache`, so later views of the same car are faster.
 - After you close the window, the Viewer waits hidden in the background for 10 minutes so the next view opens faster.
-- Liveries that use the game's logo stickers require an FH6 GameDB that the user has prepared locally (not included in the distribution).
+- With an FH6 GameDB that the user has prepared locally (not included in the distribution), liveries are shown more accurately. Without it, game logo stickers are omitted and wheels and tires are shown in a simplified form.
 
 ### The three tools share settings and style
 
@@ -91,13 +91,19 @@ On first launch, the Viewer downloads three.js (MIT License), which it uses for 
 
 ### GameDB
 
-Liveries that use the game's logo stickers require the FH6 GameDB (a decrypted SQLite file) to be shown. Liveries without logo stickers can be shown without the GameDB.
+With the FH6 GameDB (a decrypted SQLite file of the game's database), liveries are shown more accurately. Without the GameDB, liveries can still be shown in 3D, with the following differences:
+
+- Game logo stickers: their images are looked up in the GameDB. Without it, they are omitted.
+- Wheels and tires: the game's wheel and tire placement, sizes, and types come from the GameDB. Without it, simplified wheels and tires are shown.
+- When something is omitted or simplified because the GameDB is missing, the Viewer shows a notice at the top of the screen.
 
 The GameDB is not included in the distribution or in this repository, and Organizer and the Viewer do not create, decrypt, copy, or modify it. Only a GameDB that the user has prepared locally and placed at the following location is used, read-only:
 
 ```text
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 ```
+
+How to prepare the GameDB is not covered. If you prepare one, do so at your own responsibility and check the game's terms of use.
 
 See [docs/3D-PREVIEW-GAMEDB.md](docs/3D-PREVIEW-GAMEDB.md) (Japanese) for details.
 

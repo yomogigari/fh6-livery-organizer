@@ -136,9 +136,16 @@ The downloaded files are verified against fixed checksums and reused afterwards.
 
 ■ Livery Viewer for FH6 and the GameDB
 
-Liveries that use the game's logo stickers require the FH6 GameDB (a decrypted
-SQLite file) to be shown. Without the GameDB, such a livery cannot be shown in 3D.
-Liveries without logo stickers can be shown without the GameDB.
+With the FH6 GameDB (a decrypted SQLite file of the game's database), Livery
+Viewer for FH6 can show liveries more accurately. Without the GameDB, liveries
+can still be shown in 3D, with the following differences:
+
+- Game logo stickers: their images are looked up in the GameDB. Without it,
+  they are omitted.
+- Wheels and tires: the game's wheel and tire placement, sizes, and types come
+  from the GameDB. Without it, simplified wheels and tires are shown.
+When something is omitted or simplified because the GameDB is missing, the
+Viewer shows a notice at the top of the screen.
 
 The GameDB is not included in the distribution, and Organizer and the Viewer do
 not create, decrypt, copy, or modify it. Only a GameDB that the user has prepared
@@ -146,8 +153,8 @@ locally and placed at the following location is used, read-only:
 
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 
-When the GameDB is available, it is also used for the car body composition and
-for wheel dimensions and placement.
+How to prepare the GameDB is not covered. If you prepare one, do so at your own
+responsibility and check the game's terms of use.
 
 
 ■ Main features
