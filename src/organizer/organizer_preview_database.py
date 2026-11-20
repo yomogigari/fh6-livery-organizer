@@ -46,6 +46,56 @@ def settings_path(environ: Mapping[str, str] | None = None, *, home: Path | None
     return _local_appdata_root(environ, home=home) / "preview-settings.json"
 
 
+def _suite_settings_module():
+    """Organizer・Viewer・Navigator Bridge の共有設定（lo4fh6_desktop_suite.settings）。読み込めなければ None。"""
+    try:
+        from lo4fh6_desktop_suite import settings as suite_settings
+    except ImportError:
+        return None
+    return suite_settings
+
+
+def load_suite_gamedb(suite_settings_file: Path | None = None) -> str:
+    """共有設定の GameDB のファイル（paths.gamedb_file）。無い・読めない場合は空。"""
+    suite = _suite_settings_module()
+    if suite is None:
+        return ""
+    try:
+        data = suite.load_settings(path=suite_settings_file) if suite_settings_file else suite.load_settings()
+    except Exception:  # noqa: BLE001  壊れた共有設定は読まない（共有設定の側で保全する）
+        return ""
+    return str((data.get("paths") or {}).get("gamedb_file") or "").strip()
+
+
+def save_suite_gamedb(value: str, suite_settings_file: Path | None = None) -> bool:
+    """共有設定へ GameDB のファイルを保存する（空なら消す）。書けなかった場合は False（Viewer 専用の設定には残る）。"""
+    suite = _suite_settings_module()
+    if suite is None:
+        return False
+    try:
+        patch = {"paths": {"gamedb_file": str(value or "")}}
+        if suite_settings_file:
+            suite.update_settings(patch, path=suite_settings_file)
+        else:
+            suite.update_settings(patch)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _uses_suite(settings_file: Path | None, suite_settings_file: Path | None,
+                environ: Mapping[str, str] | None = None, home: Path | None = None) -> bool:
+    """共有設定を使うか。既定の Viewer 専用の設定を使うときだけ使う（一時の設定を渡すテストは本物の共有設定を読まない）。"""
+    if suite_settings_file is not None:
+        return True
+    if settings_file is None:
+        return True
+    try:
+        return Path(settings_file).resolve() == settings_path(environ, home=home).resolve()
+    except OSError:
+        return False
+
+
 def load_shared_settings(path: Path | None = None) -> dict[str, object]:
     target = Path(path) if path is not None else settings_path()
     try:
@@ -96,14 +146,20 @@ def validate_fh6_database(path: str | Path) -> Path:
     return candidate
 
 
-def remember_database(path: str | Path, *, settings_file: Path | None = None) -> DatabaseResolution:
+def remember_database(path: str | Path, *, settings_file: Path | None = None,
+                      suite_settings_file: Path | None = None) -> DatabaseResolution:
+    """GameDB を覚える。3 つのツールの共有設定と、Viewer 専用の設定（古い版の Organizer も読む）の両方へ書く。"""
     database = validate_fh6_database(path)
     update_shared_settings({SETTINGS_DATABASE_KEY: str(database)}, settings_file)
+    if _uses_suite(settings_file, suite_settings_file):
+        save_suite_gamedb(str(database), suite_settings_file)
     return DatabaseResolution(database, "shared-setting")
 
 
-def forget_database(*, settings_file: Path | None = None) -> None:
+def forget_database(*, settings_file: Path | None = None, suite_settings_file: Path | None = None) -> None:
     update_shared_settings({SETTINGS_DATABASE_KEY: None}, settings_file)
+    if _uses_suite(settings_file, suite_settings_file):
+        save_suite_gamedb("", suite_settings_file)
 
 
 def _stable_candidates(*, home: Path | None = None) -> list[Path]:
@@ -129,11 +185,12 @@ def resolve_database_path(
     settings_file: Path | None = None,
     home: Path | None = None,
     stable_candidates: list[Path] | tuple[Path, ...] | None = None,
+    suite_settings_file: Path | None = None,
 ) -> DatabaseResolution | None:
     """Resolve a prepared GameDB using an intentionally narrow priority order.
 
-    Priority: explicit argument -> ``LO4FH6_GAMEDB`` -> shared saved setting ->
-    stable per-user game-data folder.  An explicit/environment path is treated
+    Priority: explicit argument -> ``LO4FH6_GAMEDB`` -> desktop-suite shared setting
+    (``paths.gamedb_file``) -> Viewer preview setting -> stable per-user game-data folder.  An explicit/environment path is treated
     as configuration and therefore fails closed when invalid.  A stale saved or
     conventional path is ignored so existing non-GameDB preview behavior remains
     available.
@@ -147,13 +204,28 @@ def resolve_database_path(
     if environment_value:
         return DatabaseResolution(validate_fh6_database(environment_value), "environment")
 
+    # 3 つのツールの共有設定（paths.gamedb_file）。2026-11-18 から GameDB の指定の正本
+    use_suite = _uses_suite(settings_file, suite_settings_file, env, home)
+    if use_suite:
+        suite_value = load_suite_gamedb(suite_settings_file)
+        if suite_value:
+            try:
+                return DatabaseResolution(validate_fh6_database(suite_value), "suite-setting")
+            except ValueError:
+                pass
+
     target_settings = settings_file if settings_file is not None else settings_path(env, home=home)
     saved = str(load_shared_settings(target_settings).get(SETTINGS_DATABASE_KEY) or "").strip()
     if saved:
         try:
-            return DatabaseResolution(validate_fh6_database(saved), "shared-setting")
+            resolution = DatabaseResolution(validate_fh6_database(saved), "shared-setting")
         except ValueError:
             pass
+        else:
+            # Viewer 専用の設定にしか無い場合は、共有設定へ一度だけ写す（Organizer・Navigator Bridge も使えるように）
+            if use_suite and not load_suite_gamedb(suite_settings_file):
+                save_suite_gamedb(str(resolution.path), suite_settings_file)
+            return resolution
 
     candidates = list(stable_candidates) if stable_candidates is not None else _stable_candidates(home=home)
     seen: set[Path] = set()

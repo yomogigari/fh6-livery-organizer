@@ -54,7 +54,9 @@ class Experimental3DPreviewGameDbR05Tests(unittest.TestCase):
             report = root / "report.html"
             record = {"ui_key": "record-reference", "source_dir": str(source), "car_id": 1000}
 
-            with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(local)}, clear=False):
+            # GameDB の指定は 3 つのツールの共有設定（APPDATA）にも写されるので、APPDATA も場面ごとに切り離す
+            with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(local), "APPDATA": str(root / "AppData")},
+                                 clear=False):
                 manifest_path, _ = build_report_preview_manifest(
                     records=[record],
                     game_root=content,
@@ -67,7 +69,8 @@ class Experimental3DPreviewGameDbR05Tests(unittest.TestCase):
             empty_local = root / "EmptyLocalAppData"
             with mock.patch.dict(
                 os.environ,
-                {"LOCALAPPDATA": str(empty_local), dbresolver.GAMEDB_ENV_VAR: ""},
+                {"LOCALAPPDATA": str(empty_local), "APPDATA": str(root / "EmptyAppData"),
+                 dbresolver.GAMEDB_ENV_VAR: ""},
                 clear=False,
             ):
                 manifest_path, _ = build_report_preview_manifest(
