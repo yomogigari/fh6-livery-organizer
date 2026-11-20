@@ -9,6 +9,8 @@
 - 準備の後、裏の糸で、最近使った KEEP_EXPANDED 台より古く、PROTECT_SECONDS より前に使った GLB を、
   圧縮した写しを作ってから（作ってあれば確かめてから）消す。使用中のファイルは消せないので飛ばす。
 - 圧縮した写しが壊れていれば使わずに消す（GLB は今までどおり作り直す）。
+- 部品の選択肢（ボディーキット）の重ね合わせの GLB（*.overlay-firstparty-v*.glb）も同じ形で圧縮し、使う前に戻す
+  （最近使った KEEP_EXPANDED_OVERLAYS 個を残す。2026-11-20）。
 - 圧縮した写しの形（.lzma）：先頭 8 バイト b"LO4GLBZ1"、4 バイトの見出しの長さ（little endian）、見出し
   （UTF-8 の JSON：format・glb_name・glb_size・glb_sha256・glb_mtime_ns・codec）、残りは lzma の生の流れ
   （FILTERS）。
@@ -31,10 +33,16 @@ CODEC = "lzma2-raw-preset1-lc0-lp2-pb2"
 FILTERS = [{"id": lzma.FILTER_LZMA2, "preset": 1, "lc": 0, "lp": 2, "pb": 2}]
 SUFFIX = ".lzma"
 PATTERN = "*.local-chassis-v*.glb"
-# 展開したまま残す台数（今の車を含む）と、最後に使ってから消してよくなるまでの秒数（別のプロセスが使っている
-# 最中に消さないため、最後に使った印の付け直しの間隔（vehicle_analysis_cache.mark_used の 10 分）より十分長く）。
+# 部品の選択肢（ボディーキット）の重ね合わせの GLB も同じく圧縮する（1 個 1〜13 MB、lzma で約 4 分の 1。2026-11-20）。
+OVERLAY_PATTERN = "*.overlay-firstparty-v*.glb"
+# 展開したまま残す数（今の車を含む）。重ね合わせは 1 台に選択肢の数だけあるので多めに残す。
 KEEP_EXPANDED = 3
-PROTECT_SECONDS = 3600
+KEEP_EXPANDED_OVERLAYS = 6
+# 最後に使ってから消してよくなるまでの秒数。別のプロセスが使っている最中に消さないため、最後に使った印の付け直しの
+# 間隔（vehicle_analysis_cache.mark_used の 10 分）より長く。2026-11-20 に 1 時間から 11 分にした（作った直後の
+# キャッシュを早く小さくする。最近の KEEP_EXPANDED 台は時間によらず残すので、続けて開く車は展開したまま）。
+PROTECT_SECONDS = 660
+_STORE_PATTERNS = ((PATTERN, KEEP_EXPANDED), (OVERLAY_PATTERN, KEEP_EXPANDED_OVERLAYS))
 _LOCK = threading.Lock()
 _WORKER: threading.Thread | None = None
 
@@ -169,16 +177,24 @@ def prepare_for_use(glb: Path) -> bool:
 
 def evict(mesh_dir: Path, keep: Path | None = None, *, now_ns: int | None = None) -> list[Path]:
     """最近使った KEEP_EXPANDED 台（keep を含む）より古く、PROTECT_SECONDS より前に使った GLB を、
-    圧縮した写しを作ってから消す。消した GLB の一覧を返す（消せなかったものは飛ばす）。"""
+    圧縮した写しを作ってから消す。消した GLB の一覧を返す（消せなかったものは飛ばす）。
+    車体の GLB と、部品の選択肢の重ね合わせの GLB（KEEP_EXPANDED_OVERLAYS 個を残す）を、それぞれ並べて決める。"""
     now_ns = time.time_ns() if now_ns is None else now_ns
+    removed: list[Path] = []
+    for pattern, keep_count in _STORE_PATTERNS:
+        removed += _evict_pattern(mesh_dir, pattern, keep_count, keep, now_ns)
+    return removed
+
+
+def _evict_pattern(mesh_dir: Path, pattern: str, keep_count: int, keep: Path | None, now_ns: int) -> list[Path]:
     try:
-        expanded = [path for path in mesh_dir.glob(PATTERN) if path.is_file()]
+        expanded = [path for path in mesh_dir.glob(pattern) if path.is_file()]
     except OSError:
         return []
     keep_resolved = keep.resolve() if keep is not None else None
     ranked = sorted(expanded, key=lambda path: (path.resolve() == keep_resolved, _last_used_ns(path)), reverse=True)
     removed: list[Path] = []
-    for path in ranked[max(1, KEEP_EXPANDED):]:
+    for path in ranked[max(1, keep_count):]:
         try:
             before = _last_used_ns(path)
             if path.resolve() == keep_resolved or now_ns - before < PROTECT_SECONDS * 10**9:

@@ -43,9 +43,10 @@
 Organizer のレポートにある 3D プレビューのリンクは、Windows の URI（`liveryorganizerpreviewforfh6:`）で Viewer を起動します。
 
 1. Viewer の設定画面で **「Organizer連携を登録」** を選びます。
-   - Windows 標準の C# コンパイラー（.NET Framework 4 の `csc.exe`）で、起動用の小さなプログラム
-     （`windows/LiveryOrganizerPreviewLauncher.cs`）を `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\bin` に作ります。
-   - 現在のユーザーのレジストリ（HKCU）に URI を登録します。登録先は、**登録を実行した Viewer のフォルダー**です。
+   - 初回は、Viewer 専用の Python の環境（`%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\runtime`）を `uv` で作ります。
+   - 現在のユーザーのレジストリ（HKCU）に URI を登録します。登録する起動の命令は、その環境の `pythonw.exe`
+     （黒い窓を出さない Python）で、**登録を実行した Viewer のフォルダー**の `organizer_preview_bridge.py` を直接起動する
+     ものです（Navigator Bridge と同じ形）。
 2. Organizer でレポートを作り、3D プレビューのリンクを開きます。
 
 Viewer のフォルダーを移動・コピーした場合は、新しい場所の設定画面からもう一度 **「Organizer連携を登録」** を実行してください。登録を消すには **「連携登録を解除」** を選びます。Viewer 単独で使うだけなら、連携の登録は不要です。
@@ -68,7 +69,7 @@ Viewer のフォルダーを移動・コピーした場合は、新しい場所�
 | `preview-settings.json` | Organizer と共有する設定（GameDB の場所など） |
 | `preview-bridge.log` | 起動・変換のログ（UTF-8） |
 | `dependencies\three-0.185.1` | 初回起動時に取得・照合した Three.js |
-| `bin` | Organizer 連携用の起動プログラム |
+| `runtime` | Organizer 連携の起動に使う Viewer 専用の Python の環境 |
 
 GameDB は、次の順に探します：環境変数 `LO4FH6_GAMEDB` → 共有の設定 `preview-settings.json` →
 `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite`。

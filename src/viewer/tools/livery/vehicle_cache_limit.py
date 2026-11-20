@@ -1,7 +1,8 @@
 """準備のキャッシュ（ペイントごとの準備のフォルダーと、車種ごとの _fh6-vehicle-cache）の容量の上限。
 
-- 既定では何も消さない。共有の設定 vehicle_cache_limit_gb に正の数があるときだけ、表示の準備の後に
+- 共有の設定 vehicle_cache_limit_gb に正の数があるときだけ、表示の準備の後に
   上限の 90% を超えていれば 75% まで消す（vehicle_analysis_cache.plan_eviction、2026-11-17 に承認の方針）。
+- 設定が無いときは、古い版の残骸だけを消す（remove_obsolete。版を上げると二度と使われないため。2026-11-20）。
 - 消す順番：古い版の残骸（名前の版が今のコードと違う）→ 元のペイントが無い準備のフォルダー →
   「大きさ × 使っていない期間 ÷ 作り直しの秒数」が大きいもの。
 - 消さないもの：表示中の車（今の準備のフォルダーと、それが参照するキャッシュ）・2 車種以上が参照する
@@ -50,9 +51,9 @@ class CacheRevisions:
 
 def current_revisions() -> CacheRevisions:
     from .part_option_overlay import PART_OPTION_OVERLAY_REVISION
-    from .portable_mesh_converter import LOCAL_CHASSIS_FORMAT_REVISION
+    from .portable_mesh_converter import BODY_KIT_OVERLAY_FORMAT_REVISION, LOCAL_CHASSIS_FORMAT_REVISION
     from .source_tire_original_normal import STANDARD_TIRE_NORMAL_CACHE_REVISION
-    return CacheRevisions(chassis=LOCAL_CHASSIS_FORMAT_REVISION, overlay=2,
+    return CacheRevisions(chassis=LOCAL_CHASSIS_FORMAT_REVISION, overlay=BODY_KIT_OVERLAY_FORMAT_REVISION,
                           part_option=PART_OPTION_OVERLAY_REVISION,
                           standard_tire=STANDARD_TIRE_NORMAL_CACHE_REVISION)
 
@@ -282,6 +283,28 @@ def usage_summary(units: list[CacheUnit]) -> dict:
         if unit.obsolete:
             row["obsolete_bytes"] += unit.bytes
     return {"total_bytes": sum(unit.bytes for unit in units), "by_kind": dict(sorted(by_kind.items()))}
+
+
+def remove_obsolete(output_root: Path | str, *, current_prepared_dir: Path | str | None = None,
+                    revisions: CacheRevisions | None = None) -> dict:
+    """古い版の残骸（名前の版が今のコードと違う車体・重ね合わせ・部品の選択肢・タイヤと、消す途中で止まったもの）
+    だけを消す。容量の上限の設定が無くても、表示の準備の後に裏で使う（版を上げると、古い版は二度と使われない。
+    2026-11-20）。表示中の車が参照するものと、リンクの先は消さない。結果の記録を返す。"""
+    root = Path(output_root)
+    units = collect_cache_units(root, revisions=revisions, current_prepared_dir=current_prepared_dir)
+    deleted, failed = [], []
+    for unit in units:
+        if not unit.obsolete or unit.in_use:
+            continue
+        record = {"kind": unit.kind, "bytes": unit.bytes, "paths": [str(path) for path in unit.paths]}
+        reason = _delete_unit(root, unit)
+        if reason is None:
+            deleted.append(record)
+        else:
+            failed.append({**record, "reason": reason})
+    return {"deleted_units": len(deleted), "deleted_bytes": sum(row["bytes"] for row in deleted),
+            "failed_units": len(failed), "deleted": deleted, "failed": failed,
+            "at": time.strftime("%Y-%m-%d %H:%M:%S")}
 
 
 def _inside(root: Path, path: Path) -> bool:

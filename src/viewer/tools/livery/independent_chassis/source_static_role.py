@@ -110,10 +110,19 @@ def static_mesh_role(source_entry: str, mesh_name: str, material_name: str, *,
     return 'trim'
 
 
-def static_livery_sides(role: str, mesh_name: str, part_type: str) -> tuple[int, int]:
-    """参照製品表示可能面とworld projection面。Mask実画素の許可ではない。"""
+def static_livery_sides(role: str, mesh_name: str, part_type: str, *,
+                        has_uv3: bool = False) -> tuple[int, int]:
+    """参照製品表示可能面とworld projection面。Mask実画素の許可ではない。
+
+    has_uv3=True（原本の UV3 で貼る塗装面）では、どの面をどこに貼るかは、原本の LiveryMasks
+    （Masks.xml と面ごとの swatchbin）が画素ごとに決める。トランクを部品名だけで「後・上」に絞らず、
+    車体の 5 面を許可してマスクに任せる。リアカウルが側面まで覆う車（例：POR_3_917LH のリアカウル
+    trunk_a）では、ゲームは左右の面の絵を載せる。world projection の面（2 番目の値）は従来どおり。
+    """
     if role not in ('paint','glass','hidden','dark','trim') or not isinstance(part_type, str):
         raise ValueError('Static preview role/part type is invalid')
+    if type(has_uv3) is not bool:
+        raise ValueError('Static preview livery sides require an exact UV3 declaration')
     if role == 'glass':
         return ALL_GLASS, _window_side(mesh_name)
     if role != 'paint':
@@ -122,7 +131,7 @@ def static_livery_sides(role: str, mesh_name: str, part_type: str) -> tuple[int,
     if panel == 'spoiler':
         return SPOILER, SPOILER
     if panel == 'trunk':
-        return BACK | TOP, BACK | TOP
+        return (ALL_BODY if has_uv3 else BACK | TOP), BACK | TOP
     by_part = {
         'FrontBumper': FRONT | LEFT | RIGHT,
         'RearBumper': BACK | LEFT | RIGHT,

@@ -14,9 +14,19 @@
 - segments：組み立ての順に [種類, 位置, 長さ]。種類 "b" は土台の GLB のバイト（位置は土台の中）、"o" は自前のバイト列
 土台の GLB の中から同じバイト列を探す単位は、比べる GLB の bufferView（データの区画）。土台の bufferView と
 バイト列が同じものを参照にし、ほかは自前のバイト列に入れる。区画の間の詰め物・BIN より後ろのチャンクも自前。
+
+共有の区画（v2、2026-11-20）：
+- 差分の大半はタイヤの画像で、同じ種類のタイヤを使う車どうしで中身が同じ（全件の撮影の 359 台で、延べ 1430 MB の
+  画像の中身は 537 種類・27 MB）。共有の置き場（shared_store）を渡すと、画像の区画（SHARED_MIN_BYTES 以上で、土台に
+  無いもの）を、中身の SHA-256 の名前（<SHA-256>.bin）で共有の置き場に置き、差分には種類 "s"（位置の代わりに
+  SHA-256）として書く。
+- 組み立てるときは、共有の置き場から読み、大きさと SHA-256 を確かめる。無い・壊れているときは
+  GlbDeltaSharedMissing（GlbDeltaBaseMismatch の一種。差分を作り直せばよい）。
+- 共有の区画を使う差分の目録の format は SHARED_FORMAT。今までの FORMAT の差分もそのまま読める。
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -27,6 +37,10 @@ from pathlib import Path
 
 MAGIC = b"LO4GLBD1"
 FORMAT = "lo4fh6.glb-delta.v1"
+SHARED_FORMAT = "lo4fh6.glb-delta.v2-shared"
+_FORMATS = (FORMAT, SHARED_FORMAT)
+SHARED_DIR = "Shared-Blobs"
+SHARED_MIN_BYTES = 4096
 _JSON_CHUNK = 0x4E4F534A
 _BIN_CHUNK = 0x004E4942
 
@@ -37,6 +51,49 @@ class GlbDeltaError(ValueError):
 
 class GlbDeltaBaseMismatch(GlbDeltaError):
     """差分の土台が、作ったときの土台と違う（土台が作り直された）。差分を作り直せばよい。"""
+
+
+class GlbDeltaSharedMissing(GlbDeltaBaseMismatch):
+    """共有の区画が無い・壊れている。差分を作り直せばよい（作り直すと共有の区画も置き直す）。"""
+
+
+def shared_store_beside(materialized_store: Path) -> Path:
+    """組み立てた GLB の置き場（…/wheel-tire/Materialized-GLB）の隣の共有の置き場（…/wheel-tire/Shared-Blobs）。"""
+    return Path(materialized_store).parent / SHARED_DIR
+
+
+def _put_shared(store: Path, data: bytes) -> str:
+    """共有の区画を置き場に置き（同じ中身があれば置かない）、名前の SHA-256 を返す。"""
+    digest = hashlib.sha256(data).hexdigest()
+    path = store / f"{digest}.bin"
+    try:
+        if path.stat().st_size == len(data):
+            return digest
+    except OSError:
+        pass
+    store.mkdir(parents=True, exist_ok=True)
+    partial = path.with_name(f"{path.name}.{os.getpid()}.partial")
+    partial.write_bytes(data)
+    partial.replace(path)
+    return digest
+
+
+def _get_shared(store: Path | None, digest: str, length: int) -> bytes:
+    """共有の区画を読む。無い・大きさか SHA-256 が違えば GlbDeltaSharedMissing（壊れたものは消す）。"""
+    if store is None:
+        raise GlbDeltaSharedMissing("共有の区画の置き場が分からない")
+    if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+        raise GlbDeltaError("GLB の差分の共有の区画の名前が不正")
+    path = Path(store) / f"{digest}.bin"
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise GlbDeltaSharedMissing("共有の区画が無い") from exc
+    if len(data) != length or hashlib.sha256(data).hexdigest() != digest:
+        with contextlib.suppress(OSError):
+            path.unlink()
+        raise GlbDeltaSharedMissing("共有の区画が壊れている")
+    return data
 
 
 def _chunks(data: bytes) -> list[tuple[int, int, int]]:
@@ -60,31 +117,41 @@ def _chunks(data: bytes) -> list[tuple[int, int, int]]:
     return chunks
 
 
-def _views(data: bytes) -> tuple[int, int, list[tuple[int, int]]]:
-    """BIN チャンクの開始位置・長さと、bufferView の [(BIN の中の位置, 長さ)]（buffer 0 のものだけ）。"""
+def _views(data: bytes) -> tuple[int, int, list[tuple[int, int]], set[tuple[int, int]]]:
+    """BIN チャンクの開始位置・長さと、bufferView の [(BIN の中の位置, 長さ)]（buffer 0 のものだけ）、
+    そのうち画像（images[].bufferView）の区画の集合。"""
     chunks = _chunks(data)
     json_chunk = next((c for c in chunks if c[0] == _JSON_CHUNK), None)
     bin_chunk = next((c for c in chunks if c[0] == _BIN_CHUNK), None)
     if json_chunk is None:
         raise GlbDeltaError("GLB に JSON チャンクが無い")
     if bin_chunk is None:
-        return 0, 0, []
+        return 0, 0, [], set()
     doc = json.loads(data[json_chunk[1]:json_chunk[1] + json_chunk[2]])
     views = []
-    for view in doc.get("bufferViews", []) or []:
+    by_index: dict[int, tuple[int, int]] = {}
+    for index, view in enumerate(doc.get("bufferViews", []) or []):
         if int(view.get("buffer", 0)) != 0:
             continue
         start = int(view.get("byteOffset", 0))
         size = int(view.get("byteLength", 0))
         if size > 0 and 0 <= start and start + size <= bin_chunk[2]:
             views.append((start, size))
-    return bin_chunk[1], bin_chunk[2], views
+            by_index[index] = (start, size)
+    images = set()
+    for image in doc.get("images", []) or []:
+        if isinstance(image, dict) and isinstance(image.get("bufferView"), int) and image["bufferView"] in by_index:
+            images.add(by_index[image["bufferView"]])
+    return bin_chunk[1], bin_chunk[2], views, images
 
 
-def make_delta(target: bytes, base: bytes) -> bytes:
-    """target（GLB）を base（GLB）との差分にする。組み立て直すと target と同じバイト列になる。"""
-    bin_start, bin_length, target_views = _views(target)
-    base_bin_start, _, base_views = _views(base)
+def make_delta(target: bytes, base: bytes, shared_store: Path | None = None) -> bytes:
+    """target（GLB）を base（GLB）との差分にする。組み立て直すと target と同じバイト列になる。
+
+    shared_store を渡すと、土台に無い画像の区画を共有の置き場に置き、差分には名前だけを書く。
+    """
+    bin_start, bin_length, target_views, image_views = _views(target)
+    base_bin_start, _, base_views, _ = _views(base)
     # 土台の区画を (長さ, SHA-1) で引けるようにする（同じ中身の区画が複数あれば最初のもの）
     index: dict[tuple[int, bytes], int] = {}
     for start, size in base_views:
@@ -121,12 +188,14 @@ def make_delta(target: bytes, base: bytes) -> bytes:
             found = index.get((size, hashlib.sha1(chunk).digest()))
             if found is not None and base[found:found + size] == chunk:
                 add_base(found, size)
+            elif shared_store is not None and size >= SHARED_MIN_BYTES and (start, size) in image_views:
+                segments.append(["s", _put_shared(Path(shared_store), chunk), size])
             else:
                 add_own(absolute, absolute + size)
             cursor = absolute + size
     add_own(cursor, len(target))
     manifest = {
-        "format": FORMAT,
+        "format": SHARED_FORMAT if any(s[0] == "s" for s in segments) else FORMAT,
         "target_sha256": hashlib.sha256(target).hexdigest(),
         "target_length": len(target),
         "base_sha256": hashlib.sha256(base).hexdigest(),
@@ -135,7 +204,7 @@ def make_delta(target: bytes, base: bytes) -> bytes:
     }
     packed_manifest = zlib.compress(json.dumps(manifest, separators=(",", ":")).encode("utf-8"), 9)
     delta = MAGIC + struct.pack("<I", len(packed_manifest)) + packed_manifest + zlib.compress(bytes(own), 6)
-    if apply_delta(delta, base) != target:
+    if apply_delta(delta, base, shared_store) != target:
         raise GlbDeltaError("差分から組み立てた GLB が元と一致しない")
     return delta
 
@@ -146,13 +215,16 @@ def read_manifest(delta: bytes) -> dict:
     (size,) = struct.unpack_from("<I", delta, len(MAGIC))
     start = len(MAGIC) + 4
     manifest = json.loads(zlib.decompress(delta[start:start + size]))
-    if manifest.get("format") != FORMAT:
+    if manifest.get("format") not in _FORMATS:
         raise GlbDeltaError("GLB の差分の版が違う")
     return manifest
 
 
-def apply_delta(delta: bytes, base: bytes) -> bytes:
-    """差分と土台から GLB を組み立てる。土台が違う・組み立てた結果の SHA-256 が記録と違えば例外。"""
+def apply_delta(delta: bytes, base: bytes, shared_store: Path | None = None) -> bytes:
+    """差分と土台から GLB を組み立てる。土台が違う・組み立てた結果の SHA-256 が記録と違えば例外。
+
+    共有の区画（種類 "s"）は shared_store から読む。無い・壊れていれば GlbDeltaSharedMissing。
+    """
     manifest = read_manifest(delta)
     if len(base) != manifest["base_length"] or hashlib.sha256(base).hexdigest() != manifest["base_sha256"]:
         raise GlbDeltaBaseMismatch("GLB の差分の土台が違う")
@@ -160,6 +232,11 @@ def apply_delta(delta: bytes, base: bytes) -> bytes:
     own = zlib.decompress(delta[len(MAGIC) + 4 + size:])
     out = bytearray()
     for kind, position, length in manifest["segments"]:
+        if kind == "s":
+            out.extend(_get_shared(shared_store, position, length))
+            continue
+        if kind not in ("b", "o"):
+            raise GlbDeltaError("GLB の差分の区画の種類が不正")
         source = base if kind == "b" else own
         if position < 0 or position + length > len(source):
             raise GlbDeltaError("GLB の差分の参照が範囲の外")
@@ -170,9 +247,12 @@ def apply_delta(delta: bytes, base: bytes) -> bytes:
     return data
 
 
-def write_delta_file(path: Path, target: bytes, base: bytes) -> dict:
-    """差分のファイルを書く（一時の名前に書いてから置き換える）。目録を返す。"""
-    delta = make_delta(target, base)
+def write_delta_file(path: Path, target: bytes, base: bytes, shared_store: Path | None = None) -> dict:
+    """差分のファイルを書く（一時の名前に書いてから置き換える）。目録を返す。
+
+    shared_store を渡すと、画像の区画を共有の置き場に置く（shared_store_beside で組み立ての置き場の隣を渡す）。
+    """
+    delta = make_delta(target, base, shared_store)
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(path.name + ".partial")
     partial.write_bytes(delta)
@@ -262,6 +342,7 @@ def materialize(delta_path: Path, base_path: Path, store: Path, expected_sha: st
     """差分のファイルと土台の GLB から GLB を組み立てて置き場に置き、場所を返す。
 
     置き場にすでに同じ GLB があれば組み立てない。土台が違う・SHA が違えば GlbDeltaError。
+    共有の区画は、置き場の隣の共有の置き場（shared_store_beside(store)）から読む。
     """
     store.mkdir(parents=True, exist_ok=True)
     path = store / f"{expected_sha}.glb"
@@ -273,7 +354,8 @@ def materialize(delta_path: Path, base_path: Path, store: Path, expected_sha: st
     delta = delta_path.read_bytes()
     if read_manifest(delta).get("target_sha256") != expected_sha:
         raise GlbDeltaError("GLB の差分の出来上がりの SHA が記録と違う")
-    return place_materialized(store, apply_delta(delta, base_path.read_bytes()), expected_sha, base_path)
+    data = apply_delta(delta, base_path.read_bytes(), shared_store_beside(store))
+    return place_materialized(store, data, expected_sha, base_path)
 
 
 # ---- 差分の土台の登録（同じプロセスの中で、作った GLB の名前から土台の GLB を引く） ----

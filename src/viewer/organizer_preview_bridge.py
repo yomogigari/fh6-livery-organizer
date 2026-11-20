@@ -18,6 +18,12 @@ import shutil
 import subprocess
 import sys
 if __name__ == "__main__":
+    # ソースから動かすとき、Organizer のリンクからは Windows が pythonw.exe でこのファイルを直接起動する
+    # （--uri … --gui-child。Navigator Bridge と同じ登録の形）。作業の場所はブラウザー次第なので、依頼の相対パスを
+    # 読む基準（このファイルのフォルダー）へ移す（以前の C# の起動用プログラムがしていたことと同じ。2026-11-20）。
+    if sys.platform == "win32" and "--uri" in sys.argv[1:] and "--gui-child" in sys.argv[1:]:
+        import os as _early_os
+        _early_os.chdir(_early_os.path.dirname(_early_os.path.abspath(__file__)))
     # Organizer からの起動（--uri）は、重い部品（約 0.9 秒）を読み込む前に、開いている Viewer の窓へ依頼を渡せたら終わる。
     import viewer_window_reuse as _early_window_reuse
     if _early_window_reuse.forward_early(sys.argv[1:]):
@@ -84,8 +90,9 @@ DEFAULT_QUALITY_PRESET = "standard"
 
 GPU_LIVERY_PRODUCTION_ADAPTER_AVAILABLE = True
 
-URI_RUNTIME_SCHEMA = 1
-NATIVE_LAUNCHER_SCHEMA = 1
+# 2（2026-11-20）：Python 標準の venv で作り、pythonw.exe が窓用（GUI）であることを確かめる。uv venv が作った環境の
+# pythonw.exe はコンソール用の中継プログラムで、起動のたびに黒い窓が一瞬出ていた（版を上げて作り直させる）。
+URI_RUNTIME_SCHEMA = 2
 _GUI_STDIO_HANDLES: list[Any] = []
 URI_RUNTIME_DEPENDENCIES = (
     "Pillow>=10,<13",
@@ -427,120 +434,22 @@ def _uri_runtime_stamp_path() -> Path:
     return _uri_runtime_root() / "lo4fh6-preview-runtime.json"
 
 
-def _native_launcher_source_path() -> Path:
-    return ROOT / "windows" / "LiveryOrganizerPreviewLauncher.cs"
+def _old_native_launcher_files() -> list[Path]:
+    """以前の版が C# で作った起動用プログラム（2026-11-20 にやめた）。登録・解除のときに消す。"""
+    root = _local_appdata_root() / "bin"
+    return [root / "LiveryOrganizerPreviewLauncher.exe", root / "LiveryOrganizerPreviewLauncher.json"]
 
 
-def _native_launcher_root() -> Path:
-    return _local_appdata_root() / "bin"
-
-
-def _native_launcher_path() -> Path:
-    return _native_launcher_root() / "LiveryOrganizerPreviewLauncher.exe"
-
-
-def _native_launcher_stamp_path() -> Path:
-    return _native_launcher_root() / "LiveryOrganizerPreviewLauncher.json"
-
-
-def _native_launcher_source_sha256() -> str:
-    return hashlib.sha256(_native_launcher_source_path().read_bytes()).hexdigest()
-
-
-def _native_launcher_stamp_payload() -> dict[str, Any]:
-    return {
-        "schema": NATIVE_LAUNCHER_SCHEMA,
-        "source_sha256": _native_launcher_source_sha256(),
-    }
-
-
-def _native_launcher_stamp_matches() -> bool:
-    exe = _native_launcher_path()
-    stamp = _native_launcher_stamp_path()
-    if not exe.is_file() or not stamp.is_file():
-        return False
+def _remove_old_native_launcher() -> None:
+    for old in _old_native_launcher_files():
+        try:
+            old.unlink(missing_ok=True)
+        except OSError:
+            pass
     try:
-        data = json.loads(stamp.read_text(encoding="utf-8"))
-    except (OSError, ValueError, TypeError):
-        return False
-    return data == _native_launcher_stamp_payload()
-
-
-def _find_windows_csc() -> Path:
-    """
-    GUI Launcherに使用するWindows .NET FrameworkのC# Compilerを探す。
-    """
-    if sys.platform != "win32":
-        raise ValueError("Native URI launcher compilation is supported only on Windows.")
-    candidates: list[Path] = []
-    windir = Path(os.environ.get("WINDIR", r"C:\Windows"))
-    candidates.extend(
-        [
-            windir / "Microsoft.NET" / "Framework64" / "v4.0.30319" / "csc.exe",
-            windir / "Microsoft.NET" / "Framework" / "v4.0.30319" / "csc.exe",
-        ]
-    )
-    path_hit = shutil.which("csc.exe") or shutil.which("csc")
-    if path_hit:
-        candidates.append(Path(path_hit))
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate
-    raise ValueError(
-        "Windows .NET Framework C# compiler (csc.exe) was not found. "
-        "Windows 11/.NET Framework 4.x is required for the console-free URI launcher."
-    )
-
-
-def _native_launcher_compile_command(csc: Path, output: Path, source: Path) -> list[str]:
-    return [
-        str(csc),
-        "/nologo",
-        "/target:winexe",
-        "/optimize+",
-        f"/out:{output}",
-        str(source),
-    ]
-
-
-def _ensure_native_uri_launcher() -> Path:
-    """
-    ソース改訂ごとにWindows GUIサブシステムのProtocol Launcherを1度だけ構築する。
-    """
-    if sys.platform != "win32":
-        raise ValueError("Native URI launcher setup is supported only on Windows.")
-    if _native_launcher_stamp_matches():
-        return _native_launcher_path()
-    source = _native_launcher_source_path()
-    if not source.is_file():
-        raise ValueError(f"Native URI launcher source is missing: {source}")
-    root = _native_launcher_root()
-    root.mkdir(parents=True, exist_ok=True)
-    output = _native_launcher_path()
-    output.unlink(missing_ok=True)
-    csc = _find_windows_csc()
-    startupinfo = subprocess.STARTUPINFO()
-    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    startupinfo.wShowWindow = subprocess.SW_HIDE
-    result = subprocess.run(
-        _native_launcher_compile_command(csc, output, source),
-        cwd=str(root),
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        creationflags=subprocess.CREATE_NO_WINDOW,
-        startupinfo=startupinfo,
-    )
-    if result.returncode != 0 or not output.is_file():
-        detail = (result.stderr or result.stdout or "unknown csc.exe error").strip()
-        raise ValueError(f"Native URI launcher build failed: {detail}")
-    _native_launcher_stamp_path().write_text(
-        json.dumps(_native_launcher_stamp_payload(), ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    return output
+        (_local_appdata_root() / "bin").rmdir()  # 空のときだけ消える
+    except OSError:
+        pass
 
 
 def _runtime_stamp_payload() -> dict[str, Any]:
@@ -550,12 +459,32 @@ def _runtime_stamp_payload() -> dict[str, Any]:
     }
 
 
+_PE_SUBSYSTEM_WINDOWS_GUI = 2
+
+
+def _windows_subsystem(path: Path) -> int | None:
+    """Windows の実行ファイルの種類（PE の Subsystem：2 が窓用、3 がコンソール用）。読めなければ None。"""
+    try:
+        with Path(path).open("rb") as handle:
+            head = handle.read(4096)
+        if head[:2] != b"MZ":
+            return None
+        pe = int.from_bytes(head[0x3C:0x40], "little")
+        if head[pe:pe + 4] != b"PE\0\0" or pe + 24 + 70 > len(head):
+            return None
+        return int.from_bytes(head[pe + 24 + 68:pe + 24 + 70], "little")
+    except OSError:
+        return None
+
+
 def _runtime_stamp_matches() -> bool:
     python = _uri_runtime_python_path()
     pythonw = _uri_runtime_pythonw_path()
     stamp = _uri_runtime_stamp_path()
     if not python.is_file() or not pythonw.is_file() or not stamp.is_file():
         return False
+    if _windows_subsystem(pythonw) != _PE_SUBSYSTEM_WINDOWS_GUI:
+        return False  # 黒い窓を出す pythonw.exe の環境は作り直す
     try:
         data = json.loads(stamp.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
@@ -579,14 +508,18 @@ def _ensure_uri_runtime() -> Path:
     runtime_root = _uri_runtime_root()
     runtime_root.parent.mkdir(parents=True, exist_ok=True)
     base_python = Path(getattr(sys, "_base_executable", sys.executable)).resolve()
-    subprocess.run(
-        [str(Path(uv_path).resolve()), "venv", str(runtime_root), "--python", str(base_python), "--clear"],
-        check=True,
-    )
+    # 登録の操作から動かす venv・uv も、黒い窓を出さずに動かす。
+    quiet = {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
+    # Python 標準の venv で作る（Scripts\pythonw.exe が窓用の中継プログラム venvwlauncher になる）。
+    subprocess.run([str(base_python), "-m", "venv", "--clear", str(runtime_root)], check=True, **quiet)
     runtime_python = _uri_runtime_python_path()
     runtime_pythonw = _uri_runtime_pythonw_path()
     if not runtime_python.is_file() or not runtime_pythonw.is_file():
         raise ValueError(f"URI runtime did not create python/pythonw under: {runtime_root}")
+    if _windows_subsystem(runtime_pythonw) != _PE_SUBSYSTEM_WINDOWS_GUI:
+        raise ValueError(
+            "Viewer 専用の Python の環境の pythonw.exe が窓用ではありません（起動のたびに黒い窓が出ます）: "
+            + str(runtime_pythonw))
     subprocess.run(
         [
             str(Path(uv_path).resolve()),
@@ -597,10 +530,12 @@ def _ensure_uri_runtime() -> Path:
             *URI_RUNTIME_DEPENDENCIES,
         ],
         check=True,
+        **quiet,
     )
     subprocess.run(
         [str(runtime_python), "-c", "import PIL, numpy, psutil, webview"],
         check=True,
+        **quiet,
     )
     _uri_runtime_stamp_path().write_text(
         json.dumps(_runtime_stamp_payload(), ensure_ascii=False, indent=2) + "\n",
@@ -753,13 +688,17 @@ def _spawn_uri_gui_child(args: argparse.Namespace) -> bool:
     return True
 
 
-def _uri_open_command(native_launcher: Path | None = None) -> str:
+def _uri_open_command(runtime_pythonw: Path | None = None) -> str:
+    """Windows に登録する起動の命令。
+
+    EXE は自分自身を直接登録する。ソースから動かすときは、Navigator Bridge と同じく、窓を出さない Python
+    （Viewer 専用の環境の pythonw.exe）でこのファイルを直接起動する（2026-11-20 に C# の起動用プログラムをやめた）。
+    """
     if _is_packaged():
-        # EXE は自分自身を直接登録する（専用の Python の仮想環境と C# の起動の部品は使わない）
         from lo4fh6_desktop_suite.runtime import packaged_executable
         return f'"{packaged_executable()}" --uri "%1"'
-    launcher = native_launcher or _native_launcher_path()
-    return f'"{launcher}" "%1"'
+    pythonw = runtime_pythonw or _uri_runtime_pythonw_path()
+    return f'"{pythonw}" "{Path(__file__).resolve()}" --uri "%1" --gui-child'
 
 
 def register_uri_scheme() -> None:
@@ -767,25 +706,23 @@ def register_uri_scheme() -> None:
         raise ValueError("URI registration is supported only on Windows.")
     import winreg
 
-    if _is_packaged():
-        runtime_pythonw = None
-        native_launcher = None
-    else:
-        runtime_pythonw = _ensure_uri_runtime()
-        native_launcher = _ensure_native_uri_launcher()
+    runtime_pythonw = None if _is_packaged() else _ensure_uri_runtime()
+    command = _uri_open_command(runtime_pythonw)
     root_path = rf"Software\Classes\{URI_SCHEME}"
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, root_path) as key:
         winreg.SetValueEx(key, "", 0, winreg.REG_SZ, "URL:Livery Organizer for FH6 3D Preview")
         winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
-        if runtime_pythonw is not None:
-            winreg.SetValueEx(key, "PreviewPythonwPath", 0, winreg.REG_SZ, str(runtime_pythonw))
-            winreg.SetValueEx(key, "PreviewBridgeScriptPath", 0, winreg.REG_SZ, str(Path(__file__).resolve()))
+        # 以前の C# の起動用プログラムが読んでいた値。今は起動の命令に直接書くので消す（残っていると登録先を取り違える）。
+        for stale in ("PreviewPythonwPath", "PreviewBridgeScriptPath"):
+            try:
+                winreg.DeleteValue(key, stale)
+            except FileNotFoundError:
+                pass
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, root_path + r"\shell\open\command") as key:
-        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, _uri_open_command(native_launcher))
+        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, command)
+    _remove_old_native_launcher()
     print(f"registered: {URI_SCHEME}://")
-    print(f"command:    {_uri_open_command(native_launcher)}")
-    if native_launcher is not None:
-        print(f"launcher:   {native_launcher}")
+    print(f"command:    {command}")
     if runtime_pythonw is not None:
         print(f"runtime:    {_uri_runtime_root()}")
 
@@ -810,6 +747,7 @@ def unregister_uri_scheme() -> None:
         _legacy_hidden_uri_launcher_path().unlink(missing_ok=True)
     except OSError:
         pass
+    _remove_old_native_launcher()
     print(f"unregistered: {URI_SCHEME}://")
 
 
@@ -1952,6 +1890,7 @@ def cached_preview_ready(
     # 完全なGLB構造とSource scopeを両方検査する。
     try:
         from tools.livery.portable_mesh_converter import (
+            BODY_KIT_OVERLAY_FORMAT_REVISION,
             LOCAL_CHASSIS_FORMAT_REVISION,
             PortableMeshConverterError,
             validate_local_chassis_glb,
@@ -1981,8 +1920,10 @@ def cached_preview_ready(
             required_firstparty_scope="ORIGINAL_STOCK_STATIC__VIEWER_FUNCTIONAL_CANDIDATE",
         )
         if overlay_added:
+            if overlay_value:
+                chassis_store.prepare_for_use(Path(overlay_value))  # 重ね合わせの GLB も圧縮した写しから戻す
             overlay_ready = bool(overlay_value and Path(overlay_value).is_file())
-            if (not overlay_ready or "overlay-firstparty-v2.glb" not in Path(overlay_value).name
+            if (not overlay_ready or f"overlay-firstparty-v{BODY_KIT_OVERLAY_FORMAT_REVISION}.glb" not in Path(overlay_value).name
                     or archived_sha not in Path(overlay_value).name):
                 return False
             validate_local_chassis_glb(
@@ -2493,14 +2434,16 @@ def _remove_stale_render_roots(output_dir: Path, render_root: Path) -> None:
 def _start_vehicle_cache_limit(output_dir: Path, summary: dict) -> None:
     """共有の設定に準備のキャッシュの容量の上限（vehicle_cache_limit_gb）があれば、表示の準備の後に裏で消す。
 
-    既定（設定なし）では何もしない。表示中の車のものは消さない（tools.livery.vehicle_cache_limit）。
+    設定が無いときは、古い版の残骸（名前の版が今のコードと違うもの）だけを消す（2026-11-20）。
+    表示中の車のものは消さない（tools.livery.vehicle_cache_limit）。
     失敗しても表示は止めず、消した・消せなかった結果をブリッジのログに残す。
     """
     try:
-        from tools.livery.vehicle_cache_limit import VEHICLE_CACHE_DIR, enforce_cache_limit, limit_bytes_from_settings
+        from tools.livery.vehicle_cache_limit import (VEHICLE_CACHE_DIR, enforce_cache_limit,
+                                                      limit_bytes_from_settings, remove_obsolete)
         limit = limit_bytes_from_settings(load_shared_settings(_settings_path()))
         cache_value = _string(summary.get("vehicle_cache_root"))
-        if limit is None or not cache_value:
+        if not cache_value:
             return
         cache_root = Path(cache_value).resolve()
         if cache_root.name != VEHICLE_CACHE_DIR:
@@ -2513,6 +2456,13 @@ def _start_vehicle_cache_limit(output_dir: Path, summary: dict) -> None:
 
     def run() -> None:
         try:
+            if limit is None:
+                result = remove_obsolete(output_root, current_prepared_dir=prepared)
+                if result["deleted_units"] or result["failed_units"]:
+                    _append_bridge_log(
+                        f"キャッシュの古い版の残骸：消した {result['deleted_units']} 単位 "
+                        f"{result['deleted_bytes'] / 1024 ** 3:.2f} GB、消せなかった {result['failed_units']} 単位")
+                return
             result = enforce_cache_limit(output_root, limit, current_prepared_dir=prepared)
             if result["deleted_units"] or result["failed_units"]:
                 _append_bridge_log(

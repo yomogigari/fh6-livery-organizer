@@ -56,6 +56,7 @@ from tools.livery.package import (
     validate_livery_inspection_artifact,
 )
 from tools.livery.portable_mesh_converter import (
+    BODY_KIT_OVERLAY_FORMAT_REVISION,
     LOCAL_CHASSIS_FORMAT_REVISION,
     PortableMeshConverterError,
     convert_vehicle_model_to_glb,
@@ -4452,6 +4453,10 @@ def _main() -> int:
             conversion_started = time.perf_counter()
             convert_vehicle_model_to_glb(asset, mesh_path, diagnostics=converter_diagnostics)
             mesh_preparation_profile["conversion_call_seconds"] = round(time.perf_counter() - conversion_started, 6)
+            # 表示しないメッシュは描かないので除く（ホイールの位置合わせをするときは、その書き出しの前に除く）。
+            from tools.livery.glb_compact import drop_hidden_meshes_in_file
+            hidden_compact = drop_hidden_meshes_in_file(mesh_path)
+            mesh_preparation_profile["hidden_meshes_removed"] = int(hidden_compact["removed_meshes"])
         for profile_key, source_key in (
             ("converter_input_selection_seconds", "input_selection_seconds"),
             ("converter_process_seconds", "converter_process_seconds"),
@@ -4468,7 +4473,9 @@ def _main() -> int:
             mesh_preparation_profile["morph_final_validation_reused"] = validation_reused
         else:
             mesh_validation, validation_reused = reuse_converter_validation(
-                mesh_path, converter_diagnostics, modified_after_conversion=wheel_morph_internal is not None,
+                mesh_path, converter_diagnostics,
+                modified_after_conversion=(wheel_morph_internal is not None
+                                           or bool(mesh_preparation_profile.get("hidden_meshes_removed"))),
             )
         mesh_preparation_profile["validated_glb_reused"] = validation_reused and wheel_morph_internal is None
         if not validation_reused:
@@ -4490,8 +4497,10 @@ def _main() -> int:
         overlay_cache_hit = False
         if added_entries:
             overlay_mesh = mesh_dir / (
-                f"{asset.model_code}-{asset.archive_mtime_ns}-{firstparty_cache_id}-bodykit-{variant_part_id}.overlay-firstparty-v2.glb"
+                f"{asset.model_code}-{asset.archive_mtime_ns}-{firstparty_cache_id}-bodykit-{variant_part_id}.overlay-firstparty-v{BODY_KIT_OVERLAY_FORMAT_REVISION}.glb"
             )
+            # 重ね合わせの GLB も、しばらく使っていなければ圧縮した写しだけを残している（chassis_store）。
+            chassis_store.prepare_for_use(overlay_mesh)
             overlay_cache_hit = overlay_mesh.is_file()
             try:
                 overlay_validation = validate_local_chassis_glb(

@@ -19,6 +19,7 @@ from typing import Any
 import numpy as np
 
 from .portable_mesh_converter import _accessor_array, _glb_payloads, validate_local_chassis_glb, seal_firstparty_chassis_metadata
+from .glb_compact import drop_hidden_meshes
 from .vehicle_assets import VehicleAsset
 from .independent_chassis.source_static_preview_selection import clean_original_static_triangle_indices
 
@@ -1913,6 +1914,11 @@ GameDBの4輪中心とCarbinの4つの一意な識別が揃えば、WheelStyle�
             "wheel_gamedb_placement_max_distance_m": 0.0,
             "wheel_gamedb_placement": {},
         }
+    # 表示しないメッシュ（隠した透明の面・影だけの面・変換で隠した面）は、描かないので最後の書き出しの前に除く
+    # （glb_compact。2026-11-20）。報告のメッシュの番号は、除いた後の番号に付け替える（除いたものは None）。
+    binary, compact = drop_hidden_meshes(document, binary)
+    for match in matches:
+        match["mesh_index"] = compact["mesh_map"].get(match["mesh_index"])
     _write_glb(path, document, binary)
     # 変更後GLBは採用前に必ず1回厳密検証する。
     # 呼出元はこの検証結果を再利用できるが、未検証データは外部へ出さない。
@@ -1943,5 +1949,7 @@ GameDBの4輪中心とCarbinの4つの一意な識別が揃えば、WheelStyle�
         "wheel_morph_max_affine_error": max_fit_error,
         "wheel_morph_degenerate_shape_reference_affine_meshes": int(degenerate_reference_meshes),
         **placement_report,
+        "hidden_meshes_removed": int(compact["removed_meshes"]),
+        "hidden_mesh_bytes_removed": int(compact["removed_bytes"]),
         "matches": matches,
     }

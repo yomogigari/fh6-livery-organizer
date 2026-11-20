@@ -150,7 +150,7 @@ def cached_original2_research_glb(source_glb:Path, source_model_zip:Path,
     # 差分で保存する（車体の形の GLB と同じ中身を持たない。組み立てた GLB は元と 1 バイトも違わない。2026-11-20）。
     # 土台は、入力の GLB（組み立てた標準タイヤ）の名前から引く。分からなければ従来どおり丸ごと保存する。
     from .glb_delta import (MATERIALIZED_DIR, GlbDeltaBaseMismatch, GlbDeltaError, delta_base_for, materialize,
-                            place_materialized, write_delta_file)
+                            place_materialized, shared_store_beside, write_delta_file)
     delta_file=result/'feow-original2-dxil-sidewall-RESEARCH.glbdelta'
     store=output_root/MATERIALIZED_DIR
     base=delta_base_for(source_glb.name)
@@ -176,14 +176,14 @@ def cached_original2_research_glb(source_glb:Path, source_model_zip:Path,
         if sha(payload)!=proof.get('research_glb_sha256'):
             raise SourceTextError('Research cache signature mismatch; no overwrite')
         if base is not None:
-            write_delta_file(delta_file,payload,base.read_bytes())
+            write_delta_file(delta_file,payload,base.read_bytes(),shared_store_beside(store))
             return place_materialized(store,payload,sha(payload),base)
         target.write_bytes(payload)
         return target
     payload,evidence=build_from_originals(source_glb,source_model_zip,source_report,source_extracted_zip,shader_source_zip)
     result.mkdir(parents=True,exist_ok=False)
     if base is not None:
-        manifest=write_delta_file(delta_file,payload,base.read_bytes())
+        manifest=write_delta_file(delta_file,payload,base.read_bytes(),shared_store_beside(store))
         evidence=dict(evidence,stored_as_glb_delta=True,glb_delta_base_sha256=manifest['base_sha256'])
         proof_file.write_text(json.dumps(evidence,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         return place_materialized(store,payload,sha(payload),base)

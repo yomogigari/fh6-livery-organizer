@@ -32,7 +32,12 @@ class ChassisConversionCancelled(PortableMeshConverterError):
 
 MAX_LOCAL_CHASSIS_BYTES = 256 * 1024 * 1024
 MAX_CONVERTER_RESIDENT_BYTES = 2 * 1024 * 1024 * 1024
-LOCAL_CHASSIS_FORMAT_REVISION = 20
+# 22（2026-11-20）：表示しないメッシュを車体の GLB から除く（glb_compact）。
+LOCAL_CHASSIS_FORMAT_REVISION = 22
+# ボディーキットの重ね合わせの GLB（…-bodykit-<番号>.overlay-firstparty-v<版>.glb）の版。同じ変換で作るので、
+# 車体の変換（許可面など）を変えて LOCAL_CHASSIS_FORMAT_REVISION を上げたら、これも上げる（名前の鍵はゲームの
+# ファイルの SHA だけで、上げないと古い変換の結果を使い続ける）。2026-11-20 にトランクの許可面の直しで 2 → 3。
+BODY_KIT_OVERLAY_FORMAT_REVISION = 3
 GLB_JSON_CHUNK = 0x4E4F534A
 GLB_BINARY_CHUNK = 0x004E4942
 ROLE_NAMES = {"paint", "glass", "hidden", "dark", "trim"}

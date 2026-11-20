@@ -442,7 +442,8 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
                         parent_materialbin=material.parent_materialbin if material is not None else '',
                         part_type=original_part_name)
                     role = 'hidden' if shadow_only or hidden_reason else static_role
-                    original_static_sides = static_livery_sides(role, b.name or '', original_part_name)
+                    original_static_sides = static_livery_sides(
+                        role, b.name or '', original_part_name, has_uv3=3 in uv)
                 else:
                     original_static_sides = None
                 # CarPaint以外の原本Shaderをゲーム準拠のGlass／PBRと断定しない。

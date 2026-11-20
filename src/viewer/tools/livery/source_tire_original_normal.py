@@ -1071,7 +1071,7 @@ def _build_cached_original_tire_normal_glb(source_glb: Path, tire_zip: Path, gam
     report = folder / "source-signed-tire.json"
     # 差分の土台（元の車体の形の GLB）。分かれば、車体と同じ中身を持たずに差分だけを保存する（1 台 約 60 MB →
     # 約 2 MB。組み立てた GLB は元と 1 バイトも違わない。2026-11-20）。分からなければ従来どおり丸ごと保存する。
-    from .glb_delta import delta_base_for, place_materialized, write_delta_file
+    from .glb_delta import delta_base_for, place_materialized, shared_store_beside, write_delta_file
     delta_base = delta_base_for(source_glb.name)
     if folder.exists():
         if not report.is_file() or not (result.is_file() or delta.is_file()):
@@ -1092,13 +1092,15 @@ def _build_cached_original_tire_normal_glb(source_glb: Path, tire_zip: Path, gam
             materialized = _materialized_standard_tire(folder, delta_base)
             if materialized is not None:
                 return materialized, folder
-            write_delta_file(delta, data, delta_base.read_bytes())
+            write_delta_file(delta, data, delta_base.read_bytes(),
+                             shared_store_beside(_standard_tire_store(folder)))
             return place_materialized(_standard_tire_store(folder), data, proof["output_glb_sha256"], delta_base), folder
         result.write_bytes(data)
         return result, folder
     folder.mkdir(parents=True, exist_ok=False)
     if delta_base is not None:
-        manifest = write_delta_file(delta, data, delta_base.read_bytes())
+        manifest = write_delta_file(delta, data, delta_base.read_bytes(),
+                                    shared_store_beside(_standard_tire_store(folder)))
         proof["stored_as_glb_delta"] = True
         proof["glb_delta_base_sha256"] = manifest["base_sha256"]
         report.write_text(json.dumps(proof, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
