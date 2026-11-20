@@ -170,6 +170,8 @@ export default {
   'phase.assets': 'Loading car and livery textures',
   'phase.materials': 'Preparing car surfaces',
   'phase.scene': 'Rendering first frame',
+  'warning.no_gamedb_wheels': 'No GameDB is available, so wheels and tires are shown in a simplified form (with a GameDB, the game\'s wheels and tires are shown).',
+  'warning.raster_decals_no_gamedb': 'No GameDB is available, so {count} type(s) of game logo stickers ({layers} layer(s)) are omitted.',
   'warning.raster_decals_omitted': 'Omitted {count} sticker type(s) that are not in the game (Raster ID {ids}, {layers} layer(s)). This livery may have been imported from outside FH6.',
   'error.shader_mode_fallback': 'The shader for “{failed}” could not compile, so the viewer returned to “{fallback}”. You can continue by selecting another material mode.',
   'error.timeout': 'Loading the car exceeded {seconds} seconds.',

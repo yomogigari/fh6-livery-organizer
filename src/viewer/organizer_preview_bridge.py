@@ -846,6 +846,13 @@ def request_from_args(args: argparse.Namespace) -> dict[str, Any]:
     wheel_placement = (_string(request.get("wheel_placement")) or "gamedb").casefold()
     if wheel_placement not in {"gamedb", "carbin"}:
         raise ValueError(f"Unsupported wheel placement: {wheel_placement}")
+    wheel_source = _string(request.get("wheel_source"))
+    gamedb_missing = database is None
+    if gamedb_missing and wheel_source.casefold() == "source-verified":
+        # 原本 4 輪＋タイヤは、車輪の位置・寸法とタイヤを GameDB から求めるので、GameDB が無いと作れない。
+        # 止めずに簡易の車輪で表示し、画面にその旨を出す（2026-11-21 利用者の決定。GameDB を持たない利用者も
+        # ペイントを見られるようにする）。
+        wheel_source = "proxy"
     normalized = {
         "format": request.get("format") or REQUEST_FORMAT_V1,
         "source": source,
@@ -860,7 +867,8 @@ def request_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "title": _string(request.get("title")),
         "output_key": _string(request.get("output_key")),
         "quality": quality,
-        "wheel_source": _string(request.get("wheel_source")),
+        "wheel_source": wheel_source,
+        "gamedb_missing": gamedb_missing,
         "pr76_tire_model": pr76_tire_model,
         # CLI上書きと要求正規化の後も研究用Shader方針を保つ。
         # r400ではこの境界で値が失われ、指定済みでもViewer URLが厳密既定へ戻っていた。
@@ -2614,6 +2622,9 @@ def _configure_server(
         if wheel_source == "source-verified":
             # 原本四輪・タイヤUV4を同時に検証。欠損は明示エラーで拒否する。
             url += "&wheel-fitment=source-bound-research"
+    if request.get("gamedb_missing"):
+        # GameDB が無い：画面に「車輪は簡易表示・ゲームのロゴのステッカーは省く」旨を出す
+        url += "&gamedb=missing"
     # Windows受入時のみ、保存済JPEGのSHAと原本Wheel描画フレームを同じ記録へ接続。
     # 通常のGUI/Organizerと旧正常描画は一切変更しない。
     if os.environ.get('LO4FH6_RELEASE_CAPTURE_AUDIT', '').strip() == '1':
@@ -3968,6 +3979,7 @@ def _open_standalone_job(window: Any, api: "PreviewJsApi", state: dict[str, Any]
             "quality": _string(request.get("quality")),
             "wheel_source_requested": _string(request.get("wheel_source")),
             "wheel_source_effective": _effective_viewer_wheel_source(request),
+            "gamedb_missing": bool(request.get("gamedb_missing")),
             "bridge_prepare_seconds": round(prepare_elapsed, 4),
             "bridge_ready_seconds": round(ready_elapsed, 4),
             "viewer_window_reused": not bool(job.get("first")),

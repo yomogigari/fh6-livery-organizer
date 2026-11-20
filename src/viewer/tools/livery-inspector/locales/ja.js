@@ -170,6 +170,8 @@ export default {
   'phase.assets': '車両とリバリーテクスチャを読み込んでいます',
   'phase.materials': '車両表面を準備しています',
   'phase.scene': '最初のフレームを描画しています',
+  'warning.no_gamedb_wheels': 'GameDB が無いため、ホイールとタイヤは簡易表示です（GameDB を用意すると、ゲームのホイールとタイヤを表示します）。',
+  'warning.raster_decals_no_gamedb': 'GameDB が無いため、ゲームのロゴのステッカー {count} 種類（{layers} 層）を省いて表示しています。',
   'warning.raster_decals_omitted': 'ゲームに無いステッカー {count} 種類（Raster ID {ids}、{layers} 層）を省いて表示しています。FH6 以外から取り込んだペイントの可能性があります。',
   'error.shader_mode_fallback': '材質「{failed}」の shader をコンパイルできなかったため、「{fallback}」へ戻しました。別の材質へ切り替えて確認を続けられます。',
   'error.timeout': '車両の読み込みが {seconds} 秒を超えました。',

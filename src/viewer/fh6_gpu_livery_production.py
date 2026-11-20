@@ -296,8 +296,8 @@ def build_gpu_livery_production_runtime(
             # 原本Rasterを製品GPUへ標準自動接続。未インストールなら描画を省略せず停止。
             if decals_zip_path is None:
                 raise RuntimeError("原本Raster Logoを通常描画するには署名確認可能なDecals.zipが必要です")
-            if gamedb_path is None:
-                raise ValueError("Raster Logoの原本画像解決にはFH6 GameDBの登録が必要です")
+            # GameDB が無いときは、ゲームのロゴのステッカーを止めずに省く（build_gpu_raster_decal_pack、
+            # 理由 gamedb-unavailable。画面の注意の帯に出す。2026-11-21 利用者の決定）。
             from tools.livery.gpu_raster_decal_pack import build_gpu_raster_decal_pack
             raster_ids = {
                 int(shape.get("raster_id") or 0)

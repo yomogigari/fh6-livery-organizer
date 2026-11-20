@@ -100,6 +100,9 @@ def build_gpu_raster_decal_pack(
     omit_missing が真なら、ゲームに無いステッカー（GameDB に登録が無い・Decals.zip にファイルが無い）だけは
     止めずに、完全に透明な 1x1 の画像を入れて記録する（summary の omitted。2026-11-18 利用者の決定。
     参照製品も無いステッカーの層を飛ばす）。ファイルがあるのに解読できないものは、今までどおり止める。
+    omit_missing が真で GameDB が無いときは、Raster ID からステッカーの画像のファイルを引けないので、全部を
+    同じく透明にして省く（理由 gamedb-unavailable。2026-11-21 利用者の決定。GameDB を持たない利用者も
+    ペイントを見られるようにする）。
     """
     if any(type(value) is not int or not 0 < value <= 0x7FFF for value in raster_ids):
         raise ValueError("Raster decal IDは1～32767の整数である必要があります")
@@ -107,9 +110,13 @@ def build_gpu_raster_decal_pack(
     if not ids:
         return HEADER.pack(MAGIC, VERSION, 0), {"count": 0, "bytes": HEADER.size, "ids": []}
 
-    if gamedb_path is None:
+    no_gamedb = gamedb_path is None
+    if no_gamedb and not omit_missing:
         raise ValueError("Raster Logoの正確な画像対応にはFH6 GameDBが必要です")
-    mapping, gamedb_sha256 = _gamedb_decal_asset_ids(gamedb_path, ids, allow_unregistered=omit_missing)
+    if no_gamedb:
+        mapping, gamedb_sha256 = {}, None
+    else:
+        mapping, gamedb_sha256 = _gamedb_decal_asset_ids(gamedb_path, ids, allow_unregistered=omit_missing)
     resolver = FH6RasterDecalResolver(archive)
     entries: list[bytes] = []
     omitted: list[dict[str, Any]] = []
@@ -117,7 +124,7 @@ def build_gpu_raster_decal_pack(
         asset_id = mapping.get(raster_id)
         reason = ""
         if asset_id is None:
-            reason = "gamedb-unregistered"
+            reason = "gamedb-unavailable" if no_gamedb else "gamedb-unregistered"
         elif omit_missing and not _member_present(resolver, asset_id):
             reason = "decals-zip-missing"
         if reason:

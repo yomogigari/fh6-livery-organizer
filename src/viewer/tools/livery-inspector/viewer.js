@@ -228,6 +228,8 @@ try {
 }
 let wheelsVisible = new URLSearchParams(window.location.search).get('wheels') !== '0';
 const requestedWheelSource = String(viewerParams.get('wheel-source') || 'source-verified').toLowerCase();
+// GameDB が無い（ブリッジが ?gamedb=missing を付ける）：車輪は簡易表示、ゲームのロゴのステッカーは省いてある。
+const gamedbMissing = viewerParams.get('gamedb') === 'missing';
 const requestedBodyKitPartId = Number(viewerParams.get('body-kit'));
 // 部品の選択肢（?parts=FrontBumper:365001,Hood:365002）。選ぶとページを読み直し、組み立ての前に加える。
 const requestedPartOptions = parsePartOptionsParam(viewerParams.get('parts'));
@@ -1178,17 +1180,34 @@ function setGpuPaintStatus(usedGpu, reason = '') {
 }
 
 function showRasterOmissionNotice(omissions, layerCount) {
-  // ゲームに無いステッカーを省いて表示したことを、画面の上の注意の帯に出す（黙って省かない）。
-  if (!Array.isArray(omissions) || !omissions.length) return;
-  const ids = omissions.map(item => Number(item?.raster_id)).filter(Number.isSafeInteger);
-  const message = t('warning.raster_decals_omitted', {
-    count: ids.length, ids: ids.join(', '), layers: Number(layerCount) || ids.length,
-  });
+  // 省いて表示したもの（ゲームに無いステッカー、GameDB が無いために画像を引けないゲームのロゴのステッカー）と、
+  // GameDB が無いときの簡易の車輪を、画面の上の注意の帯に出す（黙って省かない）。
+  const items = Array.isArray(omissions) ? omissions : [];
+  const noGamedb = items.filter(item => item?.reason === 'gamedb-unavailable');
+  const others = items.filter(item => item?.reason !== 'gamedb-unavailable');
+  const layers = Number(layerCount) || 0;
+  const messages = [];
+  if (gamedbMissing) messages.push(t('warning.no_gamedb_wheels'));
+  if (noGamedb.length) {
+    messages.push(t('warning.raster_decals_no_gamedb', {
+      count: noGamedb.length, layers: (others.length ? 0 : layers) || noGamedb.length,
+    }));
+  }
+  const ids = others.map(item => Number(item?.raster_id)).filter(Number.isSafeInteger);
+  if (ids.length) {
+    messages.push(t('warning.raster_decals_omitted', {
+      count: ids.length, ids: ids.join(', '), layers: (noGamedb.length ? 0 : layers) || ids.length,
+    }));
+  }
+  if (!messages.length) return;
+  const message = messages.join(' ');
   if (renderErrorWarning) {
     renderErrorWarning.textContent = message;
     renderErrorWarning.classList.remove('hidden');
   }
-  viewerEvent('raster-decals-omitted', message, {rasterIds: ids, layerCount: Number(layerCount) || 0});
+  const allIds = items.map(item => Number(item?.raster_id)).filter(Number.isSafeInteger);
+  if (allIds.length) viewerEvent('raster-decals-omitted', message, {rasterIds: allIds, layerCount: layers});
+  if (gamedbMissing) viewerEvent('gamedb-missing', message, {rasterIds: allIds, layerCount: layers});
 }
 
 function updateDemoTitle() {
