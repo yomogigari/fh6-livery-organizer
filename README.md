@@ -6,26 +6,42 @@
 
 GameSaveから取得した情報をもとに、サムネイル付きのHTMLレポートとExcelを生成します。生成されたHTMLでは、検索・絞り込み・並び替え・整理状態・タグ・メモ・バックアップなどを利用できます。
 
-**v0.4.62 Preview**（2026-09-19公開）では、比較画面と再ダウンロード重複整理から「FH6で削除済み（仮）」へ直接反映できるようにし、仮削除済み一覧の検索・復元を強化しました。さらに、保存済み `C_livery` の構造から5項目の統計的特徴を確認する**作成方法監査スコア**を追加し、カード・比較・CSV / Excelで `0/5`～`5/5` の数値として確認できます。監査スコアは作成方法の判定結果、自動生成の確率や信頼度、ペイント品質、作者を評価する値ではありません。
+このリポジトリと配布物には、次の3つのツールが入っています。
+
+| ツール | 役割 |
+| --- | --- |
+| **Livery Organizer for FH6**（本体） | ダウンロード済みペイントを一覧化・検索・整理し、HTML / Excelのレポートを生成します。 |
+| **Livery Viewer for FH6**（任意・実験的） | レポートのペイントを、FH6の車体に貼った3Dで表示します。v0.4.63から同梱しました。 |
+| **Navigator Bridge for FH6**（任意） | Organizerで選んだペイントの位置まで、FH6「マイデザイン」のカーソルを移動します。 |
+
+**v0.4.63 Preview**（公開日 YYYY-MM-DD：公開時に記入）では、3Dプレビューの **Livery Viewer for FH6** を同梱しました。Organizerのレポートの各カードから、そのペイントを車体に貼った3D表示を開けます。あわせて、3つのツールの設定と見た目をそろえ、配布ZIPをEXEとEXEの動作に必要なファイルだけにしました。
 
 > [!IMPORTANT]
-> 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。
+> 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。Livery Viewer for FH6 の3D表示は実験的な機能で、ゲーム内の見た目と完全には一致しません。
 
-## v0.4.62 Previewの主な更新
+## v0.4.63 Previewの主な更新
 
-比較画面では、表示中の候補をその場で「残す / 削除候補 / 未決定」へ変更できるようになりました。FH6上で削除したペイントは、通常の比較画面と再ダウンロード完全一致の整理画面からも「FH6で削除済み（仮）」へ反映できます。
+### Livery Viewer for FH6（3Dプレビュー・実験的）を同梱
 
-「FH6で削除済み（仮）」の復元画面には検索欄を追加しました。車種、タイトル、作成者、元スロット、FH6位置、表示日付、取得日時などを対象に複数語のAND検索ができ、表示件数を確認しながら1件ずつ復元できます。
+Organizerのレポートの各カードに「3Dプレビュー（実験）」を追加しました。クリックすると、Livery Viewer for FH6 の窓に、そのペイントを貼った車が表示されます。
 
-作成方法監査では、保存済み `C_livery` の形状・色・変形値などから5項目の統計的特徴を確認し、一致した項目数だけを `0/5`～`5/5` で表示します。「監査スコア:高い順 / 低い順」で並び替えでき、スコアを算出できないペイントはどちらの順序でも末尾になります。数値だけで制作方法を断定せず、自動的な「手作業 / 自動生成」分類も行いません。
+- FH6本体のゲームアセットとGameSaveのペイントを読み取り専用で読み、パソコンの中でWebGL2で描画します。
+- 同じ車の別のペイントへの切り替えは、開いている窓の中で行います（開発用のPCで約1秒）。
+- 初めて表示する車の準備には時間がかかります（開発用のPCで10～20秒ほど）。準備の結果を `preview-cache` に残すので、同じ車の2回目からは速くなります。
+- 窓を閉じた後も、次に開くときに速いよう、10分間は裏で待機します（窓は表示しません）。
+- ゲームのロゴのステッカーを使うペイントの表示には、利用者がローカルに用意したFH6のGameDBが必要です（配布物には含めません）。
 
-監査結果は `C_livery` の内容SHA-256単位でGameSave外へキャッシュします。同一内容の再ダウンロードや複製データは同じ解析結果を再利用するため、2回目以降のレポート生成を短縮できます。監査ロジック、校正ID、キャッシュ形式が変わった場合は古い結果を再利用せず再計算します。
+### 3つのツールの共通化
 
-内蔵ヘルプは、作成方法監査を含む現在の操作手順と安全上の注意が読み取りやすくなるよう文章を整理し、日本語 / 英語の説明を同期しました。
+Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システム設定 / ライト / ダーク）・FH6本体とGameSaveのフォルダーなどの設定を共有し、同じ配色・文字・余白の画面にそろえました。Navigator Bridgeにも、言語と表示テーマの切り替えを追加しました。
 
-Navigator Bridge for FH6 は **v0.0.28** を継続します。同梱車両メタデータも **2026-09-08 / 647車種 / package revision 2** のままです。
+### 配布物
 
-Python版では、Organizer本体に加えて `i18n.py`、`livery-authorship-audit.py`、`vehicle-metadata-update.py`、`fh6-vehicle-metadata.json`、`fh6-vehicle-metadata-manifest.json`、`locales/` を同じ `python/` フォルダー内に保持してください。
+配布ZIPには、EXEとEXEの動作に必要なファイルだけを含めます。前の版まで同梱していたPython版（`python` フォルダー）は含めません。ソースコード（Python・Rust）は、このリポジトリで公開しています。同梱する第三者の部品とそのライセンスは、ZIPの `THIRD-PARTY-NOTICES.txt` にまとめました。
+
+Navigator Bridge for FH6 は **v0.0.29** です。同梱車両メタデータは **2026-11更新 / 667車種 / package revision 4** へ更新しました。
+
+詳しい変更内容は [docs/releases/CHANGELOG.md](docs/releases/CHANGELOG.md) を参照してください。
 
 ## 特徴
 
@@ -34,7 +50,9 @@ Python版では、Organizer本体に加えて `i18n.py`、`livery-authorship-aud
 - サムネイルを埋め込んだローカルHTMLレポート
 - サムネイル付きExcel出力
 - 車種・メーカー・作成者・年式などによる検索、絞り込み、並び替え
-- Organizer GUI / 生成HTML / Excelの日本語・英語表示
+- レポートの各カードから、ペイントを車体に貼った3D表示（Livery Viewer for FH6・実験的）
+- Organizer GUI / Viewer / Navigator Bridge / 生成HTML / Excelの日本語・英語表示
+- 3つのツールで共有する言語・表示テーマ（システム設定 / ライト / ダーク）・フォルダーの設定
 - `/` で検索欄へ移動、`?` でヘルプを開くキーボードショートカット
 - 大規模レポート向けに軽量化したライブ検索
 - FH6「マイデザイン」順での表示
@@ -53,12 +71,39 @@ Python版では、Organizer本体に加えて `i18n.py`、`livery-authorship-aud
 - ユーザーデータ、判定状態のバックアップと復元（現在のレポート外データも保持）
 - CSV出力
 - ブラウザ内の動作診断
-- Python標準ライブラリのみで動作するPython版
 - 任意の **Navigator Bridge for FH6** との連携
+
+作成方法監査スコアは、保存済み `C_livery` の形状・色・変形値などから5項目の統計的特徴を確認し、一致した項目数を `0/5`～`5/5` で表示するものです。作成方法の判定結果、自動生成の確率や信頼度、ペイント品質、作者を評価する値ではありません。
+
+## Livery Viewer for FH6
+
+**Livery Viewer for FH6** は、Organizerのレポートのペイントを、FH6の車体に貼って3Dで表示する実験的なツールです。FH6本体のゲームアセットと、GameSaveのペイント（`Livery_*` フォルダー）を読み取り専用で読み、パソコンの中で描画します（WebGL2）。
+
+1. `Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` を起動し、設定画面で **「Organizer連携を登録」** を一度実行します。
+2. Organizerでレポートを生成します。FH6本体のインストール先を確認できたレポートでは、各カードに「3Dプレビュー（実験）」が表示されます。
+3. 「3Dプレビュー（実験）」をクリックすると、Viewerの窓にそのペイントを貼った車が表示されます。別のペイントをクリックすると、同じ窓で表示が切り替わります。
+
+Viewerの設定画面から、`Livery_*` フォルダーを選んで開くこともできます。プレビュー画面からは、表示中の視点や6方向の画像をJPEG / PNGで保存できます。
+
+Windowsへの連携登録には、Viewerの**絶対パス**が保存されます。Viewerのフォルダーを移動した場合は、移動後のViewerから「Organizer連携を登録」をもう一度実行してください。Viewerを削除する場合は、先に設定画面の「連携登録を解除」を実行してください。
+
+初回の起動では、3D表示に使う three.js（MIT License）を、npmの公式配布から取得します（インターネットへの接続が必要です）。取得したファイルは照合値を確かめてから使い、次回からは再利用します。
+
+### GameDB
+
+ゲームのロゴのステッカーを使うペイントを表示するには、FH6のGameDB（復号済みのSQLite）が必要です。ロゴのステッカーを使わないペイントは、GameDBが無くても表示できます。
+
+GameDBは配布物にもリポジトリにも含めません。Organizer・ViewerがGameDBを作成・復号・コピー・変更することもありません。利用者がローカルに用意したGameDBを次の場所に置いた場合だけ、読み取り専用で使用します。
+
+```text
+%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
+```
+
+詳しくは [docs/3D-PREVIEW-GAMEDB.md](docs/3D-PREVIEW-GAMEDB.md) を参照してください。
 
 ## Navigator Bridge for FH6
 
-**Navigator Bridge for FH6 v0.0.28** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
+**Navigator Bridge for FH6 v0.0.29** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
 
 Organizerでは、各ペイントに次のような現在位置を表示します。
 
@@ -96,23 +141,27 @@ Windowsの連携登録にはBridge本体の**絶対パス**が保存されます
 
 - Bridgeを別フォルダへ移動した
 - Bridge本体のファイル名を変更した
-- EXE版からPython版、またはPython版からEXE版へ切り替えた
+- EXEとソースからの実行（Python）を切り替えた
 
 移動前に「解除」を行う必要はありません。変更後のBridgeから再登録すると、新しい場所へ登録が上書きされます。
 
 同じフォルダ・同じファイル名のEXEを新しいバージョンで上書きしただけの場合は、通常は再登録不要です。
 
+詳しい仕様と操作方法は、[docs/releases/NAVIGATOR-BRIDGE-README.txt](docs/releases/NAVIGATOR-BRIDGE-README.txt) を参照してください。
+
 ## 安全性
 
-### Livery Organizer for FH6
+### Livery Organizer for FH6 / Livery Viewer for FH6
 
-Livery Organizer for FH6 は、**FH6のGameSaveとFH6本体のゲームアセットを読み取り専用で扱います**。
+Livery Organizer for FH6 と Livery Viewer for FH6 は、**FH6のGameSaveとFH6本体のゲームアセットを読み取り専用で扱います**。
 
 解析元に対して、書き込み・削除・移動・リネーム・上書きは行いません。レポートの出力先としてGameSave配下を指定することもできません。
 
 HTML上の「削除候補」や「FH6で削除済み（仮）」は、Organizer内で整理するための状態です。GameSave内のファイルを削除する機能ではありません。
 
-設定ファイル、キャッシュ、生成レポートはGameSave外へ保存されます。
+設定ファイル、キャッシュ、生成レポート、Viewerの準備の結果は、GameSave外へ保存されます。
+
+Organizer / Viewer / Navigator Bridgeのいずれにも、利用者のLiveryデータを外部サーバーへ送信するためのネットワーク機能はありません。Livery Viewer for FH6 が外部へ接続するのは、初回に three.js をnpmの公式配布（`registry.npmjs.org`）から取得するときだけです。
 
 ### Navigator Bridge for FH6
 
@@ -133,39 +182,44 @@ FH6画面の画像認識や解析、ゲーム内部の現在カーソル位置�
 
 ## 配布版
 
-GitHub Releasesでは、EXE版・Python版・日本語/英語ドキュメントをまとめたZIPを配布します。
+GitHub Releasesでは、EXEとEXEの動作に必要なファイル、日本語 / 英語のドキュメントをまとめたZIPを配布します。
 
 ```text
 Livery-Organizer-for-FH6.exe
 Navigator-Bridge-for-FH6.exe
+Livery-Viewer-for-FH6\
+  Livery-Viewer-for-FH6.exe
+  （Viewerの動作に必要なファイル）
 README.txt
 README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python/
-  livery-organizer-for-fh6-v0462.py
-  i18n.py
-  livery-authorship-audit.py
-  vehicle-metadata-update.py
-  fh6-vehicle-metadata.json
-  fh6-vehicle-metadata-manifest.json
-  navigator-bridge-for-fh6-v028.py
-  locales/
-    __init__.py
-    ja.py
-    en.py
+LICENSE.txt
+THIRD-PARTY-NOTICES.txt
 ```
 
-OrganizerはEXE版とPython版のどちらか一方を選んで利用できます。Python版Organizerは多言語リソースを使用するため、`python` フォルダー内の `i18n.py` と `locales` フォルダーを削除・移動せず、そのままの構成で使用してください。
+Livery Viewer for FH6 は、`Livery-Viewer-for-FH6` フォルダーの中のファイルを一緒に使います。フォルダーごと置いて使い、EXEだけを別の場所へ取り出さないでください。
 
-Navigator BridgeもEXE版とPython版のどちらか一方を利用します。Navigator Bridgeを使用しない場合は、Bridgeのファイルを起動する必要はありません。
+Livery Viewer for FH6 と Navigator Bridge for FH6 は任意機能です。使用しない場合は、起動する必要はありません。
 
-Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手順は、通常の配布物には含めていません。
+配布ZIPには、ソースコードとPython版は含めません。ソースコードは、このリポジトリで公開しています。Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手順は、配布物にもリポジトリにも含めていません。
+
+## このリポジトリの構成
+
+| 場所 | 内容 |
+| --- | --- |
+| `src/organizer/` | Livery Organizer for FH6（Python） |
+| `src/navigator_bridge/` | Navigator Bridge for FH6（Python） |
+| `src/viewer/` | Livery Viewer for FH6（Python・JavaScript・Rust） |
+| `docs/` | 多言語対応の方針、3DプレビューとGameDB、配布物の文書（`docs/releases/`） |
+| `tests/` | テスト |
+
+`src/viewer/tools/livery/native/lo4fh6_native/` は、Viewerの一部の計算を速くする部品のRustのソースです。配布版のViewerには、このソースから作った部品（DLL）を入れています。ソースから動かす場合はこの部品が無く、同じ計算をPythonで行います（時間は長くなります）。
 
 ## 言語・ドキュメント
 
-Organizerの利用者向け表示は、現在 **日本語** と **英語** に対応しています。言語設定は `settings.json` に保存され、変更は次回起動時から反映されます。生成HTML / Excelは、レポートを生成した時点のOrganizer言語を使用します。Liveryタイトル、説明、作成者名、車名、タグ、メモなどの利用者データは翻訳しません。
+Organizer・Viewer・Navigator Bridgeの利用者向け表示は、現在 **日本語** と **英語** に対応しています。言語と表示テーマは3つのツールで共有し、言語の変更は次回起動時から反映されます。生成HTML / Excelは、レポートを生成した時点のOrganizer言語を使用します。Liveryタイトル、説明、作成者名、車名、タグ、メモなどの利用者データは翻訳しません。
 
 このプロジェクトでは、**日本語を主要ドキュメントの正本、英語を共通の第二言語**として扱います。GitHubではこの `README.md` を日本語の基準文書とし、英語は [README_EN.md](README_EN.md) を参照してください。配布ZIPにも `README_EN.txt` と `NAVIGATOR-BRIDGE-README_EN.txt` を含めます。
 
@@ -181,7 +235,7 @@ Organizerの利用者向け表示は、現在 **日本語** と **英語** に�
 
 [Livery Organizer for FH6 動作デモ](https://yomogigari.github.io/fh6-livery-organizer/fh6-livery-organizer-demo.html)
 
-公開デモでは、安全のためNavigator Bridgeの起動とFH6へのキー入力を無効化しています。
+公開デモでは、安全のためNavigator Bridgeの起動とFH6へのキー入力を無効化しています。3Dプレビュー（Livery Viewer for FH6）は、公開デモでは使えません。
 
 ## 動作環境
 
@@ -191,39 +245,25 @@ Organizerの利用者向け表示は、現在 **日本語** と **英語** に�
 - PC版 Forza Horizon 6
 - 一般的なデスクトップWebブラウザ
 
+Livery Viewer for FH6 には、さらに次が必要です。
+
+- WebGL2を使えるGPU
+- Microsoft Edge WebView2 ランタイム（Windows 11には標準で入っています）
+- 初回の three.js の取得のためのインターネット接続
+
 開発・動作確認は **Microsoft Store / Xbox App版** を中心に行っています。
 
-**OrganizerについてはSteam版でも利用者から正常動作の報告があります**が、開発側でSteam環境を正式に検証したものではありません。環境によってFH6本体やセーブデータの保存先・ファイル構成などが異なる可能性があります。Navigator BridgeもSteam環境での正式検証は行っておらず、利用にはウィンドウタイトルが `Forza Horizon 6` と一致し、所有プロセスをFH6本体として確認できる必要があります。
-
-Python版はPython標準ライブラリのみを使用し、GUIにはTkinterを使用します。
+**OrganizerについてはSteam版でも利用者から正常動作の報告があります**が、開発側でSteam環境を正式に検証したものではありません。環境によってFH6本体やセーブデータの保存先・ファイル構成などが異なる可能性があります。Navigator Bridge・Livery Viewer for FH6 もSteam環境での正式検証は行っていません。Navigator Bridgeの利用には、ウィンドウタイトルが `Forza Horizon 6` と一致し、所有プロセスをFH6本体として確認できる必要があります。
 
 ## 使い方
 
-### Organizer EXE版
+### 配布版（EXE）
 
-```text
-Livery-Organizer-for-FH6.exe
-```
+- **Organizer**：`Livery-Organizer-for-FH6.exe` を起動します。
+- **Livery Viewer for FH6**：`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` を起動し、初回は「Organizer連携を登録」を実行します。
+- **Navigator Bridge**：`Navigator-Bridge-for-FH6.exe` を起動し、初回は「連携を登録」を実行します。
 
-を起動します。
-
-### Organizer Python版
-
-配布ZIPを展開したフォルダーで、次のように実行します。
-
-```powershell
-python python\livery-organizer-for-fh6-v0462.py
-```
-
-uvを使用する場合:
-
-```powershell
-uv run python\livery-organizer-for-fh6-v0462.py
-```
-
-`python` フォルダー内の `i18n.py` と `locales` フォルダーはOrganizerの日本語/英語表示に必要です。
-
-GUIが起動したら、必要に応じて次の項目を確認して解析を実行します。
+OrganizerのGUIが起動したら、必要に応じて次の項目を確認して解析を実行します。
 
 - FH6保存領域
 - FH6本体のインストール先
@@ -233,23 +273,25 @@ GUIが起動したら、必要に応じて次の項目を確認して解析を�
 
 解析前にFH6を完全に終了しておくことを推奨します。
 
-### Navigator Bridge EXE版
+### ソースから動かす
 
-```text
-Navigator-Bridge-for-FH6.exe
-```
-
-を起動し、初回は「連携を登録」を実行します。
-
-### Navigator Bridge Python版
+OrganizerとNavigator Bridgeは、Python 3.12以上の標準ライブラリだけで動作します（GUIはTkinter）。このリポジトリのフォルダーで、次のように実行します。
 
 ```powershell
-python python\navigator-bridge-for-fh6-v028.py
+python src\organizer\livery-organizer-for-fh6.py
+python src\navigator_bridge\navigator-bridge-for-fh6.py
 ```
 
-Organizerから利用する場合は、Python版Bridgeを単独起動して「連携を登録」を行ってください。
+uvを使用する場合:
 
-詳しい仕様と操作方法は、配布ZIP内の `NAVIGATOR-BRIDGE-README.txt` を参照してください。
+```powershell
+uv run src\organizer\livery-organizer-for-fh6.py
+uv run src\navigator_bridge\navigator-bridge-for-fh6.py
+```
+
+Navigator Bridgeは、`src\navigator_bridge\start-navigator-bridge-quiet.vbs` から黒いウィンドウを出さずに起動することもできます（uvが必要です）。ソースから動かすBridgeをOrganizerから使う場合は、そのBridgeを単独起動して「連携を登録」を行ってください。
+
+Livery Viewer for FH6 は、uvとPython 3.12を使います。`src\viewer\start-viewer-gui.cmd`（黒いウィンドウを出さない場合は `start-viewer-gui-quiet.vbs`）を実行すると、Viewerの設定画面が開きます。初回は、uvが必要なPythonのパッケージ（Pillow・numpy・psutil・pywebview）を取得します。詳しくは [src/viewer/README.md](src/viewer/README.md) を参照してください。
 
 ## 生成ファイル
 
@@ -272,6 +314,8 @@ livery-organizer-for-fh6-decisions-backup.json
 livery-organizer-for-fh6-decisions.csv
 livery-organizer-for-fh6-decisions-filtered.csv
 ```
+
+設定・キャッシュの保存場所は、配布物の [README.txt](docs/releases/README.txt) の「設定・キャッシュの保存場所」を参照してください。
 
 ## HTMLで保存される整理情報
 
@@ -296,6 +340,8 @@ livery-organizer-for-fh6-decisions-filtered.csv
 FH6の保存データやゲームアセットの内部構造は、本プロジェクトが管理する仕様ではありません。
 
 ゲーム側のアップデート、保存形式や配置の変更、環境差などにより、解析できないデータや誤認識が発生する可能性があります。
+
+Livery Viewer for FH6 の3D表示は、ゲームのファイルから独自に再現したもので、ゲーム内の見た目と完全には一致しません。Xbox版・PC版のゲーム画面と同じであることは確認していません。
 
 Navigator Bridgeも、FH6内部の現在位置を読み取って補正する仕組みではありません。入力の取りこぼし、想定外の画面状態、FH6側の応答遅延などによってカーソル位置がずれる可能性があります。実行前後の位置は利用者自身で確認してください。
 
@@ -322,6 +368,8 @@ Copyright (c) 2026 Yomogigari
 このプロジェクトは [MIT License](LICENSE) の下で公開します。
 
 MIT Licenseは、著作権表示とライセンス表示を保持することを条件に、利用・複製・改変・配布などを広く認めるパーミッシブなライセンスです。
+
+配布版のZIPに同梱する第三者の部品とそのライセンスは、ZIPの `THIRD-PARTY-NOTICES.txt` を参照してください。
 
 ### 無保証・免責
 
