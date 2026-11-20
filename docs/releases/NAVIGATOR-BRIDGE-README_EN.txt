@@ -1,11 +1,14 @@
-Navigator Bridge for FH6 v0.0.28
+Navigator Bridge for FH6 v0.0.29
 ================================
-Release date: 2026-09-11
+Release date: YYYY-MM-DD (fill in at release)
 
-Navigator Bridge for FH6 v0.0.28 further hardens FH6 window targeting. A target
-must have the exact "Forza Horizon 6" title and be owned by forzahorizon6.exe.
-Ambiguous multiple candidates are rejected, and the same target is revalidated
-immediately before every normal movement key.
+Navigator Bridge for FH6 v0.0.29 shares the language and theme (Follow system /
+Light / Dark) settings with Livery Organizer for FH6 and Livery Viewer for FH6,
+and lets you switch the UI language (Japanese / English) and theme. A language
+change takes effect on the next launch. The window style now matches the other
+two tools. FH6 window targeting (the exact "Forza Horizon 6" title, the
+forzahorizon6.exe owning process, and revalidation immediately before every
+normal movement key) is unchanged from v0.0.28.
 
 This document describes the current behavior and usage of the optional Bridge.
 

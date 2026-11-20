@@ -4,6 +4,44 @@
 
 ---
 
+## v0.4.63 Preview — YYYY-MM-DD（公開時に記入）
+
+### Livery Viewer for FH6（3Dプレビュー・実験的）を同梱
+
+- Organizerのレポートの各カードへ「3Dプレビュー（実験）」を追加し、ペイントを車体に貼った3D表示を開けるようにした。
+- 3D表示を行う Livery Viewer for FH6 を配布物へ同梱（`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe`、フォルダーごと使用）。
+- FH6本体のゲームアセットとGameSaveのペイントを読み取り専用で読み、パソコンの中でWebGL2で描画。
+- 同じ車の別のペイントは、開いている窓の中で切り替える。
+- 初めて表示する車の準備の結果を `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache` に残し、2回目から速くする。
+- 窓を閉じた後、10分間は裏で待機し、次の表示を速くする。
+- ゲームのロゴのステッカーを使うペイントの表示には、利用者がローカルに用意したFH6のGameDBが必要（配布物へ同梱しない）。
+- GameDBを使用できる場合は、車体の構成やホイールの寸法・配置にも使用。
+- 初回に three.js を npm の公式配布から取得し、照合値を確認してから使用。
+- 表示はゲーム内の見た目と完全には一致しない。
+
+### 3つのツールの共通化
+
+- Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システム設定 / ライト / ダーク）・FH6本体とGameSaveのフォルダー等を共有（`%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`）。
+- OrganizerとNavigator Bridgeの画面を、Viewerと同じ配色・文字・余白にそろえた。
+- Navigator Bridgeへ、言語と表示テーマの切り替えを追加。
+
+### 車両メタデータ
+
+- 同梱車両メタデータを 2026-11更新・667車種・package revision 4 へ更新。
+- 車両メタデータの更新日を、月の精度（例: `2026-11`）でも扱えるようにした。
+
+### 配布物
+
+- 配布ZIPを、EXEとEXEの動作に必要なファイルだけにした。Python版（`python` フォルダー）は含めない。
+- ソースコード（Python・Rust）はGitHubのリポジトリで公開。
+- `LICENSE.txt` と、同梱する第三者の部品とライセンスの一覧 `THIRD-PARTY-NOTICES.txt` を同梱。
+
+### ソースから動かす場合
+
+- Navigator Bridgeをソースから動かすとき、黒いウィンドウを出さずに起動する `start-navigator-bridge-quiet.vbs` を追加。
+
+---
+
 ## v0.4.62 Preview — 2026-09-19
 
 ### 比較 / FH6削除済み（仮）

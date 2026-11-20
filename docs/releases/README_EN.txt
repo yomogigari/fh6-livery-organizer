@@ -1,64 +1,72 @@
-Livery Organizer for FH6 v0.4.62 Preview
+Livery Organizer for FH6 v0.4.63 Preview
 ========================================
 
-Release date: 2026-09-19
+Release date: YYYY-MM-DD (fill in at release)
 
 Livery Organizer for FH6 is a Windows tool for listing, searching, and organizing
 paint designs (liveries) downloaded in the PC version of Forza Horizon 6.
 
-v0.4.62 lets comparison views change organization decisions directly and mark a
-paint as temporarily “Deleted in FH6” from normal comparison or exact re-download
-duplicate review. The temporary-deletion review adds multi-term search and clearer
-restore information for vehicle, title, creator, original slot, FH6 position, and dates.
+This distribution contains three tools:
 
-A numeric creation-method audit score now checks five statistical characteristics
-of saved C_livery structure and displays only 0/5 through 5/5. It is not a creation-
-method determination, an automatic-generation probability or confidence value, a
-paint-quality score, or an evaluation of the creator. Audit results are cached outside
-the GameSave by C_livery content SHA-256 so identical content can reuse the result.
+- Livery Organizer for FH6 (main tool)
+  Lists, searches, and organizes downloaded liveries and generates HTML / Excel reports.
+- Livery Viewer for FH6 (optional, experimental)
+  Shows a report's livery in 3D on the FH6 car body. Bundled starting with this version.
+- Navigator Bridge for FH6 (optional)
+  Moves the FH6 My Designs cursor to a livery position selected in Organizer.
 
-Navigator Bridge for FH6 remains v0.0.28. The bundled vehicle metadata also remains
-at the 2026-09-08 update with 647 vehicles and metadata package revision 2.
+This release is a preview version.
+
+v0.4.63 bundles the 3D preview tool, Livery Viewer for FH6. Each card in an
+Organizer report can open a 3D view of that livery applied to the car body.
+Livery Viewer for FH6 is experimental, and its rendering does not exactly match
+the in-game appearance.
+
+The three tools now share settings such as the language, theme (Follow system /
+Light / Dark), and the FH6 installation and GameSave folders, and use the same
+window style.
+
+The release ZIP contains only the EXEs and the files they need to run. The Python
+version (python folder) included in earlier releases is no longer included. The
+source code is published in the GitHub repository.
+
+The bundled vehicle metadata is updated to the 2026-11 update with 667 vehicles
+and metadata package revision 4.
 
 
 ■ Release files
 
 Livery-Organizer-for-FH6.exe
 Navigator-Bridge-for-FH6.exe
+Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe (plus the files it needs in the same folder)
 README.txt
 README_EN.txt
 NAVIGATOR-BRIDGE-README.txt
 NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
-python\livery-organizer-for-fh6-v0462.py
-python\i18n.py
-python\livery-authorship-audit.py
-python\vehicle-metadata-update.py
-python\fh6-vehicle-metadata.json
-python\fh6-vehicle-metadata-manifest.json
-python\navigator-bridge-for-fh6-v028.py
-python\locales\__init__.py
-python\locales\ja.py
-python\locales\en.py
+LICENSE.txt
+THIRD-PARTY-NOTICES.txt
 
-Organizer can be used as either the EXE or Python version.
-The Python Organizer uses the localization modules in the same python folder, so
-keep i18n.py and the locales folder together with the Organizer script.
-Navigator Bridge can also be used as either the EXE or Python version.
-Navigator Bridge is optional; Organizer's listing, search, organization, CSV,
-and Excel features do not require it.
+Livery Viewer for FH6 uses the files inside the Livery-Viewer-for-FH6 folder.
+Keep the folder together; do not move the EXE out of it by itself.
 
-The Build Kit and detailed instructions for rebuilding the Windows EXEs are not
-included in the normal distribution.
+Livery Viewer for FH6 and Navigator Bridge for FH6 are optional. Organizer's
+listing, search, organization, CSV, and Excel features do not require them.
+
+The source code (Python and Rust) is published in the GitHub repository:
+https://github.com/yomogigari/fh6-livery-organizer
+The Build Kit and detailed instructions for building the Windows EXEs are not
+included in the distribution or in the repository.
 
 
-■ Language and documentation
+■ Language, theme, and documentation
 
-Organizer user-facing UI currently supports Japanese and English.
+The user-facing UI of Organizer, Viewer, and Navigator Bridge supports Japanese
+and English. The language and theme (Follow system / Light / Dark) are shared by
+the three tools. A language change takes effect on the next launch.
 
-The language selection is saved in settings.json and takes effect on the next
-launch. Generated HTML and Excel reports use the Organizer language that is
-active when the report is generated.
+Generated HTML and Excel reports use the Organizer language that is active when
+the report is generated.
 
 Livery titles, descriptions, creator names, vehicle/proper-name values, tags,
 notes, IDs, and similar user/game data are not translated.
@@ -78,6 +86,68 @@ layout effects, and regression tests are checked before incorporation.
 If additional UI languages are added later, a complete documentation set will
 not necessarily be maintained for each language. Users who do not read Japanese
 should use the English documentation as the common reference.
+
+
+■ Livery Viewer for FH6
+
+Livery Viewer for FH6 is an experimental tool that shows a report's livery in 3D
+on the FH6 car body. It reads the FH6 game assets and the GameSave livery
+(Livery_* folder) as read-only input and renders them on your PC (WebGL2).
+
+- Open a livery from the "3D Preview (Experimental)" link on each report card.
+- You can also choose a Livery_* folder in the Viewer settings window.
+- The first time a car is shown, preparation takes a while (about 10-20 seconds
+  on the development PC). The prepared data is kept in preview-cache, so later
+  views of the same car are faster.
+- Switching to another livery of the same car happens in the open window
+  (about 1 second on the development PC).
+- After you close the window, the Viewer waits hidden in the background for
+  10 minutes so the next view opens faster, then exits.
+- The rendering does not exactly match the in-game appearance. It has not been
+  verified to match the Xbox or PC game screen.
+
+The Viewer only reads and displays liveries. It does not write to the GameSave
+or the FH6 installation.
+
+
+■ Using Livery Viewer for FH6
+
+1. Start Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe and run
+   "Register Organizer integration" once in the settings window.
+   If you move the Viewer to another folder, run "Register Organizer integration"
+   again from the moved Viewer. The Windows registration stores the Viewer's
+   absolute path.
+2. Generate a report in Organizer. Reports that could confirm the FH6
+   installation location show "3D Preview (Experimental)" on each card.
+3. Click "3D Preview (Experimental)". If the browser asks whether to open an
+   external app, check the request and allow it. Organizer and the Viewer use
+   liveryorganizerpreviewforfh6:// for local integration.
+4. The Viewer window shows the car with that livery. Clicking
+   "3D Preview (Experimental)" for another livery switches the view in the same
+   window.
+
+To open a livery from the settings window, check "FH6 folder", "Livery_* folder",
+and "preview-cache", then run "Open 3D preview".
+
+On first launch, the Viewer downloads three.js (MIT License), which it uses for 3D
+rendering, from the official npm distribution (an internet connection is required).
+The downloaded files are verified against fixed checksums and reused afterwards.
+
+
+■ Livery Viewer for FH6 and the GameDB
+
+Liveries that use the game's logo stickers require the FH6 GameDB (a decrypted
+SQLite file) to be shown. Without the GameDB, such a livery cannot be shown in 3D.
+Liveries without logo stickers can be shown without the GameDB.
+
+The GameDB is not included in the distribution, and Organizer and the Viewer do
+not create, decrypt, copy, or modify it. Only a GameDB that the user has prepared
+locally and placed at the following location is used, read-only:
+
+%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
+
+When the GameDB is available, it is also used for the car body composition and
+for wheel dimensions and placement.
 
 
 ■ Main features
@@ -103,6 +173,7 @@ should use the English documentation as the common reference.
 - Temporary "Deleted in FH6" state that recalculates remaining positions
 - FH6 move-target selection from normal lists and comparison dialogs
 - F key or Move to selected design in FH6 to send a target to Navigator Bridge
+- 3D view of a livery from each report card with Livery Viewer for FH6 (experimental)
 - / shortcut to focus search
 - ? shortcut to open Help
 - Optimized live search for large reports
@@ -113,18 +184,7 @@ files in the FH6 GameSave.
 
 ■ Running Organizer
 
-EXE:
-Livery-Organizer-for-FH6.exe
-
-Python:
-From the folder where you extracted the release ZIP, run:
-python python\livery-organizer-for-fh6-v0462.py
-
-With uv:
-uv run python\livery-organizer-for-fh6-v0462.py
-
-Keep python\i18n.py and the python\locales folder in place. They contain the
-Japanese/English UI resources required by the Python Organizer.
+Start Livery-Organizer-for-FH6.exe.
 
 After the GUI starts, confirm these paths as needed:
 
@@ -174,7 +234,7 @@ into a newly generated report. Use the built-in backup functions for data you
 want to preserve.
 
 
-■ Navigator Bridge for FH6 v0.0.28
+■ Navigator Bridge for FH6 v0.0.29
 
 Navigator Bridge is an optional companion tool that moves the FH6 My Designs
 cursor to a paint position selected in Organizer.
@@ -196,9 +256,9 @@ cursor sequence through the standard Windows input API.
 
 On first use, start Bridge by itself and run Register Integration once.
 The navigatorbridgeforfh6:// Windows registration stores Bridge's absolute path.
-Register again if you move/rename Bridge or switch between the EXE and Python
-versions. Replacing an EXE at the same path and filename normally does not require
-registration again.
+Register again if you move/rename Bridge or switch between the EXE and running
+from the source code (Python). Replacing an EXE at the same path and filename
+normally does not require registration again.
 
 See NAVIGATOR-BRIDGE-README_EN.txt for detailed behavior, timing settings, and
 safety boundaries.
@@ -257,21 +317,30 @@ Primary target:
 Windows 11
 PC version of Forza Horizon 6
 
+Livery Viewer for FH6 additionally requires:
+- a GPU that supports WebGL2
+- the Microsoft Edge WebView2 Runtime (included with Windows 11)
+- an internet connection for the first-time three.js download
+
 Development and verification are centered on the Microsoft Store / Xbox App
 version.
 
 Users have reported successful Organizer use with the Steam version, but Steam
-is not an officially verified development environment. Navigator Bridge is also
-not formally verified on Steam and requires the FH6 window title to match
-"Forza Horizon 6".
+is not an officially verified development environment. Navigator Bridge and
+Livery Viewer for FH6 are also not formally verified on Steam. Navigator Bridge
+requires the FH6 window title to match "Forza Horizon 6".
 
-The Python version uses only the Python standard library and Tkinter.
+For running the tools from the source code with Python, see the GitHub repository.
 
 
 ■ Settings / cache locations
 
 Organizer settings:
 %APPDATA%\Livery-Organizer-for-FH6\settings.json
+
+Settings shared by the three tools (language, theme, FH6 installation and
+GameSave folders, and similar):
+%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json
 
 Organizer / Bridge shared navigation settings:
 %APPDATA%\Livery-Organizer-for-FH6\navigator-bridge-settings.json
@@ -282,6 +351,30 @@ Vehicle DB cache:
 Navigator Bridge IPC / log:
 %LOCALAPPDATA%\Navigator-Bridge-for-FH6\
 
+Livery Viewer for FH6 settings, logs, and downloaded three.js:
+%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\
+
+Livery Viewer for FH6 prepared data (per-car models, images, and similar):
+%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache\
+If you delete it, it is rebuilt the next time a car is shown (the first view of
+that car takes longer). This version does not delete it automatically by size.
+
+The time the Viewer waits in the background after its window closes can be
+changed with viewer_keep_alive_seconds (seconds; 0 disables waiting) in
+%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json.
+
+
+■ Moving or removing Livery Viewer for FH6
+
+The Organizer integration registration in Windows stores the Viewer's absolute
+path. If you move the Livery-Viewer-for-FH6 folder, start the moved Viewer and run
+"Register Organizer integration" again in the settings window.
+
+To remove the Viewer, first start it and run "Remove Organizer integration" in
+the settings window to remove the liveryorganizerpreviewforfh6:// registration.
+Then delete the Livery-Viewer-for-FH6 folder and, if no longer needed, the Viewer
+locations listed above.
+
 
 ■ Demo
 
@@ -291,11 +384,26 @@ The public demo uses anonymized/dummy data and disables launching Navigator Brid
 and sending keys to FH6.
 
 
+■ Safety
+
+Livery Organizer for FH6 and Livery Viewer for FH6 treat the FH6 GameSave and the
+FH6 game assets as read-only input. They do not write, delete, move, rename, or
+overwrite them. The GameSave cannot be chosen as the report output location.
+
+None of Organizer, the Viewer, or Navigator Bridge has a network feature for
+sending your livery data to an external server. Livery Viewer for FH6 connects
+to the internet only to download three.js from the official npm distribution
+(registry.npmjs.org) on first launch.
+
+
 ■ Preview notice / unofficial project
 
 FH6 internal data formats are not public specifications, and some parsing behavior
 is based on observations from real data. Game updates, format/location changes,
 or environment differences may require future changes.
+
+The 3D rendering of Livery Viewer for FH6 is an independent reconstruction from
+the game files and does not exactly match the in-game appearance.
 
 This is an unofficial, non-commercial fan-made project. It is not affiliated
 with, endorsed by, sponsored by, or approved by Microsoft, Xbox, Turn 10 Studios,
@@ -313,6 +421,7 @@ https://www.xbox.com/en-US/developers/rules
 
 ■ License / disclaimer
 
-MIT License.
+MIT License (included LICENSE.txt).
+For third-party components and their licenses, see the included THIRD-PARTY-NOTICES.txt.
 The software is provided as-is. Back up important data as appropriate and use the
 software at your own responsibility.
