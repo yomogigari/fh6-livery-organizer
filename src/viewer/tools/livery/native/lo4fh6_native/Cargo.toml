@@ -1,0 +1,24 @@
+# LO4FH6 Viewer の自前の部品（Rust、2026-11-20）。作った DLL は src/viewer/tools/livery/native/lo4fh6_native.dll。
+# 作り方：fh6-livery-viewer-internal の python tools/native/build_lo4fh6_native.py（作り直すと同じバイト列になる設定で作る）。
+# 配布の EXE では、fh6-livery-organizer-internal のキットが同じ設定で作る（DLL はリポジトリに置かない）。
+# 外の crate には頼らない（dependencies なし）。標準ライブラリも使わない（no_std）。
+[package]
+name = "lo4fh6_native"
+version = "2.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+incremental = false

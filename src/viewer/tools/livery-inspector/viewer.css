@@ -1,0 +1,382 @@
+:root {
+  background: var(--lo4-bg);
+  color: var(--lo4-text);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #viewport {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#viewport {
+  position: relative;
+  background: var(--lo4-bg);
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+#canvas:active { cursor: grabbing; }
+
+.top-hud {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hud {
+  display: flex;
+  gap: 5px;
+}
+
+.hud-left {
+  flex-direction: column;
+  min-width: 0;
+  max-width: min(54vw, 560px);
+  overflow-wrap: anywhere;
+}
+
+.viewer-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+/* 診断欄はモデルを隠しすぎない。通常のViewerカメラ/描画APIを変更しない。 */
+.lo4fh6-status-actions {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  pointer-events:auto;
+}
+.lo4fh6-status-actions button,
+.lo4fh6-status-panel > summary {
+  font:inherit;
+  font-size:11px;
+  color:var(--lo4-text-control);
+  border:1px solid var(--lo4-line);
+  border-radius:var(--lo4-radius-control);
+  background:var(--lo4-panel);
+  padding:5px 9px;
+  cursor:pointer;
+}
+.lo4fh6-status-actions button:focus-visible,
+.lo4fh6-status-panel > summary:focus-visible {
+  outline:2px solid var(--lo4-accent);
+  outline-offset:2px;
+}
+.lo4fh6-status-panel {
+  width:100%;
+  min-width:0;
+  pointer-events:auto;
+  color:var(--lo4-text-muted);
+  font-size:11px;
+}
+.lo4fh6-status-panel > summary {display:list-item;list-style-position:inside;}
+.lo4fh6-status-lines {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin-top:5px;
+  max-height:min(45vh,390px);
+  overflow:auto;
+  overflow-wrap:anywhere;
+  padding:7px 9px;
+  border-radius:var(--lo4-radius-panel);
+  background:var(--lo4-panel);
+}
+#lo4fh6-status-copy-result {font-size:11px;}
+.lo4fh6-render-error-warning {
+  color:#ffb9c3;
+  background:var(--lo4-panel);
+  border:1px solid #dc4056;
+  border-radius:var(--lo4-radius-control);
+  font-size:12px;
+  padding:7px 9px;
+  pointer-events:auto;
+  white-space:pre-wrap;
+}
+.lo4fh6-render-error-warning.hidden { display:none; }
+
+.hud-left strong {
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 650;
+}
+
+.hud-left span, .hint {
+  color: var(--lo4-text-muted);
+  font-size: 11px;
+}
+
+#render-info {
+  color: var(--lo4-text-subtle);
+}
+
+#compare-info {
+  color: var(--lo4-text-subtle);
+}
+
+#finish-info {
+  color: var(--lo4-text-subtle);
+}
+
+.hud-right {
+  flex-direction: row;
+  flex-shrink: 1;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.wheel-toggle, .setting-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 8px;
+  color: var(--lo4-text-control);
+  background: var(--lo4-control);
+  border-radius: var(--lo4-radius-control);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.setting-control select {
+  min-height: 24px;
+  padding: 2px 22px 2px 6px;
+  border: 1px solid var(--lo4-line-control);
+  border-radius: var(--lo4-radius-control);
+  color: var(--lo4-text);
+  background: var(--lo4-control-solid);
+  font: 600 var(--lo4-font-control)/1 "Segoe UI", Arial, sans-serif;
+}
+
+
+.setting-control.hidden { display: none; }
+
+.setting-control input[type="range"] {
+  width: 112px;
+  accent-color: var(--lo4-accent);
+}
+
+#compare-split-control input[type="range"] {
+  width: 126px;
+}
+
+#difference-gain-control input[type="range"] {
+  width: 92px;
+}
+
+.setting-control output {
+  min-width: 30px;
+  color: var(--lo4-text-control);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.wheel-toggle input { margin: 0; accent-color: #8be4f3; }
+.wheel-toggle:focus-within, .setting-control:focus-within { outline: 1px solid #73cfe0; outline-offset: 2px; }
+
+.part-controls {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 190px);
+  align-items: center;
+  gap: 5px 8px;
+  max-height: min(48vh, 360px);
+  padding: 8px;
+  overflow-y: auto;
+  border: 1px solid var(--lo4-line);
+  border-radius: var(--lo4-radius-control);
+  background: var(--lo4-panel);
+}
+
+.part-controls.hidden { display: none; }
+.part-option-controls { display: contents; }
+.part-option-controls.hidden { display: none; }
+
+.diagnostic-controls {
+  max-width: 100%;
+  border: 1px solid var(--lo4-line);
+  border-radius: var(--lo4-radius-control);
+  background: var(--lo4-panel);
+  color: var(--lo4-text-control);
+}
+
+.diagnostic-controls > summary {
+  padding: 6px 9px;
+  cursor: pointer;
+  font: 600 var(--lo4-font-control)/1 "Segoe UI", Arial, sans-serif;
+  font-size: 11px;
+}
+
+.diagnostic-controls[open] { padding-bottom: 6px; }
+.diagnostic-controls[open] > .setting-control { margin: 0 6px; }
+
+.part-controls label {
+  color: var(--lo4-text-muted);
+  font-size: 11px;
+}
+
+.part-controls select {
+  min-height: 28px;
+  min-width: 0;
+  padding: 3px 24px 3px 7px;
+  border: 1px solid var(--lo4-line-control);
+  border-radius: var(--lo4-radius-control);
+  color: var(--lo4-text);
+  background: var(--lo4-control-solid);
+  font: 600 var(--lo4-font-control)/1 "Segoe UI", Arial, sans-serif;
+}
+
+button {
+  min-height: 30px;
+  padding: 5px 11px;
+  border: 1px solid var(--lo4-line-control);
+  border-radius: var(--lo4-radius-control);
+  color: var(--lo4-text-control);
+  background: var(--lo4-control);
+  font: 600 var(--lo4-font-control)/1 "Segoe UI", Arial, sans-serif;
+  cursor: pointer;
+}
+
+button:hover, button:focus-visible {
+  color: white;
+  border-color: var(--lo4-accent-border);
+  outline: none;
+}
+
+button[aria-pressed="true"], button.active {
+  color: var(--lo4-accent-text);
+  border-color: var(--lo4-accent);
+  background: var(--lo4-accent);
+}
+
+.view-strip {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  transform: translateX(-50%);
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--lo4-line);
+  border-radius: var(--lo4-radius-panel);
+  background: var(--lo4-panel);
+}
+
+.status {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  max-width: min(80vw, 560px);
+  transform: translate(-50%, -50%);
+  padding: 12px 16px;
+  border: 1px solid #3a4650;
+  background: rgba(8, 11, 14, .94);
+  color: var(--lo4-text-control);
+  font-size: 12px;
+  text-align: center;
+}
+
+.status.hidden { display: none; }
+.status.error { border-color: #dc4056; color: #ffb9c3; }
+
+.gpu-paint-info {
+  font-weight: 700;
+}
+
+.gpu-paint-info.warning {
+  border-left: 3px solid currentColor;
+  padding-left: 7px;
+  color: #ffd28a;
+}
+
+.gpu-paint-info.hidden { display: none; }
+
+.hint {
+  position: absolute;
+  left: 18px;
+  bottom: 22px;
+  z-index: 2;
+}
+
+@media (max-width: 1100px) {
+  .hint { display: none; }
+}
+
+@media (max-width: 720px) {
+  .top-hud { flex-direction: column; gap: 8px; }
+  .hud-left { max-width: 100%; }
+  .viewer-tools { align-items: flex-start; max-width: 100%; }
+  .view-strip { bottom: 12px; max-width: calc(100% - 16px); overflow-x: auto; }
+  .hint { display: none; }
+  button { min-height: 34px; }
+  .part-controls { max-width: 100%; }
+}
+
+/* r414: recording-only controls; default playback and source data are unchanged. */
+.demo-privacy-controls { max-width: 100%; border: 1px solid var(--lo4-line); border-radius: var(--lo4-radius-control); background: var(--lo4-panel); color: var(--lo4-text-control); font-size: 11px; }
+.demo-privacy-controls > summary { padding: 6px 9px; cursor: pointer; font-weight: 700; }
+.demo-privacy-body { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 2px 9px 9px; max-width: min(52vw, 475px); }
+.demo-privacy-body label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+.demo-privacy-body input { accent-color: var(--lo4-accent); }
+.demo-privacy-body select { color: var(--lo4-text); background: var(--lo4-control-solid); border: 1px solid var(--lo4-line-control); border-radius: 4px; }
+#viewport.demo-vehicle-pending #canvas, #viewport.demo-vehicle-failed #canvas { visibility: hidden; }
+
+/* 公開用の通常操作と、旧r485由来の研究UIを安全に分離する。 */
+.lo4fh6-research-controls {
+  position: relative;
+  border: 1px solid var(--lo4-line);
+  border-radius: var(--lo4-radius-control);
+  background: var(--lo4-panel);
+  color: var(--lo4-text-control);
+  font-size: 11px;
+}
+.lo4fh6-research-controls > summary {
+  padding: 9px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.lo4fh6-research-fields {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  width: min(560px, 88vw);
+  max-height: min(65vh, 460px);
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--lo4-line);
+  border-radius: var(--lo4-radius-panel);
+  background: var(--lo4-panel-solid);
+  box-shadow: 0 8px 20px rgba(0,0,0,.26);
+  z-index: 12;
+}
+.lo4fh6-research-controls:not([open]) .lo4fh6-research-fields { display: none; }
+@media (max-width: 720px) {
+  .lo4fh6-research-fields { left: 0; right: auto; max-width: 88vw; }
+}

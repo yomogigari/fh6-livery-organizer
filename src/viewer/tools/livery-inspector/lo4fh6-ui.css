@@ -1,0 +1,99 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", Arial, sans-serif;
+
+  /* LO4FH6 shared visual language. Viewer values are the visual baseline. */
+  --lo4-bg: #090b0e;
+  --lo4-panel: rgba(7, 10, 13, .92);
+  --lo4-panel-solid: #121820;
+  --lo4-control: rgba(14, 18, 22, .92);
+  --lo4-control-solid: #0e1216;
+  --lo4-line: #2f3841;
+  --lo4-line-control: #39434d;
+  --lo4-text: #f4f6f8;
+  --lo4-text-control: #dce2e7;
+  --lo4-text-muted: #9ea9b4;
+  --lo4-text-subtle: #7f8b96;
+  --lo4-accent: #8be4f3;
+  --lo4-accent-border: #73cfe0;
+  --lo4-accent-text: #061014;
+  --lo4-danger: #dc4056;
+  --lo4-danger-text: #ffb9c3;
+
+  --lo4-radius-control: 4px;
+  --lo4-radius-panel: 5px;
+  --lo4-radius-card: 8px;
+  --lo4-space-1: 5px;
+  --lo4-space-2: 8px;
+  --lo4-space-3: 12px;
+  --lo4-space-4: 16px;
+
+  --lo4-font-control: 11px;
+  --lo4-font-body: 12px;
+  --lo4-control-height-comfortable: 30px;
+  --lo4-control-height-compact: 28px;
+}
+
+.lo4-ui {
+  background: var(--lo4-bg);
+  color: var(--lo4-text);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.lo4-ui .lo4-card {
+  border: 1px solid var(--lo4-line);
+  border-radius: var(--lo4-radius-card);
+  background: var(--lo4-panel);
+}
+
+.lo4-ui .lo4-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lo4-space-2);
+}
+
+.lo4-ui .lo4-button,
+.lo4-ui .lo4-input,
+.lo4-ui .lo4-select {
+  min-height: var(--lo4-control-height-comfortable);
+  border: 1px solid var(--lo4-line-control);
+  border-radius: var(--lo4-radius-control);
+  color: var(--lo4-text-control);
+  background: var(--lo4-control);
+  font: 600 var(--lo4-font-control)/1 "Segoe UI", Arial, sans-serif;
+}
+
+.lo4-ui .lo4-button {
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+.lo4-ui .lo4-input,
+.lo4-ui .lo4-select {
+  padding: 5px 8px;
+}
+
+.lo4-ui .lo4-button:hover,
+.lo4-ui .lo4-button:focus-visible,
+.lo4-ui .lo4-input:focus,
+.lo4-ui .lo4-select:focus {
+  border-color: var(--lo4-accent-border);
+  outline: none;
+}
+
+.lo4-ui .lo4-button-primary,
+.lo4-ui .lo4-button[aria-pressed="true"],
+.lo4-ui .lo4-button.active {
+  color: var(--lo4-accent-text);
+  border-color: var(--lo4-accent);
+  background: var(--lo4-accent);
+}
+
+.lo4-ui.lo4-density-compact .lo4-button,
+.lo4-ui.lo4-density-compact .lo4-input,
+.lo4-ui.lo4-density-compact .lo4-select,
+.lo4-density-compact .lo4-button,
+.lo4-density-compact .lo4-input,
+.lo4-density-compact .lo4-select {
+  min-height: var(--lo4-control-height-compact);
+}

@@ -1,0 +1,120 @@
+{
+  "schema": "lo4fh6.private.tire-source-mati-texture-override-graph.v1",
+  "model_archive_sha256": "f1a6acb4e37aa1376e5617fe09d4390465800c2434d15cf6e14260062d70fd0d",
+  "shader_source_archive_sha256": "2b1ea9694af962b243363c3f501d503c40a956704c7d90d94e78a2e75e997b41",
+  "shaderbin_sha256": "0b4530398a6cd3409819a3a9289532bf3c52d18689224121dcad986dd6870270",
+  "source_shader_texture_slots": 21,
+  "shader_default_unique_swatch_count": 16,
+  "shader_text_param_names": [
+    "TextTexture0_TyreSideWallTextTexture",
+    "TextTexture_TyreSideWallTextTexture"
+  ],
+  "shader_text_param_hashes": [
+    "f205a233",
+    "18766ac3"
+  ],
+  "text_switch_parameter_hash": "15d0acb0",
+  "text_switch_shader_default": false,
+  "source_mati_entries": [
+    {
+      "source_member": "tireL_street_FE_OW.modelbin",
+      "modelbin_sha256": "d3244b1e876d0f7e6dd6e3019c3eeeb7b0c35372ea77c424c8fa38ad0bbc1b6d",
+      "materials": [
+        {
+          "original_mati_name": "scaling_text",
+          "original_mati_id": 2,
+          "mati_sha256": "aa7b5fc7229c8e37c806b531d366c3b4683be78d6810bd5b10bf091d93ffa675",
+          "text_switch": null,
+          "text_texture_overrides": []
+        },
+        {
+          "original_mati_name": "sidewall",
+          "original_mati_id": 0,
+          "mati_sha256": "df851612a235dfbd77caee7da00f649b06033b05cc89a9383bd25bab837d0a9a",
+          "text_switch": 1,
+          "text_texture_overrides": [
+            {
+              "parameter_name": "TextTexture0_TyreSideWallTextTexture",
+              "source_path": "Game:\\Media\\cars\\_library\\textures\\tires\\swatches\\tire_letters_forzaedition_diff1_04dd0731-74fe-4511-b9b5-346d5d7bd92c.swatchbin",
+              "parameter_id_hex": "f205a233",
+              "override_record_sha256": "60b1584d61073e39ae4fc80084c79918e42ccf758d12087b16aabcfeff03fbeb",
+              "source_relative": "tires/swatches/tire_letters_forzaedition_diff1_04dd0731-74fe-4511-b9b5-346d5d7bd92c.swatchbin",
+              "listed_in_shader_default_17_manifest": false
+            },
+            {
+              "parameter_name": "TextTexture_TyreSideWallTextTexture",
+              "source_path": "Game:\\Media\\cars\\_library\\textures\\tires\\swatches\\tire_letters_forzaedition_diff4_f0474266-a35d-41b2-910b-0f3c1e600d27.swatchbin",
+              "parameter_id_hex": "18766ac3",
+              "override_record_sha256": "60b1584d61073e39ae4fc80084c79918e42ccf758d12087b16aabcfeff03fbeb",
+              "source_relative": "tires/swatches/tire_letters_forzaedition_diff4_f0474266-a35d-41b2-910b-0f3c1e600d27.swatchbin",
+              "listed_in_shader_default_17_manifest": false
+            }
+          ]
+        },
+        {
+          "original_mati_name": "tread",
+          "original_mati_id": 1,
+          "mati_sha256": "07e08f1ff9f2a828dc5f4c4277c9262353b4f296aae185693a858c6d5eccc9b2",
+          "text_switch": null,
+          "text_texture_overrides": []
+        }
+      ]
+    },
+    {
+      "source_member": "tireR_street_FE_OW.modelbin",
+      "modelbin_sha256": "b7de0c7bee982708459e93ba0925e3213da5b167dacfd0f7d3fb4c9ef0b3a629",
+      "materials": [
+        {
+          "original_mati_name": "scaling_text",
+          "original_mati_id": 2,
+          "mati_sha256": "aa7b5fc7229c8e37c806b531d366c3b4683be78d6810bd5b10bf091d93ffa675",
+          "text_switch": null,
+          "text_texture_overrides": []
+        },
+        {
+          "original_mati_name": "sidewall",
+          "original_mati_id": 0,
+          "mati_sha256": "df851612a235dfbd77caee7da00f649b06033b05cc89a9383bd25bab837d0a9a",
+          "text_switch": 1,
+          "text_texture_overrides": [
+            {
+              "parameter_name": "TextTexture0_TyreSideWallTextTexture",
+              "source_path": "Game:\\Media\\cars\\_library\\textures\\tires\\swatches\\tire_letters_forzaedition_diff1_04dd0731-74fe-4511-b9b5-346d5d7bd92c.swatchbin",
+              "parameter_id_hex": "f205a233",
+              "override_record_sha256": "60b1584d61073e39ae4fc80084c79918e42ccf758d12087b16aabcfeff03fbeb",
+              "source_relative": "tires/swatches/tire_letters_forzaedition_diff1_04dd0731-74fe-4511-b9b5-346d5d7bd92c.swatchbin",
+              "listed_in_shader_default_17_manifest": false
+            },
+            {
+              "parameter_name": "TextTexture_TyreSideWallTextTexture",
+              "source_path": "Game:\\Media\\cars\\_library\\textures\\tires\\swatches\\tire_letters_forzaedition_diff4_f0474266-a35d-41b2-910b-0f3c1e600d27.swatchbin",
+              "parameter_id_hex": "18766ac3",
+              "override_record_sha256": "60b1584d61073e39ae4fc80084c79918e42ccf758d12087b16aabcfeff03fbeb",
+              "source_relative": "tires/swatches/tire_letters_forzaedition_diff4_f0474266-a35d-41b2-910b-0f3c1e600d27.swatchbin",
+              "listed_in_shader_default_17_manifest": false
+            }
+          ]
+        },
+        {
+          "original_mati_name": "tread",
+          "original_mati_id": 1,
+          "mati_sha256": "07e08f1ff9f2a828dc5f4c4277c9262353b4f296aae185693a858c6d5eccc9b2",
+          "text_switch": null,
+          "text_texture_overrides": []
+        }
+      ]
+    }
+  ],
+  "unique_sidewall_mati_text_swatch_paths": [
+    "tires/swatches/tire_letters_forzaedition_diff1_04dd0731-74fe-4511-b9b5-346d5d7bd92c.swatchbin",
+    "tires/swatches/tire_letters_forzaedition_diff4_f0474266-a35d-41b2-910b-0f3c1e600d27.swatchbin"
+  ],
+  "unlisted_in_shader_default_17_manifest": [
+    "tires/swatches/tire_letters_forzaedition_diff1_04dd0731-74fe-4511-b9b5-346d5d7bd92c.swatchbin",
+    "tires/swatches/tire_letters_forzaedition_diff4_f0474266-a35d-41b2-910b-0f3c1e600d27.swatchbin"
+  ],
+  "source_library_status": "UNVERIFIED_OUTSIDE_TARGET_17_MANIFEST",
+  "game_shader_pixel_equivalence": false,
+  "viewer_default_changed": false,
+  "third_party_code_included": false
+}
