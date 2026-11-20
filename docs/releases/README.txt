@@ -420,8 +420,13 @@ Livery Viewer for FH6 の設定・ログ・取得した three.js:
 
 Livery Viewer for FH6 の準備の結果（車ごとの形・画像など）:
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache\
+表示した車の数に応じて大きくなります。しばらく使っていない車の分は自動で圧縮し、
+古い版のViewerが作った分は自動で削除します。大きさの上限による自動削除は行いません。
 削除しても、次に表示するときに作り直します（その車の初回の表示は時間がかかります）。
-現在の版では、大きさの上限による自動削除は行いません。
+
+参考：開発者の環境で、GameSaveにあるダウンロード済みの全ペイント 997件（359車種）を
+3D表示用に準備した場合、preview-cache は約 3.2 GB でした（1車種あたり平均 約 9 MB）。
+1台だけ表示した場合は約 40 MB です（最近使った車の分は、すぐ使えるように圧縮せずに置いておくため）。
 
 窓を閉じた後に裏で待機する時間は、%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json の
 viewer_keep_alive_seconds（秒。0で待機しない）で変更できます。

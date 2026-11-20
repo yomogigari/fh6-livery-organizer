@@ -356,8 +356,16 @@ Livery Viewer for FH6 settings, logs, and downloaded three.js:
 
 Livery Viewer for FH6 prepared data (per-car models, images, and similar):
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache\
+It grows with the number of cars you have shown. Data for cars not used for a
+while is compressed automatically, and data left by older Viewer versions is
+deleted automatically. It is not deleted automatically by size.
 If you delete it, it is rebuilt the next time a car is shown (the first view of
-that car takes longer). This version does not delete it automatically by size.
+that car takes longer).
+
+Reference: on the developer's PC, preparing all 997 downloaded liveries in the
+GameSave (359 car models) for 3D view made preview-cache about 3.2 GB (about
+9 MB per car model on average). Showing a single car uses about 40 MB, because
+data for the most recently used cars is kept uncompressed for quick use.
 
 The time the Viewer waits in the background after its window closes can be
 changed with viewer_keep_alive_seconds (seconds; 0 disables waiting) in
