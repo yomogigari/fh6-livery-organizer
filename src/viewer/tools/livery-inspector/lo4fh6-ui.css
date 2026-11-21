@@ -28,10 +28,11 @@
   --lo4-space-3: 12px;
   --lo4-space-4: 16px;
 
-  --lo4-font-control: 11px;
-  --lo4-font-body: 12px;
-  --lo4-control-height-comfortable: 30px;
-  --lo4-control-height-compact: 28px;
+  /* 2026-11-21：文字を約 2 割大きく（本文 12 → 15px ≒ 11 ポイント）。ボタンなどの高さも合わせる */
+  --lo4-font-control: 13px;
+  --lo4-font-body: 15px;
+  --lo4-control-height-comfortable: 34px;
+  --lo4-control-height-compact: 32px;
 }
 
 .lo4-ui {

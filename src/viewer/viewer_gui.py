@@ -211,6 +211,49 @@ def validate_game_folder(value: str | Path) -> Path:
     raise ValueError("FH6フォルダーを確認できません。インストール先または Content フォルダーを選択してください。")
 
 
+def _gamesave_root(path: Path) -> Path | None:
+    """パスの祖先のうち、名前が GameSave のフォルダー（無ければ None）。"""
+    for candidate in (path, *path.parents):
+        if candidate.name.casefold() == "gamesave":
+            return candidate
+    return None
+
+
+def output_root_problem(output_value: str | Path, source: str | Path | None = None,
+                        game: str | Path | None = None) -> str:
+    """preview-cache の置き場が GameSave の中・FH6 のフォルダーの中なら、画面の対訳の名前を返す（問題が無ければ空）。
+
+    GameSave（ペイントのセーブデータ）とゲームのフォルダーには書かない決まり（2026-11-22）。Organizer のレポートの
+    出力先と同じく、GameSave という名前のフォルダーは丸ごと守る。GameSave の名前が無い構成では、ペイントの
+    ContainersRoot（無ければペイントの親のフォルダー）を守る。比べるときはジャンクション（current など）をたどる。
+    """
+    text = str(output_value or "").strip()
+    if not text:
+        return ""
+    output = Path(os.path.realpath(Path(text).expanduser()))
+    if _gamesave_root(output) is not None:
+        return "outputInGameSave"
+    if source:
+        livery = Path(os.path.realpath(Path(str(source)).expanduser()))
+        protected = _gamesave_root(livery) or next(
+            (candidate for candidate in (livery, *livery.parents) if candidate.name.casefold() == "containersroot"),
+            livery.parent)
+        if output == protected or protected in output.parents:
+            return "outputInGameSave"
+    if game:
+        game_root = Path(os.path.realpath(Path(str(game)).expanduser()))
+        install = game_root.parent if game_root.name.casefold() == "content" else game_root
+        if output == install or install in output.parents:
+            return "outputInGameFolder"
+    return ""
+
+
+OUTPUT_PROBLEM_MESSAGES = {
+    "outputInGameSave": "preview-cache を GameSave（ペイントのセーブデータ）の中には置けません。ほかの場所を選んでください。",
+    "outputInGameFolder": "preview-cache を FH6 のフォルダーの中には置けません。ほかの場所を選んでください。",
+}
+
+
 def _suite_preferences() -> dict[str, Any]:
     """共有設定の読込失敗は元データを保持し、旧GUIを起動可能にする。"""
     try:
@@ -320,6 +363,91 @@ def _child_env() -> dict[str, str]:
     env = os.environ.copy()
     env.setdefault("PYTHONUTF8", "1")
     return env
+
+
+def _windows_file_dialog(title: str, initial: str = "") -> str:
+    """GameDB の SQLite を選ぶ（2026-11-21）。フォルダーの選択と同じく、別の PowerShell の STA の窓で開く。"""
+    script = "\n".join([
+        "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)",
+        "Add-Type -AssemblyName System.Windows.Forms",
+        "$dialog = New-Object System.Windows.Forms.OpenFileDialog",
+        "$dialog.Title = $env:LO4FH6_FILE_DIALOG_TITLE",
+        "$dialog.Filter = $env:LO4FH6_FILE_DIALOG_FILTER",
+        "$dialog.CheckFileExists = $true",
+        "if ($env:LO4FH6_FILE_DIALOG_INITIAL_DIR -and [System.IO.Directory]::Exists($env:LO4FH6_FILE_DIALOG_INITIAL_DIR)) "
+        "{ $dialog.InitialDirectory = $env:LO4FH6_FILE_DIALOG_INITIAL_DIR }",
+        "$owner = New-Object System.Windows.Forms.Form",
+        "$owner.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen",
+        "$owner.ShowInTaskbar = $false",
+        "$owner.TopMost = $true",
+        "$owner.Width = 1",
+        "$owner.Height = 1",
+        "$owner.Opacity = 0",
+        "try {",
+        "  $owner.Show()",
+        "  $owner.Activate()",
+        "  $result = $dialog.ShowDialog($owner)",
+        "  if ($result -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Write($dialog.FileName) }",
+        "}",
+        "finally {",
+        "  $dialog.Dispose()",
+        "  $owner.Close()",
+        "  $owner.Dispose()",
+        "}",
+    ])
+    env = _child_env()
+    env["LO4FH6_FILE_DIALOG_TITLE"] = title
+    env["LO4FH6_FILE_DIALOG_FILTER"] = "GameDB (SQLite)|*.sqlite;*.sqlite3;*.db|*.*|*.*"
+    initial_dir = Path(initial).parent if initial else Path.home() / "Documents"
+    env["LO4FH6_FILE_DIALOG_INITIAL_DIR"] = str(initial_dir) if initial_dir.is_dir() else ""
+    result = subprocess.run(
+        ["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-STA", "-ExecutionPolicy", "Bypass",
+         "-Command", script],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, creationflags=_creationflags(),
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()
+        raise RuntimeError(f"Windows file dialog failed (exit {result.returncode}): {detail}")
+    return result.stdout.strip()
+
+
+def _gamedb_reason(error: Exception) -> str:
+    """GameDB として使えない理由（organizer_preview_database の英語の知らせ）を、画面に出す言葉の鍵にする。"""
+    text = str(error)
+    if "not found" in text:
+        return "gamedbNotFound"
+    if "not a decrypted SQLite" in text or "Unable to open" in text:
+        return "gamedbNotSqlite"
+    if "missing required" in text:
+        return "gamedbMissingTables"
+    return "gamedbInvalid"
+
+
+def gamedb_state() -> dict[str, Any]:
+    """設定画面に出す GameDB の今の状態（2026-11-21）。
+
+    設定した物（共有の設定 paths.gamedb_file）と、実際に使う物（探す順で見つかった物）と、その出どころを返す。
+    使えない物を設定していれば、その理由も返す。
+    """
+    from organizer_preview_database import GAMEDB_ENV_VAR, load_suite_gamedb, resolve_database_path, validate_fh6_database
+    configured = load_suite_gamedb()
+    state: dict[str, Any] = {"configured": configured, "path": "", "source": "", "reason": ""}
+    if configured:
+        try:
+            validate_fh6_database(configured)
+        except ValueError as exc:
+            state["reason"] = _gamedb_reason(exc)
+    try:
+        resolution = resolve_database_path()
+    except ValueError as exc:  # 環境変数に使えない物を指定しているとき
+        state["source"] = "environment"
+        state["path"] = os.environ.get(GAMEDB_ENV_VAR, "")
+        state["reason"] = _gamedb_reason(exc)
+        return state
+    if resolution is not None:
+        state["path"] = str(resolution.path)
+        state["source"] = resolution.source
+    return state
 
 
 def _windows_folder_dialog(title: str, directory: str = "") -> str:
@@ -434,14 +562,16 @@ def _launcher_html(config: dict[str, str]) -> str:
 <style>{theme_css}</style>
 <style>
 body{{margin:0}}
-main{{max-width:1040px;margin:0 auto;padding:10px 16px 8px;box-sizing:border-box}}h1{{font-size:19px;margin:0 0 4px}}p{{color:var(--lo4-text-muted);line-height:1.4;margin:0 0 5px}}
+main{{max-width:1040px;margin:0 auto;padding:10px 16px 8px;box-sizing:border-box}}h1{{font-size:23px;margin:0 0 4px}}p{{color:var(--lo4-text-muted);line-height:1.4;margin:0 0 5px}}
 .card{{padding:8px 12px;margin-top:7px}}.row{{display:grid;grid-template-columns:150px minmax(0,1fr) 66px;gap:8px;align-items:center;margin:5px 0}}.row>.lo4-button{{width:66px;min-width:66px;padding-left:7px;padding-right:7px}}
 label{{color:var(--lo4-text-control)}}input{{width:100%;min-width:0;box-sizing:border-box}}input[type=checkbox]{{width:auto;min-width:0}}
 .checkrow{{display:flex;gap:8px;align-items:center;margin:8px 0 2px}}
 .primary{{font-weight:700}}#status{{min-height:24px;color:var(--lo4-text-control)}}#status.error{{color:var(--lo4-danger-text)}}
-pre{{height:calc(10 * 1.45em);font-size:12px;line-height:1.45;overflow:auto;background:var(--lo4-panel-solid);border:1px solid var(--lo4-line);border-radius:var(--lo4-radius-panel);padding:10px;color:var(--lo4-text-muted);white-space:pre-wrap;margin:6px 0}}
-.small{{font-size:12px;color:var(--lo4-text-muted)}}
-@media(max-width:700px){{.row{{grid-template-columns:1fr}}}}
+pre{{height:calc(10 * 1.45em);font-size:14px;line-height:1.45;overflow:auto;background:var(--lo4-panel-solid);border:1px solid var(--lo4-line);border-radius:var(--lo4-radius-panel);padding:10px;color:var(--lo4-text-muted);white-space:pre-wrap;margin:6px 0}}
+.small{{font-size:14px;color:var(--lo4-text-muted)}}
+.gamedb-state{{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:-1px 0 4px 158px;min-height:28px}}
+.gamedb-state .lo4-button{{min-height:0;padding:3px 10px;white-space:nowrap}}
+@media(max-width:700px){{.row{{grid-template-columns:1fr}}.gamedb-state{{margin-left:0}}}}
 </style></head><body class="lo4-ui"><main><h1>Livery Viewer for FH6</h1>
 <div class="small" id="lo4fh6-gui-build-id" style="font-weight:700;margin:0 0 8px">{html.escape(_build_identity_label())}</div>
 <p data-i18n="description">Organizerと連携して3Dリバリーを表示します。Livery_* フォルダーを指定してください。</p>
@@ -454,6 +584,8 @@ pre{{height:calc(10 * 1.45em);font-size:12px;line-height:1.45;overflow:auto;back
 <div class="row"><label data-i18n="game">FH6フォルダー</label><input class="lo4-input" id="game"><button class="lo4-button" onclick="chooseGame()" data-i18n="browse">参照...</button></div>
 <div class="row"><label data-i18n="livery">Livery_* フォルダー</label><input class="lo4-input" id="source"><button class="lo4-button" onclick="chooseLivery()" data-i18n="browse">参照...</button></div>
 <div class="row"><label data-i18n="output">preview-cache</label><input class="lo4-input" id="output"><button class="lo4-button" onclick="chooseOutput()" data-i18n="browse">参照...</button></div>
+<div class="row"><label for="gamedb" data-i18n="gamedb">GameDB</label><input class="lo4-input" id="gamedb" spellcheck="false"><button class="lo4-button" onclick="chooseGamedb()" data-i18n="browse">参照...</button></div>
+<div class="gamedb-state small"><span id="gamedb-state"></span><button class="lo4-button" id="gamedb-clear" onclick="clearGamedb()" data-i18n="gamedbClear" hidden>設定を外す</button></div>
 <div class="toolbar lo4-toolbar" style="justify-content:flex-end;margin-top:16px"><button class="primary lo4-button lo4-button-primary" onclick="openPreview()" data-i18n="open">3Dプレビューを開く</button></div>
 </div>
 <div class="card lo4-card"><div id="status" data-i18n="ready">準備完了</div><pre id="log"></pre><div class="small"><span data-i18n="log">ログ</span>: {html.escape(str(log_path()))}</div></div>
@@ -461,8 +593,8 @@ pre{{height:calc(10 * 1.45em);font-size:12px;line-height:1.45;overflow:auto;back
 const INITIAL={initial};
 const INITIAL_SUITE={initial_suite};
 const I18N={{
- ja: {{description:'Organizerと連携して3Dリバリーを表示します。Livery_* フォルダーを指定してください。',language:'言語',theme:'表示テーマ',system:'システム設定',light:'ライト',dark:'ダーク',register:'Organizer連携を登録',unregister:'連携登録を解除',game:'FH6フォルダー',livery:'Livery_* フォルダー',output:'preview-cache',browse:'参照...',ready:'準備完了',log:'ログ',open:'3Dプレビューを開く',chooseGame:'FH6フォルダーを選択してください...',chooseLivery:'Livery_* フォルダーを選択してください...',chooseOutput:'preview-cache フォルダーを選択してください...',selectFailed:'フォルダー選択に失敗しました',registering:'連携を登録しています...',unregistering:'連携登録を解除しています...',opening:'3Dプレビューを開始しています...',registerFailed:'Organizer連携を登録できませんでした',unregisterFailed:'Organizer連携を解除できませんでした',registerDone:'Organizer連携を登録しました',unregisterDone:'Organizer連携を解除しました',openDone:'3Dプレビューを起動しました',saveDone:'共通表示設定を保存しました',sourceMaterial:'原本材質',neutralGrade:'色補正中立化',wheelMode:'車輪・タイヤ',wheelProxy:'従来の車輪',wheelStock:'原本車輪（タイヤ補完）',wheelVerified:'原本4輪＋タイヤ（ローカル原本・研究比較）',appearanceError:'描画設定を保存できませんでした',standby:'Organizerの起動時に3Dプレビューを準備しておく（最初の表示が速くなります。裏でメモリーを使います）',standbyDone:'Organizerの起動時の準備の設定を保存しました',standbyError:'設定を保存できませんでした'}},
- en: {{description:'Preview liveries in 3D and connect with Organizer. Choose a Livery_* folder to start.',language:'Language',theme:'Theme',system:'Follow system',light:'Light',dark:'Dark',register:'Register Organizer integration',unregister:'Remove Organizer integration',game:'FH6 folder',livery:'Livery_* folder',output:'preview-cache',browse:'Browse...',ready:'Ready',log:'Log',open:'Open 3D preview',chooseGame:'Choose your FH6 folder...',chooseLivery:'Choose a Livery_* folder...',chooseOutput:'Choose preview-cache folder...',selectFailed:'Folder selection failed',registering:'Registering Organizer integration...',unregistering:'Removing Organizer integration...',opening:'Launching 3D preview...',registerFailed:'Could not register Organizer integration',unregisterFailed:'Could not remove Organizer integration',registerDone:'Organizer integration registered',unregisterDone:'Organizer integration removed',openDone:'3D preview launched',saveDone:'Shared appearance saved',sourceMaterial:'Source materials',neutralGrade:'Neutral livery grade',wheelMode:'Wheels / tires',wheelProxy:'Legacy wheels',wheelStock:'Recovered wheel with neutral tire',wheelVerified:'Local original wheels + tires (research comparison)',appearanceError:'Could not save rendering settings',standby:'Prepare the 3D preview when Organizer starts (faster first preview; uses memory in the background)',standbyDone:'Organizer startup preparation setting saved',standbyError:'Could not save the setting'}}
+ ja: {{description:'Organizerと連携して3Dリバリーを表示します。Livery_* フォルダーを指定してください。',language:'言語',theme:'表示テーマ',system:'システム設定',light:'ライト',dark:'ダーク',register:'Organizer連携を登録',unregister:'連携登録を解除',game:'FH6フォルダー',livery:'Livery_* フォルダー',output:'preview-cache',browse:'参照...',ready:'準備完了',log:'ログ',open:'3Dプレビューを開く',chooseGame:'FH6フォルダーを選択してください...',chooseLivery:'Livery_* フォルダーを選択してください...',chooseOutput:'preview-cache フォルダーを選択してください...',selectFailed:'フォルダー選択に失敗しました',registering:'連携を登録しています...',unregistering:'連携登録を解除しています...',opening:'3Dプレビューを開始しています...',registerFailed:'Organizer連携を登録できませんでした',unregisterFailed:'Organizer連携を解除できませんでした',registerDone:'Organizer連携を登録しました',unregisterDone:'Organizer連携を解除しました',openDone:'3Dプレビューを起動しました',saveDone:'共通表示設定を保存しました',sourceMaterial:'原本材質',neutralGrade:'色補正中立化',wheelMode:'車輪・タイヤ',wheelProxy:'従来の車輪',wheelStock:'原本車輪（タイヤ補完）',wheelVerified:'原本4輪＋タイヤ（ローカル原本・研究比較）',appearanceError:'描画設定を保存できませんでした',standby:'Organizerの起動時に3Dプレビューを準備しておく（最初の表示が速くなります。裏でメモリーを使います）',standbyDone:'Organizerの起動時の準備の設定を保存しました',standbyError:'設定を保存できませんでした',gamedb:'GameDB',gamedbClear:'設定を外す',chooseGamedb:'GameDB のファイルを選択してください...',gamedbInUse:'この GameDB を使います（ロゴのステッカーと、ホイール・タイヤの位置・寸法をより正確に表示します）',gamedbFoundDefault:'既定の場所で見つけた GameDB を使います',gamedbEnvironment:'環境変数 LO4FH6_GAMEDB の GameDB を使います（この欄より優先されます）',gamedbNone:'GameDB は未設定です（無くても表示できます。あると、ロゴのステッカーと、ホイール・タイヤをより正確に表示します）',gamedbUnusable:'GameDB として使えません：',gamedbNotFound:'ファイルが見つかりません',gamedbNotSqlite:'SQLite のデータベースとして読めません',gamedbMissingTables:'車の表（data_car など）がそろっていません',gamedbInvalid:'内容を確かめられません',gamedbSaveFailed:'GameDB の設定を保存できませんでした',gamedbSaved:'GameDB を設定しました',gamedbCleared:'GameDB の設定を外しました',outputInGameSave:'preview-cache を GameSave（ペイントのセーブデータ）の中には置けません。ほかの場所を選んでください。',outputInGameFolder:'preview-cache を FH6 のフォルダーの中には置けません。ほかの場所を選んでください。'}},
+ en: {{description:'Preview liveries in 3D and connect with Organizer. Choose a Livery_* folder to start.',language:'Language',theme:'Theme',system:'Follow system',light:'Light',dark:'Dark',register:'Register Organizer integration',unregister:'Remove Organizer integration',game:'FH6 folder',livery:'Livery_* folder',output:'preview-cache',browse:'Browse...',ready:'Ready',log:'Log',open:'Open 3D preview',chooseGame:'Choose your FH6 folder...',chooseLivery:'Choose a Livery_* folder...',chooseOutput:'Choose preview-cache folder...',selectFailed:'Folder selection failed',registering:'Registering Organizer integration...',unregistering:'Removing Organizer integration...',opening:'Launching 3D preview...',registerFailed:'Could not register Organizer integration',unregisterFailed:'Could not remove Organizer integration',registerDone:'Organizer integration registered',unregisterDone:'Organizer integration removed',openDone:'3D preview launched',saveDone:'Shared appearance saved',sourceMaterial:'Source materials',neutralGrade:'Neutral livery grade',wheelMode:'Wheels / tires',wheelProxy:'Legacy wheels',wheelStock:'Recovered wheel with neutral tire',wheelVerified:'Local original wheels + tires (research comparison)',appearanceError:'Could not save rendering settings',standby:'Prepare the 3D preview when Organizer starts (faster first preview; uses memory in the background)',standbyDone:'Organizer startup preparation setting saved',standbyError:'Could not save the setting',gamedb:'GameDB',gamedbClear:'Clear',chooseGamedb:'Choose the GameDB file...',gamedbInUse:'This GameDB is used (logo stickers and wheel/tire placement and size are shown more accurately).',gamedbFoundDefault:'Using the GameDB found in the default folder.',gamedbEnvironment:'Using the GameDB from the LO4FH6_GAMEDB environment variable (it takes priority over this field).',gamedbNone:'No GameDB is set (previews still work; with a GameDB, logo stickers and wheels/tires are shown more accurately).',gamedbUnusable:'Cannot use this as a GameDB: ',gamedbNotFound:'the file was not found',gamedbNotSqlite:'it cannot be read as an SQLite database',gamedbMissingTables:'the vehicle tables (data_car, etc.) are missing',gamedbInvalid:'its contents could not be verified',gamedbSaveFailed:'Could not save the GameDB setting',gamedbSaved:'GameDB set',gamedbCleared:'GameDB setting cleared',outputInGameSave:'preview-cache cannot be inside GameSave (the paint save data). Choose another folder.',outputInGameFolder:'preview-cache cannot be inside the FH6 folder. Choose another folder.'}}
 }};
 const languageInput=document.getElementById('suite-language');
 const themeInput=document.getElementById('suite-theme');
@@ -472,6 +604,7 @@ function applySuiteUi(language,theme){{
   document.documentElement.lang=lang;
   document.body.dataset.suiteTheme=theme;
   for(const node of document.querySelectorAll('[data-i18n]'))node.textContent=I18N[lang][node.dataset.i18n]||node.textContent;
+  showGamedb(gamedbLast);
   requestAnimationFrame(fitWindow);
 }}
 // 窓の大きさを中身に合わせる（2026-11-21）。中身の下の端を測って Python に渡し、Python が枠の分を足して窓を変える。
@@ -525,7 +658,7 @@ function status(msg, err=false){{statusEl.textContent=msg;statusEl.className=err
 function log(msg){{if(!msg)return;logEl.textContent+=(logEl.textContent?String.fromCharCode(10):'')+msg;logEl.scrollTop=logEl.scrollHeight}}
 async function chooseGame(){{try{{status(tr('chooseGame'));const r=await pywebview.api.choose_game_folder();if(r&&r.path)game.value=r.path;status(tr('ready'))}}catch(e){{log(String(e));status(tr('selectFailed'),true)}}}}
 async function chooseLivery(){{try{{status(tr('chooseLivery'));const r=await pywebview.api.choose_livery_folder();if(r&&r.path){{source.value=r.path}}status(tr('ready'))}}catch(e){{log(String(e));status(tr('selectFailed'),true)}}}}
-async function chooseOutput(){{try{{status(tr('chooseOutput'));const r=await pywebview.api.choose_output_folder();if(r&&r.path)output.value=r.path;status(tr('ready'))}}catch(e){{log(String(e));status(tr('selectFailed'),true)}}}}
+async function chooseOutput(){{try{{status(tr('chooseOutput'));const r=await pywebview.api.choose_output_folder();if(r&&r.reason){{status(tr(r.reason),true);return;}}if(r&&r.path)output.value=r.path;status(tr('ready'))}}catch(e){{log(String(e));status(tr('selectFailed'),true)}}}}
 async function registerIntegration(){{
   status(tr('registering'));
   try {{
@@ -542,8 +675,39 @@ async function unregisterIntegration(){{
     status(r&&r.ok?tr('unregisterDone'):(r&&r.message)||tr('unregisterFailed'),!(r&&r.ok));
   }} catch(e) {{log(String(e));status(tr('unregisterFailed'),true)}}
 }}
-async function openPreview(){{status(tr('opening'));const r=await pywebview.api.open_preview(source.value,game.value,output.value);if(r.source)source.value=r.source;log(r.output||'');status(r.ok?tr('openDone'):r.message,!r.ok)}}
+async function openPreview(){{status(tr('opening'));const r=await pywebview.api.open_preview(source.value,game.value,output.value);if(r.source)source.value=r.source;log(r.output||'');status(r.ok?tr('openDone'):(r.reason?tr(r.reason):r.message),!r.ok)}}
 window.addEventListener('beforeunload',()=>{{pywebview.api.save_settings(source.value,game.value,output.value)}});
+// GameDB（2026-11-21）：参照で選ぶか、場所を書いて確定すると、使えるかを確かめてから覚える。下の行に今の状態を出す。
+var gamedbLast={{}};
+function showGamedb(state){{
+  gamedbLast=state||{{}};
+  const input=document.getElementById('gamedb'),label=document.getElementById('gamedb-state'),clear=document.getElementById('gamedb-clear');
+  if(!input||!label)return;
+  const configured=gamedbLast.configured||'';
+  if(document.activeElement!==input)input.value=configured||(gamedbLast.source==='stable-user-data'?(gamedbLast.path||''):'');
+  let text;
+  if(gamedbLast.reason&&!gamedbLast.rejected)text=tr('gamedbUnusable')+tr(gamedbLast.reason);
+  else if(gamedbLast.source==='environment')text=tr('gamedbEnvironment');
+  else if(gamedbLast.path&&gamedbLast.source==='stable-user-data')text=tr('gamedbFoundDefault');
+  else if(gamedbLast.path)text=tr('gamedbInUse');
+  else text=tr('gamedbNone');
+  label.textContent=text;
+  if(clear)clear.hidden=!configured;
+  requestAnimationFrame(fitWindow);
+}}
+function afterGamedb(r){{
+  if(!r){{status(tr('gamedbSaveFailed'),true);return}}
+  showGamedb(r);
+  if(r.cancelled){{status(tr('ready'));return}}
+  if(r.ok)status(r.configured?tr('gamedbSaved'):tr('gamedbCleared'));
+  else if(r.reason==='gamedbSaveFailed')status(tr('gamedbSaveFailed'),true);
+  else status(tr('gamedbUnusable')+tr(r.reason||'gamedbInvalid'),true);
+}}
+async function chooseGamedb(){{status(tr('chooseGamedb'));try{{afterGamedb(await pywebview.api.choose_gamedb_file())}}catch(e){{status(tr('selectFailed'),true)}}}}
+async function saveGamedb(){{try{{afterGamedb(await pywebview.api.set_gamedb(document.getElementById('gamedb').value))}}catch(e){{status(tr('gamedbSaveFailed'),true)}}}}
+async function clearGamedb(){{try{{afterGamedb(await pywebview.api.clear_gamedb())}}catch(e){{status(tr('gamedbSaveFailed'),true)}}}}
+document.getElementById('gamedb').addEventListener('change',()=>{{void saveGamedb()}});
+window.addEventListener('pywebviewready',()=>{{pywebview.api.gamedb_state().then(showGamedb).catch(()=>{{}})}});
 </script></body></html>'''
 
 
@@ -651,7 +815,53 @@ class LauncherApi:
 
     def choose_output_folder(self) -> dict[str, Any]:
         cfg = load_config()
-        return {"path": self._folder("preview-cache", cfg.get("output_root", ""))}
+        path = self._folder("preview-cache", cfg.get("output_root", ""))
+        # GameSave の中・FH6 のフォルダーの中を選んだときは、欄に入れずに理由を返す
+        problem = output_root_problem(path, cfg.get("last_livery_folder", ""), cfg.get("game_folder", "")) if path else ""
+        if problem:
+            return {"path": "", "reason": problem}
+        return {"path": path}
+
+    # ---- GameDB（2026-11-21。使うのは Viewer だけなので、Viewer の設定画面で設定する） ----
+    def gamedb_state(self) -> dict[str, Any]:
+        try:
+            return {"ok": True, **gamedb_state()}
+        except Exception as exc:  # noqa: BLE001  状態が読めなくても画面は止めない
+            return {"ok": False, "message": str(exc)}
+
+    def choose_gamedb_file(self) -> dict[str, Any]:
+        if os.name != "nt":
+            return {"ok": False, "message": "Windows only"}
+        try:
+            current = gamedb_state()
+            selected = _windows_file_dialog("GameDB", current.get("configured") or current.get("path") or "")
+        except Exception as exc:  # noqa: BLE001
+            return {"ok": False, "message": str(exc)}
+        if not selected:
+            return {"ok": True, "cancelled": True, **gamedb_state()}
+        return self.set_gamedb(selected)
+
+    def set_gamedb(self, value: str) -> dict[str, Any]:
+        """GameDB を確かめてから覚える（3 つのツールの共有の設定と Viewer の設定）。使えなければ覚えずに理由を返す。"""
+        from organizer_preview_database import remember_database
+        value = str(value or "").strip().strip('"')
+        if not value:
+            return self.clear_gamedb()
+        try:
+            remember_database(value)
+        except ValueError as exc:
+            return {**gamedb_state(), "ok": False, "reason": _gamedb_reason(exc), "rejected": value}
+        except Exception as exc:  # noqa: BLE001  設定を書けなかったとき
+            return {**gamedb_state(), "ok": False, "reason": "gamedbSaveFailed", "message": str(exc), "rejected": value}
+        return {"ok": True, **gamedb_state()}
+
+    def clear_gamedb(self) -> dict[str, Any]:
+        from organizer_preview_database import forget_database
+        try:
+            forget_database()
+        except Exception as exc:  # noqa: BLE001
+            return {**gamedb_state(), "ok": False, "reason": "gamedbSaveFailed", "message": str(exc), "rejected": "clear"}
+        return {"ok": True, **gamedb_state()}
 
     def _integration(self, unregister: bool = False) -> dict[str, Any]:
         # Old successful registration command is unchanged; only GUI exception
@@ -708,6 +918,9 @@ class LauncherApi:
             return {'ok': False, 'message': '設定を保存できません: ' + str(exc)}
 
     def save_settings(self, source: str, game_folder: str, output_root: str) -> dict[str, Any]:
+        # GameSave の中・FH6 のフォルダーの中の preview-cache は覚えない（前に覚えた値のまま）
+        if output_root_problem(output_root, source, game_folder):
+            output_root = load_config().get("output_root", "")
         save_config({
             "game_folder": game_folder,
             "output_root": output_root,
@@ -720,6 +933,10 @@ class LauncherApi:
         try:
             source, car_id = validate_livery_source(source_value)
             game = validate_game_folder(game_value)
+            # GameSave の中・FH6 のフォルダーの中には準備の結果を書かない（フォルダーも作らない）
+            problem = output_root_problem(output_value, source, game)
+            if problem:
+                return {"ok": False, "message": OUTPUT_PROBLEM_MESSAGES[problem], "reason": problem, "output": ""}
             output = Path(output_value).expanduser().resolve()
             output.mkdir(parents=True, exist_ok=True)
             save_config({

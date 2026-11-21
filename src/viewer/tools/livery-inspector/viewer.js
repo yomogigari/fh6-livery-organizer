@@ -23,6 +23,7 @@ import {sourceWheelUvAttributeName} from './source-wheel-uv-channel.mjs';
 import {frameBufferImage, downloadImage, withReferenceCaptureResolution, captureFilename} from './rm_capture.mjs';
 import {evaluateReleaseSceneCapture} from './release-scene-capture-audit.mjs';
 import {saveCaptureImage} from './native-image-save.mjs';
+import {appendCaptureCaption, formatCaptureTime} from './capture-caption.mjs';
 import {composeSixCarViews, SIX_CAR_VIEWS} from './six-view-capture.mjs';
 import {frameVisibleCar, horizontalOverheadCameraUp} from './camera-frame-fit.mjs';
 import {THUMBNAIL_CAMERA_PRESET_ID, THUMBNAIL_CAMERA_DIRECTION, thumbnailCameraDirection}
@@ -1244,6 +1245,31 @@ function updateDemoTitle() {
 function changeDemoTextPrivacy() {
   updateDemoTitle();
   updateVehicleInfo();
+}
+// 保存する画像（現在視点・6方向）の下の帯に書く、ペイントの情報（2026-11-21）。タイトルはペイントから読んだ物を先に使い、
+// 作成者とアップロード日は Organizer から届いた物を使う。「タイトル・作成者を隠す」がオンのときは、どちらも伏せる。
+function captureCaptionFields(capturedAt) {
+  const organizer = currentManifest?.capture_caption || {};
+  const titleText = String(currentManifest?.livery?.title || organizer.title || organizer.vehicle_name || '').trim();
+  const creatorText = String(organizer.creator_name || '').trim();
+  return {
+    title: titleText ? maskedDemoText(titleText, demoHideTitle.checked, t('demo.title_redacted')) : '',
+    creator: creatorText ? maskedDemoText(creatorText, demoHideTitle.checked, t('demo.creator_redacted')) : '',
+    uploadDate: String(organizer.upload_date || '').trim(),
+    capturedAt: formatCaptureTime(capturedAt),
+  };
+}
+function withCaptureCaption(image, capturedAt) {
+  return appendCaptureCaption({
+    image,
+    fields: captureCaptionFields(capturedAt),
+    labels: {
+      creator: t('capture.caption.creator'),
+      uploaded: t('capture.caption.uploaded'),
+      captured: t('capture.caption.captured'),
+    },
+    createCanvas: () => document.createElement('canvas'),
+  });
 }
 function changeDemoMosaicPrivacy() {
   // Mask適用済みの1フレームが正常終了するまでは利用不可として扱う。
@@ -7887,7 +7913,7 @@ function resetFromDoubleClick() {
  */
 async function requestSixCarViews(format) {
   if (viewerDisposed || !modelReady || !firstFrameReady || rmCaptureBusy || rmCaptureFormat || !modelBounds) {
-    setStatus('車両描画の準備完了後に6方向画像を保存してください。', true);
+    setStatus(t('capture.six_not_ready'), true);
     return;
   }
   rmCaptureBusy = true;
@@ -7898,6 +7924,25 @@ async function requestSixCarViews(format) {
     damping: controls.enableDamping, rotation: controls.autoRotate,
     minDistance: controls.minDistance, maxDistance: controls.maxDistance,
     homePosition: homeCamera.clone(), homeTarget: homeTarget.clone(),
+  };
+  // 6 方向を描いた後、保存を始める前に元の向きへ戻して描き直す（2026-11-21）。各方向は見えている画面に描いて
+  // 読み取るので、戻すのが保存の後だと、保存の窓が開いている間も最後の方向（下面）が画面に残っていた。
+  // 同じ処理の中で描き直すので、画面が更新されるときには元の表示になっている。
+  let poseRestored = false;
+  const restoreSixViewPose = () => {
+    if (poseRestored) return;
+    poseRestored = true;
+    // frameModelが毎回更新するhome位置も含め、元の通常Viewへ必ず戻す。
+    camera.position.copy(pose.position); camera.up.copy(pose.up);
+    camera.quaternion.copy(pose.quaternion);
+    camera.near=pose.near; camera.far=pose.far; camera.zoom=pose.zoom;
+    camera.updateProjectionMatrix();
+    controls.target.copy(pose.target); controls.minDistance=pose.minDistance;
+    controls.maxDistance=pose.maxDistance; controls.enableDamping=false;
+    controls.autoRotate=false; controls.update();
+    homeCamera.copy(pose.homePosition); homeTarget.copy(pose.homeTarget);
+    controls.enableDamping=pose.damping; controls.autoRotate=pose.rotation;
+    setVariantVisibility(null);
   };
   try {
     controls.enableDamping = false;
@@ -7937,27 +7982,26 @@ async function requestSixCarViews(format) {
         },width,height);
         return viewCanvas;
       },
-      views:SIX_CAR_VIEWS,
+      // 各マスの見出しは画面の言葉に合わせる（日本語は今までどおり。2026-11-21）
+      views:SIX_CAR_VIEWS.map(view => ({...view, label: t(`capture.view.${view.key}`)})),
     });
-    const name = captureFilename(format).replace('Livery-Viewer-for-FH6-', 'Livery-Viewer-for-FH6-SixViews-');
-    const result = await saveCaptureImage(image,name,{format,quality:0.95,downloadFallback:downloadImage});
-    if (result.cancelled) showImageSaveNotice('6方向画像の保存をキャンセルしました');
-    else if (result.requestedOnly) showImageSaveNotice('ブラウザーに6方向画像のダウンロードを要求しました（保存先・保存完了は未確認）');
-    else showImageSaveNotice('完成車両6方向画像を保存しました: '+result.path+' ('+result.bytes+' bytes, '+result.width+'×'+result.height+'px)');
-  } catch(error) {
-    showImageSaveNotice('6方向画像保存失敗: '+String(error?.message || error),true);
-  } finally {
-    // frameModelが毎回更新するhome位置も含め、元の通常Viewへ必ず戻す。
-    camera.position.copy(pose.position); camera.up.copy(pose.up);
-    camera.quaternion.copy(pose.quaternion);
-    camera.near=pose.near; camera.far=pose.far; camera.zoom=pose.zoom;
-    camera.updateProjectionMatrix();
-    controls.target.copy(pose.target); controls.minDistance=pose.minDistance;
-    controls.maxDistance=pose.maxDistance; controls.enableDamping=false;
-    controls.autoRotate=false; controls.update();
-    homeCamera.copy(pose.homePosition); homeTarget.copy(pose.homeTarget);
-    controls.enableDamping=pose.damping; controls.autoRotate=pose.rotation;
+    restoreSixViewPose();
+    if (demoMosaicBody.checked) renderDemoProtected(performance.now());
+    else renderSelectedMode(performance.now());
     setVariantVisibility(null);
+    const capturedAt = new Date();
+    const name = captureFilename(format, capturedAt).replace('Livery-Viewer-for-FH6-', 'Livery-Viewer-for-FH6-SixViews-');
+    // 画像の下に、タイトル・作成者・アップロード日・撮影日時の帯を付けて保存する
+    const result = await saveCaptureImage(withCaptureCaption(image, capturedAt),name,
+      {format,quality:0.95,downloadFallback:downloadImage});
+    if (result.cancelled) showImageSaveNotice(t('capture.six_cancelled'));
+    else if (result.requestedOnly) showImageSaveNotice(t('capture.six_download_requested'));
+    else showImageSaveNotice(t('capture.six_saved', {path: result.path, bytes: result.bytes, width: result.width, height: result.height}));
+  } catch(error) {
+    showImageSaveNotice(t('capture.six_failed', {message: String(error?.message || error)}),true);
+  } finally {
+    // 途中で失敗したときも、元の通常Viewへ必ず戻す（戻し済みなら何もしない）。
+    restoreSixViewPose();
     rmCaptureBusy = false;
     for (const button of [captureJpegButton,capturePngButton,sixViewsJpegButton,sixViewsPngButton]) button.disabled = false;
     requestRender();
@@ -7969,7 +8013,7 @@ sixViewsPngButton.addEventListener('click', () => { void requestSixCarViews('png
 
 function requestRmCapture(format) {
   if (viewerDisposed || !modelReady || !firstFrameReady || rmCaptureBusy || rmCaptureFormat) {
-    setStatus('車両の描画完了後に画像を保存してください。', true);
+    setStatus(t('capture.not_ready'), true);
     return;
   }
   rmCaptureFormat = format;
@@ -8235,8 +8279,12 @@ function renderFrame(timestamp) {
           return result;
         },
       });
-      const filename = captureFilename(format);
-      void saveCaptureImage(image, filename, {format, quality: 0.95, downloadFallback: downloadImage})
+      const capturedAt = new Date();
+      const filename = captureFilename(format, capturedAt);
+      // 画像の下に、タイトル・作成者・アップロード日・撮影日時の帯を付けて保存する。受け入れの撮影の診断
+      // （明示して起動したときだけ）は、GPU の描画と保存した画像の寸法を比べるので、帯を付けない。
+      const output = releaseSceneCaptureAuditRequested ? image : withCaptureCaption(image, capturedAt);
+      void saveCaptureImage(output, filename, {format, quality: 0.95, downloadFallback: downloadImage})
         .then(async result => {
           // 保存完了の実バイトSHAだけを撮影GPU証拠に結合。所有者の保存先パスは証拠JSONへ記録しない。
           if (releaseSceneCaptureAuditRequested && releaseCaptureEvidence) {
@@ -8253,13 +8301,13 @@ function renderFrame(timestamp) {
               if (!receipt?.ok) console.error('4K撮影証拠の記録に失敗:', receipt?.error || '不明');
             }
           }
-          if (result.cancelled) finishRmCapture('画像保存をキャンセルしました');
-          else if (result.requestedOnly) finishRmCapture('ブラウザーにダウンロードを要求しました（保存先・保存完了は未確認）');
-          else finishRmCapture(`画像を保存しました: ${result.path} (${result.bytes} bytes, ${result.width}×${result.height}px)`);
+          if (result.cancelled) finishRmCapture(t('capture.cancelled'));
+          else if (result.requestedOnly) finishRmCapture(t('capture.download_requested'));
+          else finishRmCapture(t('capture.saved', {path: result.path, bytes: result.bytes, width: result.width, height: result.height}));
         })
-        .catch(error => finishRmCapture('画像保存失敗: ' + error.message, true));
+        .catch(error => finishRmCapture(t('capture.failed', {message: error.message}), true));
     } catch (error) {
-      finishRmCapture('画像保存失敗: ' + error.message, true);
+      finishRmCapture(t('capture.failed', {message: error.message}), true);
     }
   }
   const sceneRenderFinish = performance.now();

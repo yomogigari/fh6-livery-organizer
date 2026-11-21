@@ -42,6 +42,7 @@ def _record_mapping(record: Any) -> dict[str, Any]:
         "title",
         "creator",
         "livery_id",
+        "fh6_date_display",
     ):
         if hasattr(record, name):
             data[name] = getattr(record, name)
@@ -165,6 +166,7 @@ def build_report_preview_manifest(
             record_id=key,
             title=_text(data.get("title")),
             creator_name=_text(data.get("creator")),
+            upload_date=_text(data.get("fh6_date_display")),
             vehicle_name=_text(data.get("vehicle_display_name")),
             slot_label=slot_label,
             list_name="Livery Organizer for FH6 report",

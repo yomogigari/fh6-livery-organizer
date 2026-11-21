@@ -17,13 +17,14 @@ from typing import Any
 
 from .theme import PALETTES
 
-# lo4fh6-ui.css に合わせた値（96 dpi で 12px ≒ 9 ポイント、11px ≒ 8 ポイント）。
+# lo4fh6-ui.css に合わせた値（96 dpi で 15px ≒ 11 ポイント、13px ≒ 10 ポイント）。
+# 2026-11-21：全体的に文字が小さいという指摘で、本文 9 → 11 ポイント（約 2 割大きく）にした。
 FONT_CANDIDATES = ('Segoe UI Variable', 'Segoe UI', 'Yu Gothic UI')
 MONO_FONT_CANDIDATES = ('Cascadia Mono', 'Consolas', 'MS Gothic')
-FONT_SIZE_BODY = 9
-FONT_SIZE_SMALL = 8
-FONT_SIZE_HEADING = 11
-FONT_SIZE_MONO = 9
+FONT_SIZE_BODY = 11
+FONT_SIZE_SMALL = 10
+FONT_SIZE_HEADING = 13
+FONT_SIZE_MONO = 11
 BUTTON_PADDING = (11, 5)
 INPUT_PADDING = (8, 5)
 FRAME_PADDING = 8

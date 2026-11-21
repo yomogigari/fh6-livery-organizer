@@ -15,6 +15,10 @@
 - Viewer 単独の設定画面、または Livery Organizer for FH6 のレポートから開く。次のペイントも同じ窓で開く
   （同じ車のペイントなら、窓の中で約 1 秒で差し替える）
 - プレビュー画面の **「現在視点JPEG」「現在視点PNG」「6方向JPEG」「6方向PNG」** から画像を保存する
+  （画像の下に、タイトル・作成者・アップロード日・撮影日時を入れる。デモ用保護の「タイトル・作成者を隠す」で伏せられる）
+- プレビュー画面の右上：よく使う操作（表示をリセット・自動回転・画像の保存）は常に表示し、
+  **「車体・部品」**（ボディキット・部品・ホイール）・**「表示の調整」**（表示プリセット・描画品質・輪郭補正・言語）・
+  **「デモ用保護」**・**「詳しい設定・診断」** は折りたたみにまとめる（最初は閉じている。開くのは 1 つだけ、Esc で閉じる）
 
 車種・ペイント・保存データの状態によって、表示できない要素や未対応の図形があります。推測では補いません。
 表示を止めるほどでない物（ゲームに無いステッカー、GameDB が無いときのロゴや車輪など）は、省いたり簡易にしたり
@@ -68,15 +72,16 @@
 3. **「Livery_* フォルダー」** で、対象のリバリーを指定します。
 4. 必要なら **「preview-cache」** で、準備の結果を残す場所を変えます（既定は
    `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache`。下の「キャッシュ」を参照）。
+   GameSave（ペイントのセーブデータ）の中と、FH6 のフォルダーの中は選べません。
 5. **「3Dプレビューを開く」** を選びます。
 
 設定画面では、言語と表示テーマ（Organizer・Navigator Bridge と共通）も選べます。3D プレビューの画面は、共通の言語の設定ではなく、
-Windows の表示言語で始まり（日本語でなければ英語）、画面の上の「言語」で切り替えます。配色は暗い色だけです。表示できない場合は、画面のエラーと、
+Windows の表示言語で始まり（日本語でなければ英語）、画面の右上の「表示の調整」の「言語」で切り替えます。配色は暗い色だけです。表示できない場合は、画面のエラーと、
 下の「問題が起きた場合」の記録のファイルを確認してください。
 
 ## Livery Organizer for FH6 から開く
 
-Organizer のレポートにある 3D プレビューのリンクは、Windows の URI（`liveryorganizerpreviewforfh6:`）で Viewer を
+Organizer のレポートにある **「プレビュー」** のリンクは、Windows の URI（`liveryorganizerpreviewforfh6:`）で Viewer を
 起動します。
 
 1. Viewer の設定画面で **「Organizer連携を登録」** を選びます。先に Viewer の置き場所を決めてから登録してください
@@ -85,7 +90,7 @@ Organizer のレポートにある 3D プレビューのリンクは、Windows �
    - ソースから動かす場合は、初回に Viewer 専用の Python の環境（`%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\runtime`）
      を `uv` で作り、その環境の `pythonw.exe`（黒い窓を出さない Python）で、**登録を実行した Viewer のフォルダー**の
      `organizer_preview_bridge.py` を直接起動するように登録します（Navigator Bridge と同じ形）。
-2. Organizer でレポートを作り、3D プレビューのリンクを開きます。ブラウザーが外部のアプリを開く確認を出したら、許可して
+2. Organizer でレポートを作り、**「プレビュー」** のリンクを開きます。ブラウザーが外部のアプリを開く確認を出したら、許可して
    ください。
 
 Viewer のフォルダーを移動・コピーした場合や、新しい版を別のフォルダーに展開した場合は、新しい場所の設定画面から
@@ -142,7 +147,7 @@ GameDB は、次の順に探します。
 
 1. 起動の指定（Organizer のレポートが記録した場所を含む）
 2. 環境変数 `LO4FH6_GAMEDB`
-3. 共通の設定（`desktop-suite-settings.json`）の `paths.gamedb_file`
+3. 共通の設定（`desktop-suite-settings.json`）の `paths.gamedb_file`（設定画面の「GameDB」の欄で設定できます。使えるかを確かめてから登録し、欄の下に今の状態を表示します）
 4. Viewer の設定（`preview-settings.json`）の以前の形の記録
 5. `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite`
 6. 5 と同じフォルダーの `fh6-gamedb-*.sqlite`（新しい順）

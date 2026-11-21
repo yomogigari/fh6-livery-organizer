@@ -1,7 +1,7 @@
 """自前の部品（native/lo4fh6_native.dll。Rust で作る。ソースは native/lo4fh6_native）を読み込んで使う（2026-11-20、FH6 に近づける案 ④）。
 
-- DLL は、下の DLL_SHA256 と中身が同じときだけ読み込む（作り方は fh6-livery-viewer-internal の
-  tools/native/build_lo4fh6_native.py。配布の EXE では、fh6-livery-organizer-internal のキットが同じバイト列に作る）。
+- DLL は、下の DLL_SHA256 と中身が同じときだけ読み込む（公開のソースには DLL を入れず、配布の EXE を作るときに、
+  native/lo4fh6_native の Rust のソースから同じバイト列に作る）。
 - 公開の fh6-livery-organizer（ソースだけ）には DLL が無いので、Python で同じ計算をする。
 - 無い・SHA が合わない・読み込めない・Windows でない・環境変数 LO4FH6_NATIVE=0 のときは None を返す。呼び出し側は
   今までの Python の処理を使う（結果は同じ）。

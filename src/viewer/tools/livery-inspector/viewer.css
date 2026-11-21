@@ -70,7 +70,7 @@ html, body, #viewport {
 .lo4fh6-status-actions button,
 .lo4fh6-status-panel > summary {
   font:inherit;
-  font-size:11px;
+  font-size:13px;
   color:var(--lo4-text-control);
   border:1px solid var(--lo4-line);
   border-radius:var(--lo4-radius-control);
@@ -88,7 +88,7 @@ html, body, #viewport {
   min-width:0;
   pointer-events:auto;
   color:var(--lo4-text-muted);
-  font-size:11px;
+  font-size:13px;
 }
 .lo4fh6-status-panel > summary {display:list-item;list-style-position:inside;}
 .lo4fh6-status-lines {
@@ -103,13 +103,13 @@ html, body, #viewport {
   border-radius:var(--lo4-radius-panel);
   background:var(--lo4-panel);
 }
-#lo4fh6-status-copy-result {font-size:11px;}
+#lo4fh6-status-copy-result {font-size:13px;}
 .lo4fh6-render-error-warning {
   color:#ffb9c3;
   background:var(--lo4-panel);
   border:1px solid #dc4056;
   border-radius:var(--lo4-radius-control);
-  font-size:12px;
+  font-size:14px;
   padding:7px 9px;
   pointer-events:auto;
   white-space:pre-wrap;
@@ -117,14 +117,14 @@ html, body, #viewport {
 .lo4fh6-render-error-warning.hidden { display:none; }
 
 .hud-left strong {
-  font-size: 16px;
+  font-size: 19px;
   line-height: 1.2;
   font-weight: 650;
 }
 
 .hud-left span, .hint {
   color: var(--lo4-text-muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 #render-info {
@@ -155,7 +155,7 @@ html, body, #viewport {
   color: var(--lo4-text-control);
   background: var(--lo4-control);
   border-radius: var(--lo4-radius-control);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -225,7 +225,7 @@ html, body, #viewport {
   padding: 6px 9px;
   cursor: pointer;
   font: 600 var(--lo4-font-control)/1 "Segoe UI", Arial, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .diagnostic-controls[open] { padding-bottom: 6px; }
@@ -233,7 +233,7 @@ html, body, #viewport {
 
 .part-controls label {
   color: var(--lo4-text-muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .part-controls select {
@@ -295,7 +295,7 @@ button[aria-pressed="true"], button.active {
   border: 1px solid #3a4650;
   background: rgba(8, 11, 14, .94);
   color: var(--lo4-text-control);
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
 }
 
@@ -336,7 +336,7 @@ button[aria-pressed="true"], button.active {
 }
 
 /* r414: recording-only controls; default playback and source data are unchanged. */
-.demo-privacy-controls { max-width: 100%; border: 1px solid var(--lo4-line); border-radius: var(--lo4-radius-control); background: var(--lo4-panel); color: var(--lo4-text-control); font-size: 11px; }
+.demo-privacy-controls { max-width: 100%; border: 1px solid var(--lo4-line); border-radius: var(--lo4-radius-control); background: var(--lo4-panel); color: var(--lo4-text-control); font-size: 13px; }
 .demo-privacy-controls > summary { padding: 6px 9px; cursor: pointer; font-weight: 700; }
 .demo-privacy-body { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 2px 9px 9px; max-width: min(52vw, 475px); }
 .demo-privacy-body label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
@@ -351,7 +351,7 @@ button[aria-pressed="true"], button.active {
   border-radius: var(--lo4-radius-control);
   background: var(--lo4-panel);
   color: var(--lo4-text-control);
-  font-size: 11px;
+  font-size: 13px;
 }
 .lo4fh6-research-controls > summary {
   padding: 9px;
@@ -379,4 +379,30 @@ button[aria-pressed="true"], button.active {
 .lo4fh6-research-controls:not([open]) .lo4fh6-research-fields { display: none; }
 @media (max-width: 720px) {
   .lo4fh6-research-fields { left: 0; right: auto; max-width: 88vw; }
+}
+
+/* 右上：よく使う物（表示をリセット・自動回転・画像の保存）は常に表示し、ほかは折りたたむ（2026-11-21 整理）。
+   折りたたみの中身は下へ重ねて出し、車体の表示を押し下げない。開くのは 1 つだけ（index.html の小さな台本）。 */
+.hud-right { align-items: center; }
+.viewer-tools { flex-shrink: 0; max-width: 64%; }
+.viewer-save-group { display: inline-flex; flex-wrap: wrap; gap: 5px; margin-left: 8px; }
+.viewer-menus { position: relative; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.viewer-menu { border: 1px solid var(--lo4-line); border-radius: var(--lo4-radius-control); background: var(--lo4-panel); color: var(--lo4-text-control); font-size: 13px; }
+.viewer-menu[open] { border-color: var(--lo4-accent-border); }
+.viewer-menu > summary, .lo4fh6-research-controls.viewer-menu > summary { padding: 7px 10px; cursor: pointer; font-weight: 700; }
+.viewer-menu-body { position: absolute; right: 0; top: calc(100% + 4px); z-index: 12; max-height: min(65vh, 460px); overflow-y: auto; padding: 10px; border: 1px solid var(--lo4-line); border-radius: var(--lo4-radius-panel); background: var(--lo4-panel-solid); box-shadow: 0 8px 20px rgba(0,0,0,.26); }
+.viewer-menu:not([open]) .viewer-menu-body { display: none; }
+.viewer-menu-fields { display: grid; gap: 6px; width: min(380px, 88vw); }
+.viewer-menu-fields > .setting-control, .viewer-menu-fields .part-option-controls > .setting-control { justify-content: space-between; }
+.viewer-menu-fields .part-controls { padding: 0; border: 0; background: none; max-height: none; }
+.viewer-menu-fields .setting-control > select { width: 210px; max-width: 60%; }
+.demo-privacy-body.viewer-menu-body { width: min(440px, 88vw); max-width: none; padding: 10px; }
+.lo4fh6-research-fields .diagnostic-controls { display: flex; flex-basis: 100%; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; padding: 8px 0 0; border: 0; border-top: 1px solid var(--lo4-line); border-radius: 0; background: none; }
+.viewer-menu-heading { flex-basis: 100%; color: var(--lo4-text-muted); font-weight: 700; }
+.lo4fh6-status-panel .lo4fh6-status-actions { margin-top: 5px; }
+@media (max-width: 720px) {
+  .viewer-menus { justify-content: flex-start; }
+  .viewer-menu-body { left: 0; right: auto; }
+  .viewer-tools { max-width: 100%; }
+  .viewer-save-group { margin-left: 0; }
 }

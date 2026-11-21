@@ -75,6 +75,9 @@
         "share_code": {
           "type": "string"
         },
+        "upload_date": {
+          "type": "string"
+        },
         "gamedb_car_body_id": {
           "type": "integer",
           "minimum": 1
@@ -205,6 +208,9 @@
               "type": "string"
             },
             "share_code": {
+              "type": "string"
+            },
+            "upload_date": {
               "type": "string"
             }
           },

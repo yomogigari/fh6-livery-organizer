@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="lo4fh6-ui.css">
   <link rel="stylesheet" href="viewer.css">
   <style>
-    .lo4fh6-build-label { display:block; max-width:620px; font-size:12px; line-height:1.35; font-weight:600; color:#e8eaf3; text-shadow:0 1px 2px #111; white-space:normal; }
+    .lo4fh6-build-label { display:block; max-width:620px; font-size:14px; line-height:1.35; font-weight:600; color:#e8eaf3; text-shadow:0 1px 2px #111; white-space:normal; }
   </style>
   <script type="importmap">
     {
@@ -26,13 +26,13 @@
       <div class="hud hud-left">
         <strong id="title" data-i18n="status.loading_livery">リバリーを読み込み中</strong>
         <span id="lo4fh6-build-label" class="lo4fh6-build-label" aria-label="実行中のViewerビルド">版: 確認中</span>
-        <!-- 車体/ビルドは常時表示。描画の細目は既存IDを保持して折りたたむ。 -->
-        <div class="lo4fh6-status-actions">
-          <button id="lo4fh6-status-copy" type="button" data-i18n="status.copy_details">診断テキストをコピー</button>
-          <span id="lo4fh6-status-copy-result" role="status" aria-live="polite"></span>
-        </div>
+        <!-- 車体/ビルドは常時表示。描画の細目と「診断テキストをコピー」は、既存IDを保持して折りたたむ（2026-11-21 整理）。 -->
         <details id="lo4fh6-status-panel" class="lo4fh6-status-panel">
           <summary data-i18n="status.expand_details">描画情報・診断を表示</summary>
+          <div class="lo4fh6-status-actions">
+            <button id="lo4fh6-status-copy" type="button" data-i18n="status.copy_details">診断テキストをコピー</button>
+            <span id="lo4fh6-status-copy-result" role="status" aria-live="polite"></span>
+          </div>
           <div class="lo4fh6-status-lines">
         <span id="lo4fh6-mode-label" class="lo4fh6-build-label" role="status" aria-live="polite">描画モード: 判定中</span>
         <span id="vehicle" data-i18n="status.reading_metadata">パッケージ情報を読み込み中…</span>
@@ -47,171 +47,187 @@
         <div id="lo4fh6-render-error-warning" class="lo4fh6-render-error-warning hidden" role="alert" aria-live="assertive"></div>
       </div>
       <div class="viewer-tools">
+        <!-- よく使う物（表示をリセット・自動回転・画像の保存）は常に表示し、ほかは折りたたむ（最初は閉じる。開くのは 1 つだけ）。
+             車体の形を変える物（ボディキット・部品・ホイール）は単独の折りたたみにする（2026-11-21 整理）。既存の要素の名前は変えない。 -->
         <div class="hud hud-right" role="toolbar" aria-label="Inspection controls">
-          <label class="setting-control" title="Choose a release-oriented display preset. Individual research controls remain available and switch this selector to Custom / Experimental.">
-            <span data-i18n="toolbar.preset">表示プリセット</span>
-            <select id="display-preset" aria-label="Display preset">
-              <option value="custom" data-i18n="preset.custom">カスタム／実験</option>
-              <option value="fast" data-i18n="preset.fast">高速</option>
-              <option value="standard" data-i18n="preset.standard">標準</option>
-              <option value="high" data-i18n="preset.high">高画質</option>
-              <option value="ultra" data-i18n="preset.ultra">ウルトラ</option>
-            </select>
-          </label>
-          <!-- 旧r485の研究設定は保持し、通常は折りたたんで誤操作を防ぐ。 -->
-          <details id="lo4fh6-research-controls" class="lo4fh6-research-controls">
-            <summary>詳細・実験用設定</summary>
-            <div class="lo4fh6-research-fields">
-          <label class="setting-control" title="Compare the authored livery with three shading levels: pure diagnostic placement, a softer lit material, and the clearcoat material research shader.">
-            <span data-i18n="toolbar.material">材質</span>
-            <select id="material-mode" aria-label="Material mode">
-              <option value="physical" data-i18n="material.physical">クリアコート</option>
-              <option value="asset_routing" data-i18n="material.asset_routing">実ゲーム材質経路（実験）</option>
-              <option value="asset_routing_r175_baseline" data-i18n="material.asset_routing_r175_baseline">比較基準：r175 材質応答</option>
-              <option value="carbon_detail_uv0_probe" data-i18n="material.carbon_detail_uv0_probe">診断：カーボン法線 UV0</option>
-              <option value="carbon_detail_uv1_probe" data-i18n="material.carbon_detail_uv1_probe">診断：カーボン法線 UV1</option>
-              <option value="carbon_detail_texture_uv0_probe" data-i18n="material.carbon_detail_texture_uv0_probe">診断：カーボン法線テクスチャ UV0</option>
-              <option value="carbon_detail_texture_uv1_probe" data-i18n="material.carbon_detail_texture_uv1_probe">診断：カーボン法線テクスチャ UV1</option>
-              <option value="carbon_mask_texture_uv0_probe" data-i18n="material.carbon_mask_texture_uv0_probe">診断：カーボン織りマスク UV0</option>
-              <option value="carbon_mask_texture_uv1_probe" data-i18n="material.carbon_mask_texture_uv1_probe">診断：カーボン織りマスク UV1</option>
-              <option value="asset_routing_roughness" data-i18n="material.asset_routing_roughness">追込：粗さ低下</option>
-              <option value="asset_routing_roughness_032" data-i18n="material.asset_routing_roughness_032">追込：粗さ R 0.32</option>
-              <option value="asset_routing_roughness_036" data-i18n="material.asset_routing_roughness_036">追込：粗さ R 0.36</option>
-              <option value="asset_routing_clearcoat" data-i18n="material.asset_routing_clearcoat">追込：クリアコート低下</option>
-              <option value="asset_routing_ibl" data-i18n="material.asset_routing_ibl">追込：環境反射増強</option>
-              <option value="base_paint_direct" data-i18n="material.base_paint_direct">ベース塗装色（直値）</option>
-              <option value="base_paint_mask" data-i18n="material.base_paint_mask">ベース塗装露出</option>
-              <option value="reflection_only" data-i18n="material.reflection_only">反射のみ</option>
-              <option value="reflection_boost" data-i18n="material.reflection_boost">反射強調</option>
-              <option value="basic" data-i18n="material.basic">基本ライティング</option>
-              <option value="diagnostic" data-i18n="material.diagnostic">診断表示</option>
-              <option value="decal_alpha" data-i18n="material.decal_alpha">リバリー不透明度（黒0 / 白1）</option>
-              <option value="decal_luma" data-i18n="material.decal_luma">リバリー輝度</option>
-            </select>
-          </label>
-          <label class="setting-control" title="Compare Physical clearcoat and Lit basic without reloading the viewer. The comparison always keeps the same camera and livery state.">
-            <span data-i18n="toolbar.compare">比較</span>
-            <select id="compare-mode" aria-label="Comparison mode">
-              <option value="off" data-i18n="compare.off">オフ</option>
-              <option value="split" data-i18n="compare.split">A/B分割</option>
-              <option value="difference" data-i18n="compare.difference">差分</option>
-              <option value="heatmap" data-i18n="compare.heatmap">差分ヒートマップ</option>
-              <option value="flicker" data-i18n="compare.flicker">交互表示</option>
-            </select>
-          </label>
-          <label id="compare-split-control" class="setting-control hidden" title="Move the split between the current Material on the left and the comparison material on the right.">
-            <span data-i18n="toolbar.split">分割位置</span>
-            <input id="compare-split" type="range" min="10" max="90" step="1" value="50" aria-label="Comparison split position">
-            <output id="compare-split-output" for="compare-split">50%</output>
-          </label>
-          <label id="difference-gain-control" class="setting-control hidden" title="Amplify the RGB difference for diagnosis. Raw Difference keeps the measured RGB difference; Difference heatmap adds a perceptual color visualization while preserving the raw difference calculation.">
-            <span data-i18n="toolbar.gain">差分倍率</span>
-            <input id="difference-gain" type="range" min="1" max="12" step="0.5" value="6" aria-label="Difference gain">
-            <output id="difference-gain-output" for="difference-gain">6×</output>
-          </label>
-          <label class="setting-control" title="Override only the window/glass treatment so body placement and glass projection can be compared separately.">
-            <span data-i18n="toolbar.glass">ガラス</span>
-            <select id="glass-mode" aria-label="Glass mode">
-              <option value="game" data-i18n="glass.game">ゲーム風</option>
-              <option value="flat" data-i18n="glass.flat">簡易着色</option>
-              <option value="off" data-i18n="glass.off">リバリーなし</option>
-            </select>
-          </label>
-          <label class="setting-control" title="Use Horizon Home Soft for the Xbox photo-reference baseline, the soft studio for neutral viewing, reflection bands/sweep for A/B checks, or the dense reference environment for subtle material inspection.">
-            <span data-i18n="toolbar.lighting">照明</span>
-            <select id="environment-mode" aria-label="Lighting environment">
-              <option value="home_soft" data-i18n="lighting.home_soft">Horizon Home ソフト</option>
-              <option value="studio" data-i18n="lighting.studio">ソフトスタジオ</option>
-              <option value="bands" data-i18n="lighting.bands">反射帯</option>
-              <option value="sweep" data-i18n="lighting.sweep">反射スイープ</option>
-              <option value="reference" data-i18n="lighting.reference">反射リファレンス</option>
-            </select>
-          </label>
-          <label id="reflection-angle-control" class="setting-control hidden" title="Rotate the reflection diagnostic rig around the car. This changes only the procedural reflection environment.">
-            <span data-i18n="toolbar.sweep">反射角度</span>
-            <input id="reflection-angle" type="range" min="-90" max="90" step="5" value="0" aria-label="Reflection sweep angle">
-            <output id="reflection-angle-output" for="reflection-angle">0°</output>
-          </label>
-          <label id="reflection-strength-control" class="setting-control hidden" title="Scale environment-map reflection intensity without changing livery placement or base-paint routing.">
-            <span data-i18n="toolbar.reflection_strength">反射強度</span>
-            <input id="reflection-strength" type="range" min="0.5" max="2.5" step="0.05" value="1" aria-label="Reflection intensity multiplier">
-            <output id="reflection-strength-output" for="reflection-strength">1.00×</output>
-          </label>
-            </div>
-          </details>
-          <label class="setting-control" title="Reference allows up to 4x device pixel ratio and a larger framebuffer budget for native-4K-class comparison. High remains the normal research setting.">
-            <span data-i18n="toolbar.render">描画品質</span>
-            <select id="render-quality" aria-label="Render quality">
-              <option value="reference" data-i18n="render.reference">ウルトラ</option>
-              <option value="high" data-i18n="render.high">高品質</option>
-              <option value="standard" data-i18n="render.standard">標準</option>
-              <option value="minimum" data-i18n="render.minimum">最低（Full HD向け）</option>
-            </select>
-          </label>
-          <label class="setting-control" title="Adjust the final post-AA resolve strength without changing livery placement or material routing.">
-            <span data-i18n="toolbar.aa_mode">輪郭補正</span>
-            <select id="aa-mode" aria-label="Post-AA strength">
-              <option value="off" data-i18n="aa_mode.off">オフ</option>
-              <option value="soft" data-i18n="aa_mode.soft">弱め</option>
-              <option value="standard" data-i18n="aa_mode.standard">標準</option>
-              <option value="strong" data-i18n="aa_mode.strong">強め</option>
-              <option value="very_strong" data-i18n="aa_mode.very_strong">かなり強め</option>
-            </select>
-          </label>
-          <label id="body-kit-control" class="setting-control hidden" title="Switch among body-kit variants available in the local FH6 vehicle Manifest.">
-            <span data-i18n="toolbar.body_kit">ボディキット</span>
-            <select id="body-kit" aria-label="Body kit"></select>
-          </label>
-          <span id="part-option-controls" class="part-option-controls hidden" aria-label="Car part options"></span>
-          <label class="setting-control" title="Viewer language">
-            <span data-i18n="toolbar.language">言語</span>
-            <select id="language" aria-label="Language">
-              <option value="ja" data-i18n="language.ja">日本語</option>
-              <option value="en" data-i18n="language.en">English</option>
-            </select>
-          </label>
-          <label class="wheel-toggle" title="Show wheels. The Viewer remembers this choice for every car."><input id="wheels" type="checkbox" checked> <span data-i18n="toolbar.wheels">ホイール</span></label>
           <button id="reset" type="button" title="Reset the camera" data-i18n="toolbar.reset">表示をリセット</button>
           <button id="rotate" type="button" title="Toggle slow automatic rotation" aria-pressed="false" data-i18n="toolbar.rotate">自動回転</button>
-          <button id="rm-capture-jpeg" type="button" title="現在視点をJPEG品質95で保存">現在視点JPEG</button>
-          <button id="rm-capture-png" type="button" title="現在視点を無劣化PNGで保存">現在視点PNG</button>
-          <button id="rm-six-views-jpeg" type="button" title="完成車両を左・前・右・後・上・下の6方向からGPU描画し、1枚のJPEGに保存">6方向JPEG</button>
-          <button id="rm-six-views-png" type="button" title="完成車両の6方向GPU画像を1枚の可逆PNGに保存">6方向PNG</button>
+          <span class="viewer-save-group" role="group" aria-label="画像の保存" data-i18n-aria-label="toolbar.save_images">
+            <button id="rm-capture-jpeg" type="button" title="現在視点をJPEG品質95で保存" data-i18n="toolbar.capture_jpeg" data-i18n-title="toolbar.capture_jpeg_title">現在視点JPEG</button>
+            <button id="rm-capture-png" type="button" title="現在視点を無劣化PNGで保存" data-i18n="toolbar.capture_png" data-i18n-title="toolbar.capture_png_title">現在視点PNG</button>
+            <button id="rm-six-views-jpeg" type="button" title="完成車両を左・前・右・後・上・下の6方向からGPU描画し、1枚のJPEGに保存" data-i18n="toolbar.six_views_jpeg" data-i18n-title="toolbar.six_views_jpeg_title">6方向JPEG</button>
+            <button id="rm-six-views-png" type="button" title="完成車両の6方向GPU画像を1枚の可逆PNGに保存" data-i18n="toolbar.six_views_png" data-i18n-title="toolbar.six_views_png_title">6方向PNG</button>
+          </span>
         </div>
-        <div id="parts" class="part-controls hidden" aria-label="Displayed car parts"></div>
-        <details class="demo-privacy-controls" id="demo-privacy-panel">
-          <summary data-i18n="demo.heading">デモ用保護</summary>
-          <div class="demo-privacy-body">
-            <label><input type="checkbox" id="demo-hide-title"> <span data-i18n="demo.hide_title">タイトルを隠す</span></label>
-            <label><input type="checkbox" id="demo-hide-source"> <span data-i18n="demo.hide_source">Livery_* を隠す</span></label>
-            <label><input type="checkbox" id="demo-mosaic-body"> <span data-i18n="demo.mosaic_body">車体をモザイク</span></label>
-            <label class="demo-mosaic-strength"><span data-i18n="demo.strength">モザイク強度</span>
-              <select id="demo-mosaic-strength" aria-label="Demo mosaic strength">
-                <option value="12" data-i18n="demo.weak">弱</option>
-                <option value="24" data-i18n="demo.medium" selected>中</option>
-                <option value="40" data-i18n="demo.strong">強</option>
-              </select>
-            </label>
-          </div>
-        </details>
-        <details class="diagnostic-controls">
-          <summary data-i18n="toolbar.diagnostics">診断</summary>
-          <label class="wheel-toggle" data-i18n-title="toolbar.recover_shader_error_help">
-            <input id="recoverable-shader-error-continue" type="checkbox" checked>
-            <span data-i18n="toolbar.recover_shader_error">Shader障害時に代替材質で続行</span>
-          </label>
-          <label id="section-filter-control" class="setting-control" data-i18n-title="toolbar.section_filter_title">
-            <span data-i18n="toolbar.section_filter">面表示</span>
-            <select id="section-filter" data-i18n-aria-label="toolbar.section_filter">
-              <option value="all" data-i18n="section.all">すべて</option>
-              <option value="top" data-i18n="section.top">上面</option>
-              <option value="left" data-i18n="section.left">左側</option>
-              <option value="right" data-i18n="section.right">右側</option>
-              <option value="front" data-i18n="section.front">前面</option>
-              <option value="back" data-i18n="section.back">背面</option>
-            </select>
-          </label>
-        </details>
+        <div class="viewer-menus">
+          <details id="viewer-body-parts" class="viewer-menu">
+            <summary data-i18n="toolbar.body_parts">車体・部品</summary>
+            <div class="viewer-menu-body viewer-menu-fields">
+              <label id="body-kit-control" class="setting-control hidden" title="Switch among body-kit variants available in the local FH6 vehicle Manifest.">
+                <span data-i18n="toolbar.body_kit">ボディキット</span>
+                <select id="body-kit" aria-label="Body kit"></select>
+              </label>
+              <span id="part-option-controls" class="part-option-controls hidden" aria-label="Car part options"></span>
+              <div id="parts" class="part-controls hidden" aria-label="Displayed car parts"></div>
+              <label class="wheel-toggle" title="Show wheels. The Viewer remembers this choice for every car."><input id="wheels" type="checkbox" checked> <span data-i18n="toolbar.wheels">ホイール</span></label>
+            </div>
+          </details>
+          <details id="viewer-display-settings" class="viewer-menu">
+            <summary data-i18n="toolbar.display_settings">表示の調整</summary>
+            <div class="viewer-menu-body viewer-menu-fields">
+              <label class="setting-control" title="Choose a release-oriented display preset. Individual research controls remain available and switch this selector to Custom / Experimental.">
+                <span data-i18n="toolbar.preset">表示プリセット</span>
+                <select id="display-preset" aria-label="Display preset">
+                  <option value="custom" data-i18n="preset.custom">カスタム／実験</option>
+                  <option value="fast" data-i18n="preset.fast">高速</option>
+                  <option value="standard" data-i18n="preset.standard">標準</option>
+                  <option value="high" data-i18n="preset.high">高画質</option>
+                  <option value="ultra" data-i18n="preset.ultra">ウルトラ</option>
+                </select>
+              </label>
+              <label class="setting-control" title="Reference allows up to 4x device pixel ratio and a larger framebuffer budget for native-4K-class comparison. High remains the normal research setting.">
+                <span data-i18n="toolbar.render">描画品質</span>
+                <select id="render-quality" aria-label="Render quality">
+                  <option value="reference" data-i18n="render.reference">ウルトラ</option>
+                  <option value="high" data-i18n="render.high">高品質</option>
+                  <option value="standard" data-i18n="render.standard">標準</option>
+                  <option value="minimum" data-i18n="render.minimum">最低（Full HD向け）</option>
+                </select>
+              </label>
+              <label class="setting-control" title="Adjust the final post-AA resolve strength without changing livery placement or material routing.">
+                <span data-i18n="toolbar.aa_mode">輪郭補正</span>
+                <select id="aa-mode" aria-label="Post-AA strength">
+                  <option value="off" data-i18n="aa_mode.off">オフ</option>
+                  <option value="soft" data-i18n="aa_mode.soft">弱め</option>
+                  <option value="standard" data-i18n="aa_mode.standard">標準</option>
+                  <option value="strong" data-i18n="aa_mode.strong">強め</option>
+                  <option value="very_strong" data-i18n="aa_mode.very_strong">かなり強め</option>
+                </select>
+              </label>
+              <label class="setting-control" title="Viewer language">
+                <span data-i18n="toolbar.language">言語</span>
+                <select id="language" aria-label="Language">
+                  <option value="ja" data-i18n="language.ja">日本語</option>
+                  <option value="en" data-i18n="language.en">English</option>
+                </select>
+              </label>
+            </div>
+          </details>
+          <details class="demo-privacy-controls viewer-menu" id="demo-privacy-panel">
+            <summary data-i18n="demo.heading">デモ用保護</summary>
+            <div class="demo-privacy-body viewer-menu-body">
+              <label><input type="checkbox" id="demo-hide-title"> <span data-i18n="demo.hide_title">タイトル・作成者を隠す</span></label>
+              <label><input type="checkbox" id="demo-hide-source"> <span data-i18n="demo.hide_source">Livery_* を隠す</span></label>
+              <label><input type="checkbox" id="demo-mosaic-body"> <span data-i18n="demo.mosaic_body">車体をモザイク</span></label>
+              <label class="demo-mosaic-strength"><span data-i18n="demo.strength">モザイク強度</span>
+                <select id="demo-mosaic-strength" aria-label="Demo mosaic strength">
+                  <option value="12" data-i18n="demo.weak">弱</option>
+                  <option value="24" data-i18n="demo.medium" selected>中</option>
+                  <option value="40" data-i18n="demo.strong">強</option>
+                </select>
+              </label>
+            </div>
+          </details>
+          <!-- 旧r485の研究設定と診断は保持し、通常は折りたたんで誤操作を防ぐ。 -->
+          <details id="lo4fh6-research-controls" class="lo4fh6-research-controls viewer-menu">
+            <summary data-i18n="toolbar.advanced">詳しい設定・診断</summary>
+            <div class="lo4fh6-research-fields viewer-menu-body">
+              <label class="setting-control" title="Compare the authored livery with three shading levels: pure diagnostic placement, a softer lit material, and the clearcoat material research shader.">
+                <span data-i18n="toolbar.material">材質</span>
+                <select id="material-mode" aria-label="Material mode">
+                  <option value="physical" data-i18n="material.physical">クリアコート</option>
+                  <option value="asset_routing" data-i18n="material.asset_routing">実ゲーム材質経路（実験）</option>
+                  <option value="asset_routing_r175_baseline" data-i18n="material.asset_routing_r175_baseline">比較基準：r175 材質応答</option>
+                  <option value="carbon_detail_uv0_probe" data-i18n="material.carbon_detail_uv0_probe">診断：カーボン法線 UV0</option>
+                  <option value="carbon_detail_uv1_probe" data-i18n="material.carbon_detail_uv1_probe">診断：カーボン法線 UV1</option>
+                  <option value="carbon_detail_texture_uv0_probe" data-i18n="material.carbon_detail_texture_uv0_probe">診断：カーボン法線テクスチャ UV0</option>
+                  <option value="carbon_detail_texture_uv1_probe" data-i18n="material.carbon_detail_texture_uv1_probe">診断：カーボン法線テクスチャ UV1</option>
+                  <option value="carbon_mask_texture_uv0_probe" data-i18n="material.carbon_mask_texture_uv0_probe">診断：カーボン織りマスク UV0</option>
+                  <option value="carbon_mask_texture_uv1_probe" data-i18n="material.carbon_mask_texture_uv1_probe">診断：カーボン織りマスク UV1</option>
+                  <option value="asset_routing_roughness" data-i18n="material.asset_routing_roughness">追込：粗さ低下</option>
+                  <option value="asset_routing_roughness_032" data-i18n="material.asset_routing_roughness_032">追込：粗さ R 0.32</option>
+                  <option value="asset_routing_roughness_036" data-i18n="material.asset_routing_roughness_036">追込：粗さ R 0.36</option>
+                  <option value="asset_routing_clearcoat" data-i18n="material.asset_routing_clearcoat">追込：クリアコート低下</option>
+                  <option value="asset_routing_ibl" data-i18n="material.asset_routing_ibl">追込：環境反射増強</option>
+                  <option value="base_paint_direct" data-i18n="material.base_paint_direct">ベース塗装色（直値）</option>
+                  <option value="base_paint_mask" data-i18n="material.base_paint_mask">ベース塗装露出</option>
+                  <option value="reflection_only" data-i18n="material.reflection_only">反射のみ</option>
+                  <option value="reflection_boost" data-i18n="material.reflection_boost">反射強調</option>
+                  <option value="basic" data-i18n="material.basic">基本ライティング</option>
+                  <option value="diagnostic" data-i18n="material.diagnostic">診断表示</option>
+                  <option value="decal_alpha" data-i18n="material.decal_alpha">リバリー不透明度（黒0 / 白1）</option>
+                  <option value="decal_luma" data-i18n="material.decal_luma">リバリー輝度</option>
+                </select>
+              </label>
+              <label class="setting-control" title="Compare Physical clearcoat and Lit basic without reloading the viewer. The comparison always keeps the same camera and livery state.">
+                <span data-i18n="toolbar.compare">比較</span>
+                <select id="compare-mode" aria-label="Comparison mode">
+                  <option value="off" data-i18n="compare.off">オフ</option>
+                  <option value="split" data-i18n="compare.split">A/B分割</option>
+                  <option value="difference" data-i18n="compare.difference">差分</option>
+                  <option value="heatmap" data-i18n="compare.heatmap">差分ヒートマップ</option>
+                  <option value="flicker" data-i18n="compare.flicker">交互表示</option>
+                </select>
+              </label>
+              <label id="compare-split-control" class="setting-control hidden" title="Move the split between the current Material on the left and the comparison material on the right.">
+                <span data-i18n="toolbar.split">分割位置</span>
+                <input id="compare-split" type="range" min="10" max="90" step="1" value="50" aria-label="Comparison split position">
+                <output id="compare-split-output" for="compare-split">50%</output>
+              </label>
+              <label id="difference-gain-control" class="setting-control hidden" title="Amplify the RGB difference for diagnosis. Raw Difference keeps the measured RGB difference; Difference heatmap adds a perceptual color visualization while preserving the raw difference calculation.">
+                <span data-i18n="toolbar.gain">差分倍率</span>
+                <input id="difference-gain" type="range" min="1" max="12" step="0.5" value="6" aria-label="Difference gain">
+                <output id="difference-gain-output" for="difference-gain">6×</output>
+              </label>
+              <label class="setting-control" title="Override only the window/glass treatment so body placement and glass projection can be compared separately.">
+                <span data-i18n="toolbar.glass">ガラス</span>
+                <select id="glass-mode" aria-label="Glass mode">
+                  <option value="game" data-i18n="glass.game">ゲーム風</option>
+                  <option value="flat" data-i18n="glass.flat">簡易着色</option>
+                  <option value="off" data-i18n="glass.off">リバリーなし</option>
+                </select>
+              </label>
+              <label class="setting-control" title="Use Horizon Home Soft for the Xbox photo-reference baseline, the soft studio for neutral viewing, reflection bands/sweep for A/B checks, or the dense reference environment for subtle material inspection.">
+                <span data-i18n="toolbar.lighting">照明</span>
+                <select id="environment-mode" aria-label="Lighting environment">
+                  <option value="home_soft" data-i18n="lighting.home_soft">Horizon Home ソフト</option>
+                  <option value="studio" data-i18n="lighting.studio">ソフトスタジオ</option>
+                  <option value="bands" data-i18n="lighting.bands">反射帯</option>
+                  <option value="sweep" data-i18n="lighting.sweep">反射スイープ</option>
+                  <option value="reference" data-i18n="lighting.reference">反射リファレンス</option>
+                </select>
+              </label>
+              <label id="reflection-angle-control" class="setting-control hidden" title="Rotate the reflection diagnostic rig around the car. This changes only the procedural reflection environment.">
+                <span data-i18n="toolbar.sweep">反射角度</span>
+                <input id="reflection-angle" type="range" min="-90" max="90" step="5" value="0" aria-label="Reflection sweep angle">
+                <output id="reflection-angle-output" for="reflection-angle">0°</output>
+              </label>
+              <label id="reflection-strength-control" class="setting-control hidden" title="Scale environment-map reflection intensity without changing livery placement or base-paint routing.">
+                <span data-i18n="toolbar.reflection_strength">反射強度</span>
+                <input id="reflection-strength" type="range" min="0.5" max="2.5" step="0.05" value="1" aria-label="Reflection intensity multiplier">
+                <output id="reflection-strength-output" for="reflection-strength">1.00×</output>
+              </label>
+              <div class="diagnostic-controls" role="group" aria-label="Diagnostics" data-i18n-aria-label="toolbar.diagnostics">
+                <span class="viewer-menu-heading" data-i18n="toolbar.diagnostics">診断</span>
+                <label class="wheel-toggle" data-i18n-title="toolbar.recover_shader_error_help">
+                  <input id="recoverable-shader-error-continue" type="checkbox" checked>
+                  <span data-i18n="toolbar.recover_shader_error">Shader障害時に代替材質で続行</span>
+                </label>
+                <label id="section-filter-control" class="setting-control" data-i18n-title="toolbar.section_filter_title">
+                  <span data-i18n="toolbar.section_filter">面表示</span>
+                  <select id="section-filter" data-i18n-aria-label="toolbar.section_filter">
+                    <option value="all" data-i18n="section.all">すべて</option>
+                    <option value="top" data-i18n="section.top">上面</option>
+                    <option value="left" data-i18n="section.left">左側</option>
+                    <option value="right" data-i18n="section.right">右側</option>
+                    <option value="front" data-i18n="section.front">前面</option>
+                    <option value="back" data-i18n="section.back">背面</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
     <div class="view-strip" role="toolbar" data-i18n-aria-label="view.toolbar">
@@ -330,6 +346,20 @@
       if (window.__lo4fh6ViewerBooted) return;
       reportViewerBootFailure('Viewerの初期化が15秒以内に完了しませんでした。ファイル欠落とは限りません。preview-bridge.logおよびWebView2のJavaScriptエラーを確認してください。');
     }, 15000);
+  </script>
+  <script>
+    // 右上の折りたたみ（車体・部品／表示の調整／デモ用保護／詳しい設定・診断）は、重ならないよう 1 つだけ開く。
+    // Esc で閉じる（2026-11-21 整理）。起動の見張りの台本とは分けておく。
+    (() => {
+      const viewerMenus = Array.from(document.querySelectorAll('.viewer-menu'));
+      viewerMenus.forEach(menu => menu.addEventListener('toggle', () => {
+        if (!menu.open) return;
+        viewerMenus.forEach(other => { if (other !== menu && other.open) other.open = false; });
+      }));
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') viewerMenus.forEach(menu => { if (menu.open) menu.open = false; });
+      });
+    })();
   </script>
   <script type="module" src="viewer.js"></script>
 </body>

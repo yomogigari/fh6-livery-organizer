@@ -72,6 +72,8 @@ class LiveryInspectorServer:
         self._local_body_kit_convert = None
         self._local_render: dict = {}
         self._manifest: dict = {}
+        # 保存する画像（現在視点・6方向）の下の帯に書く、ペイントの情報（Organizer から届いた物。2026-11-21）
+        self._capture_caption: dict = {}
         self._gpu_livery_runtime: dict = {}
         self._stock_body_only: dict = {}
         self._private_wheel_research: dict = {}
@@ -101,6 +103,18 @@ class LiveryInspectorServer:
     @property
     def package_path(self) -> Path | None:
         return self._package
+
+    def set_capture_caption(self, caption: dict | None) -> None:
+        """保存する画像（現在視点・6方向）の下の帯に書く、ペイントの情報を受け取る（2026-11-21）。
+
+        タイトル・作成者・アップロード日・車名の文字だけを持つ（無い項目は空、長すぎる物は切る）。
+        画面の表示や描画には使わず、ページは /api/manifest の capture_caption で受け取る。
+        """
+        source = caption if isinstance(caption, dict) else {}
+        self._capture_caption = {
+            key: source[key].strip()[:200] if isinstance(source.get(key), str) else ""
+            for key in ("title", "creator_name", "upload_date", "vehicle_name")
+        }
 
     def set_package(self, package: Path | str) -> dict:
         path = Path(package).resolve()
@@ -785,6 +799,7 @@ class LiveryInspectorServer:
             if self.request_diagnostic:
                 self.request_diagnostic("manifest_request_received")
             runtime_manifest = dict(self._manifest)
+            runtime_manifest["capture_caption"] = dict(self._capture_caption)
             runtime_manifest["inspection_runtime"] = {
                 "local_mesh": self._local_mesh is not None,
                 "stock_body_only": dict(self._stock_body_only),

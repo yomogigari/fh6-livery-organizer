@@ -261,6 +261,7 @@ ORGANIZER_OPTIONAL_KEYS = (
     "creator_name",
     "vehicle_name",
     "share_code",
+    "upload_date",
 )
 
 
@@ -335,6 +336,7 @@ def normalize_request_payload(data: dict[str, Any]) -> dict[str, Any]:
         "creator_name": _string(data.get("creator_name")) or _nested_string(data, "display", "creator_name"),
         "vehicle_name": _string(data.get("vehicle_name")) or _nested_string(data, "display", "vehicle_name"),
         "share_code": _string(data.get("share_code")) or _nested_string(data, "display", "share_code"),
+        "upload_date": _string(data.get("upload_date")) or _nested_string(data, "display", "upload_date"),
     }
     if request["car_id"] is not None:
         request["car_id"] = int(request["car_id"])
@@ -901,6 +903,7 @@ def request_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "creator_name": _string(request.get("creator_name")),
         "vehicle_name": _string(request.get("vehicle_name")),
         "share_code": _string(request.get("share_code")),
+        "upload_date": _string(request.get("upload_date")),
     }
     if manifest_context:
         preview = manifest_context.get("preview") if isinstance(manifest_context.get("preview"), dict) else {}
@@ -2485,6 +2488,7 @@ def _load_output_into_server(server: LiveryInspectorServer, output_dir: Path, re
                 render_contract["source_paint_binding_diagnostics_unavailable"] = str(exc)
     validate_livery_inspection_artifact(package_path)
     server.set_package(package_path)
+    server.set_capture_caption(_capture_caption(request))
     server.set_local_mesh(mesh_path)
     overlay_plan = summary.get("body_kit_overlay_plan") if isinstance(summary.get("body_kit_overlay_plan"), dict) else {}
     overlay_value = _string(summary.get("body_kit_overlay_mesh"))
@@ -3893,6 +3897,12 @@ def _wait_for_standby_job(jobs: "queue.Queue[dict[str, Any]]", keep_alive: Any) 
         keep_alive.shown_for_job()
         _append_bridge_log("viewer standby: opening the window for the first request")
         return {**job, "first": True, "from_standby": True}
+
+
+def _capture_caption(request: dict[str, Any] | None) -> dict[str, str]:
+    """保存する画像（現在視点・6方向）の下の帯に書く、ペイントの情報（Organizer から届いた表示の項目。2026-11-21）。"""
+    request = request if isinstance(request, dict) else {}
+    return {key: _string(request.get(key)) for key in ("title", "creator_name", "upload_date", "vehicle_name")}
 
 
 def _standalone_title(request: dict[str, Any]) -> str:

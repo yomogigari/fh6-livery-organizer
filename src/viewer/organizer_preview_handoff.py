@@ -39,6 +39,7 @@ def request_record(
     creator_name: str = "",
     vehicle_name: str = "",
     share_code: str = "",
+    upload_date: str = "",
     slot_label: str = "",
     list_name: str = "",
     output_key: str = "",
@@ -71,6 +72,8 @@ def request_record(
             "creator_name": _text(creator_name),
             "vehicle_name": _text(vehicle_name),
             "share_code": _text(share_code),
+            # アップロード日（FH6 の画面と同じ「日/月/年」。保存する画像の帯に書く。2026-11-21）
+            "upload_date": _text(upload_date),
         },
         "organizer": {
             "record_id": resolved_record_id,
@@ -189,6 +192,7 @@ def request_from_manifest(path: str | Path, record_id: str) -> tuple[dict[str, A
                 "creator_name": _text(display.get("creator_name")),
                 "vehicle_name": _text(display.get("vehicle_name")) or _text(vehicle.get("vehicle_name")),
                 "share_code": _text(display.get("share_code")),
+                "upload_date": _text(display.get("upload_date")),
             },
             "organizer": {
                 "record_id": requested_id,
