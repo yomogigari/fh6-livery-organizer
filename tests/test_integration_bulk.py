@@ -97,12 +97,54 @@ class OrganizerIntegrationTargetsTests(unittest.TestCase):
     def test_packaged_mode_uses_executables_next_to_organizer(self) -> None:
         base = Path("C:/dist")
         with mock.patch.object(organizer, "running_as_packaged_organizer", return_value=True), \
-                mock.patch.object(organizer.sys, "executable", str(base / "Livery-Organizer-for-FH6.exe")):
+                mock.patch.object(organizer, "packaged_organizer_dir", return_value=base):
             targets = organizer.integration_targets()
-        viewer_exe = (base / "Livery-Viewer-for-FH6" / "Livery-Viewer-for-FH6.exe").resolve()
-        bridge_exe = (base / "Navigator-Bridge-for-FH6.exe").resolve()
+        viewer_exe = base / "Livery-Viewer-for-FH6" / "Livery-Viewer-for-FH6.exe"
+        bridge_exe = base / "Navigator-Bridge-for-FH6.exe"
         self.assertEqual(targets["viewer"]["command"], [str(viewer_exe), "--lo4fh6-run=bridge"])
         self.assertEqual(targets["bridge"]["command"], [str(bridge_exe)])
+        self.assertIn("base = packaged_organizer_dir()", ORGANIZER_SOURCE.read_text(encoding="utf-8"))
+
+
+class OrganizerPackagedFolderTests(unittest.TestCase):
+    """配布の EXE（Nuitka の 1 ファイル形式）では sys.executable が展開先の一時フォルダーになる（2026-11-22）。"""
+
+    def make_dist(self, root: Path) -> tuple[Path, Path]:
+        dist = root / "Livery-Organizer-for-FH6-v0.5.0-preview"
+        (dist / "Livery-Viewer-for-FH6").mkdir(parents=True)
+        (dist / "Navigator-Bridge-for-FH6.exe").write_bytes(b"")
+        extracted = root / "onefile_1234"
+        extracted.mkdir()
+        return dist, extracted
+
+    def test_original_exe_folder_wins_over_extraction_folder(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            dist, extracted = self.make_dist(Path(folder))
+            with mock.patch.object(organizer, "_ORGANIZER_ARGV0_AT_START", str(dist / "Livery-Organizer-for-FH6.exe")), \
+                    mock.patch.object(organizer.sys, "executable", str(extracted / "Livery-Organizer-for-FH6.exe")):
+                self.assertEqual(organizer.packaged_organizer_dir(), dist.resolve())
+
+    def test_compiled_containing_dir_is_used(self) -> None:
+        import tempfile
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as folder:
+            dist, extracted = self.make_dist(Path(folder))
+            organizer.__compiled__ = SimpleNamespace(containing_dir=str(dist))
+            try:
+                with mock.patch.object(organizer, "_ORGANIZER_ARGV0_AT_START", str(extracted / "x.exe")), \
+                        mock.patch.object(organizer.sys, "executable", str(extracted / "x.exe")):
+                    self.assertEqual(organizer.packaged_organizer_dir(), dist)
+            finally:
+                del organizer.__compiled__
+
+    def test_first_candidate_when_tools_are_missing(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            lonely = Path(folder) / "lonely"
+            lonely.mkdir()
+            with mock.patch.object(organizer, "_ORGANIZER_ARGV0_AT_START", str(lonely / "Livery-Organizer-for-FH6.exe")):
+                self.assertEqual(organizer.packaged_organizer_dir(), lonely.resolve())
 
 
 class OrganizerIntegrationStateTests(unittest.TestCase):

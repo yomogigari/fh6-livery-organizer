@@ -20628,6 +20628,32 @@ def running_as_packaged_organizer() -> bool:
     return bool(getattr(sys, "frozen", False) or globals().get("__compiled__") is not None)
 
 
+# 起動したときの sys.argv[0]（配布した EXE）。Nuitka の 1 ファイル形式では、sys.executable は展開先の一時フォルダーの
+# 物になるので、元の EXE の場所には使えない（2026-11-22）。
+_ORGANIZER_ARGV0_AT_START = sys.argv[0] if sys.argv else ""
+
+
+def packaged_organizer_dir() -> Path:
+    """配布した Organizer の EXE があるフォルダー（同じフォルダーに Viewer のフォルダーと Bridge の EXE がある）。
+
+    Nuitka の元の EXE のフォルダー（__compiled__.containing_dir）→ 起動したときの sys.argv[0] → sys.executable の
+    順に候補を挙げ、Viewer か Bridge が実際に隣にある物を選びます（どれにも無ければ最初の候補）。
+    """
+    candidates: list = []
+    compiled = globals().get("__compiled__")
+    containing_dir = getattr(compiled, "containing_dir", None) if compiled is not None else None
+    if containing_dir:
+        candidates.append(Path(str(containing_dir)))
+    if _ORGANIZER_ARGV0_AT_START:
+        candidates.append(Path(_ORGANIZER_ARGV0_AT_START).resolve().parent)
+    if sys.executable:
+        candidates.append(Path(sys.executable).resolve().parent)
+    for folder in candidates:
+        if (folder / "Navigator-Bridge-for-FH6.exe").is_file() or (folder / "Livery-Viewer-for-FH6").is_dir():
+            return folder
+    return candidates[0] if candidates else Path.cwd()
+
+
 def integration_targets() -> dict:
     """まとめて登録・解除する Viewer と Navigator Bridge の、命令と目印（登録先がこの Organizer と同じ物か）。
 
@@ -20635,7 +20661,7 @@ def integration_targets() -> dict:
     台本を使います（Viewer は設定画面と同じく uv で部品をそろえて動かし、Bridge は今の Python で動かします）。
     """
     if running_as_packaged_organizer():
-        base = Path(sys.executable).resolve().parent
+        base = packaged_organizer_dir()
         viewer = base / "Livery-Viewer-for-FH6" / "Livery-Viewer-for-FH6.exe"
         bridge = base / "Navigator-Bridge-for-FH6.exe"
         viewer_command = [str(viewer), "--lo4fh6-run=bridge"]
