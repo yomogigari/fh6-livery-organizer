@@ -38,6 +38,8 @@
 - Organizerに「連携の登録・解除」を追加し、Livery Viewer for FH6とNavigator BridgeのOrganizer連携を、まとめて登録・解除できるようにした（それぞれの画面の登録もそのまま使える）。
 - Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システム設定 / ライト / ダーク）・FH6本体とGameSaveのフォルダー等を共有（`%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`）。
 - OrganizerとNavigator Bridgeの画面を、Viewerと同じ配色・文字・余白にそろえた。
+- 3つのツールの画面の文字を約2割大きくした（本文 9 → 11 ポイント。Viewerのプレビュー画面も同じ割合）。
+- Organizer・Navigator Bridge・Viewerの設定画面を、中身に合わせた大きさで開くようにした（起動のときに小さい窓が一瞬見えることも無くした）。Navigator Bridgeの「入力・共通移動設定」は2列にした。
 - Navigator Bridgeへ、言語と表示テーマの切り替えを追加。
 
 ### 車両メタデータ
@@ -55,7 +57,7 @@
 
 ### 更新するときの注意
 
-- 新しいフォルダーから使う場合は、Viewerの「Organizer連携を登録」と、Navigator Bridgeの「連携を登録」をやり直す（どちらの登録にも、EXEの絶対パスが保存されるため）。
+- 新しいフォルダーから使う場合は、新しいOrganizerの「連携の登録・解除」で「まとめて登録」を実行する（Viewerの「Organizer連携を登録」と、Navigator Bridgeの「連携を登録」をそれぞれやり直しても同じ。どちらの登録にも、EXEの絶対パスが保存されるため）。
 - v0.4.62の配布ZIPの `python\navigator-bridge-for-fh6-v028.py` でBridgeを登録していた場合も、EXEのBridgeから「連携を登録」をやり直す。
 
 ### ソースから動かす場合

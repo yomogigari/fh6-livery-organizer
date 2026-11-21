@@ -80,11 +80,11 @@ The creation-method audit score checks five structural/statistical signals in sa
 
 **Livery Viewer for FH6** is a tool that shows a report's livery in 3D on the FH6 car body. It reads the FH6 game assets and the GameSave livery (`Livery_*` folder) as read-only input and renders them on your PC (WebGL2).
 
-1. Put the release folder where you will keep it, then start `Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` and run **Register Organizer integration** once in the settings window (the registration stores the Viewer's location, so decide the location first). You can also register the Viewer and Navigator Bridge together with **Register Both** in Organizer's **Integration...** window. After registering, you can close the settings window. Opening a 3D preview starts the Viewer automatically.
+1. Put the release folder where you will keep it, then start `Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` and run **Register Organizer integration** once in the settings window (the registration stores the Viewer's location, so decide the location first). You can also register the Viewer and Navigator Bridge together with **Register Both** in Organizer's **Integration…** window. After registering, you can close the settings window. Opening a 3D preview starts the Viewer automatically.
 2. Generate a report in Organizer. Reports that could confirm the FH6 installation location show "Preview" on each card.
 3. Click "Preview". The Viewer window shows the car with that livery. If the browser asks whether to open an external application, allow it. Clicking another livery switches the view in the same window.
 
-You can also choose a `Livery_*` folder in the Viewer settings window. From the preview screen, you can save the current view or a six-direction image as JPEG / PNG (the title, creator, upload date, and capture time are added below the image).
+You can also choose a `Livery_*` folder in the Viewer settings window. From the preview screen, you can save the current view or a six-direction image as JPEG / PNG (the title, creator, upload date, and capture time are added below the image; the creator and upload date are included when the livery is opened from an Organizer report).
 
 The Windows integration registration stores the Viewer's **absolute path**. If you move the Viewer folder, run "Register Organizer integration" again from the moved Viewer. Before removing the Viewer, run "Remove Organizer integration" in the settings window.
 
@@ -148,7 +148,7 @@ Navigator Bridge is optional. Organizer alone can list, search, and organize liv
 
 ### Integration registration
 
-On first use, start Navigator Bridge by itself and run **Register integration** once (or run **Register Both** in Organizer's **Integration...** window). Windows stores the absolute path of the Bridge executable/script for the `navigatorbridgeforfh6://` protocol.
+On first use, start Navigator Bridge by itself and run **Register integration** once (or run **Register Both** in Organizer's **Integration…** window). Windows stores the absolute path of the Bridge executable/script for the `navigatorbridgeforfh6://` protocol.
 
 Register again from the new Bridge location if you:
 
@@ -219,7 +219,7 @@ Livery-Organizer-for-FH6-v0.5.0-preview\
   THIRD-PARTY-NOTICES.txt
 ```
 
-When you update from an earlier version and use the new folder, run "Register Both" in the new Organizer's "Integration..." window (or run "Register Organizer integration" in the Viewer and "Register integration" in Navigator Bridge again; both registrations store the absolute path of the EXE).
+When you update from an earlier version and use the new folder, run "Register Both" in the new Organizer's "Integration…" window (or run "Register Organizer integration" in the Viewer and "Register integration" in Navigator Bridge again; both registrations store the absolute path of the EXE).
 
 Livery Viewer for FH6 uses the files inside the `Livery-Viewer-for-FH6` folder. Keep the folder together; do not move the EXE out of it by itself.
 

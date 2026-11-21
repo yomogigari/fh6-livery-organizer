@@ -52,7 +52,7 @@ LICENSE.txt
 THIRD-PARTY-NOTICES.txt
 
 When you update from an earlier version and use the new folder, run
-"Register Both" in the new Organizer's "Integration..." window (or run
+"Register Both" in the new Organizer's "Integration…" window (or run
 "Register Organizer integration" in the Viewer and "Register integration" in
 Navigator Bridge again; both registrations store the absolute path of the EXE).
 
@@ -148,7 +148,7 @@ or the FH6 installation.
    "Register Organizer integration" again from the moved Viewer.
    After registering, you can close the settings window. Opening a 3D preview
    starts the Viewer automatically.
-   Running "Register Both" in Organizer's "Integration..." window registers
+   Running "Register Both" in Organizer's "Integration…" window registers
    the Viewer and Navigator Bridge together (the same as this step).
 2. Generate a report in Organizer. Reports that could confirm the FH6
    installation location show "Preview" on each card.
@@ -305,7 +305,7 @@ that passed the title + process checks, and sends the fixed Left / Right / Down
 cursor sequence through the standard Windows input API.
 
 On first use, start Bridge by itself and run "Register integration" once
-(or run "Register Both" in Organizer's "Integration..." window).
+(or run "Register Both" in Organizer's "Integration…" window).
 The navigatorbridgeforfh6:// Windows registration stores Bridge's absolute path
 (see "Moving, renaming, or removing Navigator Bridge" below).
 
