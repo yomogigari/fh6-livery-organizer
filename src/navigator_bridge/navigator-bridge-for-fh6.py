@@ -94,6 +94,8 @@ IPC_POLL_MS = 180
 # 説明の文の折り返し幅：置かれた幅からこの余白を引く。狭すぎるときは変えない（2026-11-21）
 WRAP_MARGIN = 8
 WRAP_MIN = 120
+# 設定の行の補足（「初期値500」など）を折り返す幅の上限。日本語は 1 行のまま、長い英語だけ折り返す（2026-11-21）
+SETTING_NOTE_WRAP = 240
 
 # Livery Organizer for FH6 のデスクトップGUIと同じ可読性基準を使います。
 # Windows 11では Segoe UI Variable を優先し、利用できない環境では
@@ -412,8 +414,9 @@ def configure_gui_fonts(root: tk.Misc) -> None:
     if SUITE_TK_THEME is not None:
         GUI_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_BODY
         GUI_SMALL_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_SMALL
-        GUI_TITLE_FONT_SIZE = 14
-        GUI_HEADING_FONT_SIZE = 12
+        # Viewer と同じ大きさ（2026-11-21 に約 2 割大きくした）
+        GUI_TITLE_FONT_SIZE = 17
+        GUI_HEADING_FONT_SIZE = 14
     try:
         default_family = str(tkfont.nametofont("TkDefaultFont", root=root).actual("family"))
     except Exception:
@@ -1865,42 +1868,47 @@ class NavigatorApp:
 
         settings = ttk.LabelFrame(outer, text=_("入力・共通移動設定"), padding=10)
         settings.grid(row=1, column=0, sticky="ew")
-        # 2 列目を枠の幅まで広げる（区切り線と説明の文が、枠の幅いっぱいを使う）
-        settings.columnconfigure(1, weight=1)
+        # 設定は 2 つずつ横に並べる（2026-11-21。文字を大きくしても、窓が縦に長くなりすぎないように）。
+        # 右の組の後ろを枠の幅まで広げる（区切り線と説明の文が、枠の幅いっぱいを使う）
+        settings.columnconfigure(3, weight=1)
 
-        def setting_row(row: int, label: str, variable: tk.StringVar, width: int, unit: str, note: str):
-            ttk.Label(settings, text=label).grid(row=row, column=0, sticky="e", padx=(0, 10), pady=4)
+        def setting_row(row: int, pair: int, label: str, variable: tk.StringVar, width: int, unit: str, note: str):
+            column = pair * 2
+            ttk.Label(settings, text=label).grid(row=row, column=column, sticky="e",
+                                                 padx=((24 if pair else 0), 10), pady=4)
             group = ttk.Frame(settings)
-            group.grid(row=row, column=1, sticky="w", pady=4)
+            group.grid(row=row, column=column + 1, sticky="w", pady=4)
             entry = ttk.Entry(group, textvariable=variable, width=width)
             entry.pack(side="left")
             if unit:
                 ttk.Label(group, text=unit).pack(side="left", padx=(6, 0))
             if note:
-                ttk.Label(group, text=note, style="Muted.TLabel").pack(side="left", padx=(8, 0))
+                # 補足は長いとき（英語など）だけ折り返す（2 列にしても窓が横に広がりすぎないように）
+                ttk.Label(group, text=note, style="Muted.TLabel", wraplength=SETTING_NOTE_WRAP,
+                          justify="left").pack(side="left", padx=(8, 0))
             return entry
 
-        self.target_entry = setting_row(0, _("移動先"), self.target_var, 18, "", "537 / #269U")
-        setting_row(1, _("最終実スロット番号"), self.last_slot_var, 18, "", _("例: 810（最大1000）"))
+        self.target_entry = setting_row(0, 0, _("移動先"), self.target_var, 18, "", "537 / #269U")
+        setting_row(0, 1, _("最終実スロット番号"), self.last_slot_var, 18, "", _("例: 810（最大1000）"))
         ttk.Separator(settings, orient="horizontal").grid(
-            row=2, column=0, columnspan=2, sticky="ew", pady=8
+            row=1, column=0, columnspan=4, sticky="ew", pady=8
         )
-        setting_row(3, _("FH6切替後の待ち時間"), self.switch_delay_var, 10, "ms", _("前面化後に待機。初期値500"))
-        setting_row(4, _("キー間隔"), self.interval_var, 10, "ms", _("安定性を優先した初期値50"))
-        setting_row(5, _("横→上下の待ち時間"), self.turn_delay_var, 10, "ms", _("例: 200"))
-        setting_row(6, _("左循環後の追加待ち"), self.wrap_delay_var, 10, "ms", _("001→最終列の直後だけ。初期値400"))
+        setting_row(2, 0, _("FH6切替後の待ち時間"), self.switch_delay_var, 10, "ms", _("前面化後に待機。初期値500"))
+        setting_row(2, 1, _("キー間隔"), self.interval_var, 10, "ms", _("安定性を優先した初期値50"))
+        setting_row(3, 0, _("横→上下の待ち時間"), self.turn_delay_var, 10, "ms", _("例: 200"))
+        setting_row(3, 1, _("左循環後の追加待ち"), self.wrap_delay_var, 10, "ms", _("001→最終列の直後だけ。初期値400"))
         ttk.Separator(settings, orient="horizontal").grid(
-            row=7, column=0, columnspan=2, sticky="ew", pady=8
+            row=4, column=0, columnspan=4, sticky="ew", pady=8
         )
         reset_group = ttk.Frame(settings)
-        reset_group.grid(row=8, column=0, columnspan=2, sticky="w", pady=(0, 3))
+        reset_group.grid(row=5, column=0, columnspan=4, sticky="w", pady=(0, 3))
         ttk.Checkbutton(
             reset_group,
             text=_("移動前にマイデザインを開き直して #001U へ戻す（ESC → RET）"),
             variable=self.reset_origin_var,
         ).pack(side="left")
-        setting_row(9, _("ESC後の待ち時間"), self.reset_esc_delay_var, 10, "ms", _("初期値500"))
-        setting_row(10, _("RET後の待ち時間"), self.reset_ret_delay_var, 10, "ms", _("初期値1000。再入場後の待機"))
+        setting_row(6, 0, _("ESC後の待ち時間"), self.reset_esc_delay_var, 10, "ms", _("初期値500"))
+        setting_row(6, 1, _("RET後の待ち時間"), self.reset_ret_delay_var, 10, "ms", _("初期値1000。再入場後の待機"))
 
         self._follow_width(ttk.Label(
             settings,
@@ -1910,7 +1918,7 @@ class NavigatorApp:
             style="Muted.TLabel",
             wraplength=650,
             anchor="w",
-        )).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        )).grid(row=7, column=0, columnspan=4, sticky="ew", pady=(8, 0))
 
         integration = ttk.LabelFrame(outer, text=_("Livery Organizer for FH6 連携"), padding=9)
         integration.grid(row=2, column=0, sticky="ew", pady=(10, 0))

@@ -1051,12 +1051,12 @@ def configure_gui_fonts(root) -> None:
     if tkfont is None:
         return
     if SUITE_TK_THEME is not None:
-        # Viewer と同じ大きさ（本文 12px ≒ 9 ポイント、見出し 19px ≒ 14 ポイント）
+        # Viewer と同じ大きさ（本文 15px ≒ 11 ポイント、見出し 23px ≒ 17 ポイント。2026-11-21 に約 2 割大きくした）
         GUI_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_BODY
         GUI_SMALL_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_SMALL
         GUI_MONO_FONT_SIZE = SUITE_TK_THEME.FONT_SIZE_MONO
-        GUI_TITLE_FONT_SIZE = 14
-        GUI_HEADING_FONT_SIZE = 12
+        GUI_TITLE_FONT_SIZE = 17
+        GUI_HEADING_FONT_SIZE = 14
 
     try:
         default_family = str(tkfont.nametofont("TkDefaultFont", root=root).actual("family"))

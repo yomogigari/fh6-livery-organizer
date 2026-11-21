@@ -157,7 +157,9 @@ class BridgeWrapLengthTests(unittest.TestCase):
         build = source[source.index("    def _build_ui(self) -> None:"):source.index("    def _on_language_selected(")]
         # 説明の文 4 つ・移動計画・状態の行が、置かれた幅で折り返す
         self.assertEqual(build.count("self._follow_width("), 6)
-        self.assertIn("settings.columnconfigure(1, weight=1)", build)
+        # 設定は 2 つずつ横に並べ（4 列）、右の組の後ろを枠の幅まで広げる（2026-11-21）
+        self.assertIn("settings.columnconfigure(3, weight=1)", build)
+        self.assertEqual(build.count("setting_row(6, 1,"), 1)
         self.assertIn("plan_frame.columnconfigure(0, weight=1)", build)
         center = source[source.index("    def _center_window(self) -> None:"):]
         center = center[:center.index("\n    def ", 10)]
