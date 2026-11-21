@@ -18,6 +18,7 @@ from lo4fh6_desktop_suite.settings import (load_settings as load_suite_settings,
     update_settings as update_suite_settings, viewer_appearance_options, viewer_wheel_source)
 from lo4fh6_desktop_suite.theme import PALETTES
 from lo4fh6_desktop_suite.runtime import is_packaged, self_command
+import viewer_window_reuse as window_reuse
 
 ROOT = Path(__file__).resolve().parent
 BRIDGE = ROOT / "organizer_preview_bridge.py"
@@ -404,7 +405,9 @@ def _launcher_html(config: dict[str, str]) -> str:
     suite = _suite_preferences()
     initial_suite = json.dumps({'language': suite['ui'].get('language', 'ja'),
                                 'theme': suite['ui'].get('theme', 'system'),
-                                'warning': suite['warning'], 'appearance': suite['appearance']}, ensure_ascii=False).replace('<', '\\u003c')
+                                'warning': suite['warning'], 'appearance': suite['appearance'],
+                                'standby': window_reuse.standby_enabled(window_reuse.read_preview_settings())},
+                               ensure_ascii=False).replace('<', '\\u003c')
     palette_json = json.dumps(PALETTES, ensure_ascii=True)
     shared_css = _shared_ui_css()
     # 既存lo4fh6-ui.cssの変数だけを上書きし、rendererやGUIイベント構造は維持。
@@ -434,26 +437,16 @@ body{{margin:0}}
 main{{max-width:1040px;margin:0 auto;padding:10px 16px 8px;box-sizing:border-box}}h1{{font-size:19px;margin:0 0 4px}}p{{color:var(--lo4-text-muted);line-height:1.4;margin:0 0 5px}}
 .card{{padding:8px 12px;margin-top:7px}}.row{{display:grid;grid-template-columns:150px minmax(0,1fr) 66px;gap:8px;align-items:center;margin:5px 0}}.row>.lo4-button{{width:66px;min-width:66px;padding-left:7px;padding-right:7px}}
 label{{color:var(--lo4-text-control)}}input{{width:100%;min-width:0;box-sizing:border-box}}input[type=checkbox]{{width:auto;min-width:0}}
+.checkrow{{display:flex;gap:8px;align-items:center;margin:8px 0 2px}}
 .primary{{font-weight:700}}#status{{min-height:24px;color:var(--lo4-text-control)}}#status.error{{color:var(--lo4-danger-text)}}
-pre{{height:58px;overflow:auto;background:var(--lo4-panel-solid);border:1px solid var(--lo4-line);border-radius:var(--lo4-radius-panel);padding:10px;color:var(--lo4-text-muted);white-space:pre-wrap}}
+pre{{height:calc(10 * 1.45em);font-size:12px;line-height:1.45;overflow:auto;background:var(--lo4-panel-solid);border:1px solid var(--lo4-line);border-radius:var(--lo4-radius-panel);padding:10px;color:var(--lo4-text-muted);white-space:pre-wrap;margin:6px 0}}
 .small{{font-size:12px;color:var(--lo4-text-muted)}}
-@media(max-height:660px){{
- main{{padding:6px 12px 4px}}
- .card{{padding:5px 9px;margin-top:4px}}
- .row{{margin:3px 0}}
- pre{{height:34px}}
- p{{margin-bottom:2px}}
-}}
-@media(max-height:590px){{
- pre{{height:22px}}
- .card{{margin-top:3px}}
- .row{{margin:2px 0}}
-}}
 @media(max-width:700px){{.row{{grid-template-columns:1fr}}}}
 </style></head><body class="lo4-ui"><main><h1>Livery Viewer for FH6</h1>
 <div class="small" id="lo4fh6-gui-build-id" style="font-weight:700;margin:0 0 8px">{html.escape(_build_identity_label())}</div>
 <p data-i18n="description">Organizerと連携して3Dリバリーを表示します。Livery_* フォルダーを指定してください。</p>
-<div class="card lo4-card"><div class="toolbar lo4-toolbar"><button class="lo4-button" onclick="registerIntegration()" data-i18n="register">Organizer連携を登録</button><button class="lo4-button" onclick="unregisterIntegration()" data-i18n="unregister">連携登録を解除</button></div></div>
+<div class="card lo4-card"><div class="toolbar lo4-toolbar"><button class="lo4-button" onclick="registerIntegration()" data-i18n="register">Organizer連携を登録</button><button class="lo4-button" onclick="unregisterIntegration()" data-i18n="unregister">連携登録を解除</button></div>
+<label class="checkrow" for="standby"><input type="checkbox" id="standby"><span data-i18n="standby">Organizerの起動時に3Dプレビューを準備しておく（最初の表示が速くなります。裏でメモリーを使います）</span></label></div>
 <div class="card lo4-card"><div class="row"><label for="suite-language" data-i18n="language">言語</label><select class="lo4-select" id="suite-language"><option value="ja">日本語</option><option value="en">English</option></select><span></span></div>
 <div class="row"><label for="suite-theme" data-i18n="theme">表示テーマ</label><select class="lo4-select" id="suite-theme"><option value="system" data-i18n="system">システム設定</option><option value="light" data-i18n="light">ライト</option><option value="dark" data-i18n="dark">ダーク</option></select><span></span></div>
 </div>
@@ -468,8 +461,8 @@ pre{{height:58px;overflow:auto;background:var(--lo4-panel-solid);border:1px soli
 const INITIAL={initial};
 const INITIAL_SUITE={initial_suite};
 const I18N={{
- ja: {{description:'Organizerと連携して3Dリバリーを表示します。Livery_* フォルダーを指定してください。',language:'言語',theme:'表示テーマ',system:'システム設定',light:'ライト',dark:'ダーク',register:'Organizer連携を登録',unregister:'連携登録を解除',game:'FH6フォルダー',livery:'Livery_* フォルダー',output:'preview-cache',browse:'参照...',ready:'準備完了',log:'ログ',open:'3Dプレビューを開く',chooseGame:'FH6フォルダーを選択してください...',chooseLivery:'Livery_* フォルダーを選択してください...',chooseOutput:'preview-cache フォルダーを選択してください...',selectFailed:'フォルダー選択に失敗しました',registering:'連携を登録しています...',unregistering:'連携登録を解除しています...',opening:'3Dプレビューを開始しています...',registerFailed:'Organizer連携を登録できませんでした',unregisterFailed:'Organizer連携を解除できませんでした',registerDone:'Organizer連携を登録しました',unregisterDone:'Organizer連携を解除しました',openDone:'3Dプレビューを起動しました',saveDone:'共通表示設定を保存しました',sourceMaterial:'原本材質',neutralGrade:'色補正中立化',wheelMode:'車輪・タイヤ',wheelProxy:'従来の車輪',wheelStock:'原本車輪（タイヤ補完）',wheelVerified:'原本4輪＋タイヤ（ローカル原本・研究比較）',appearanceError:'描画設定を保存できませんでした'}},
- en: {{description:'Preview liveries in 3D and connect with Organizer. Choose a Livery_* folder to start.',language:'Language',theme:'Theme',system:'Follow system',light:'Light',dark:'Dark',register:'Register Organizer integration',unregister:'Remove Organizer integration',game:'FH6 folder',livery:'Livery_* folder',output:'preview-cache',browse:'Browse...',ready:'Ready',log:'Log',open:'Open 3D preview',chooseGame:'Choose your FH6 folder...',chooseLivery:'Choose a Livery_* folder...',chooseOutput:'Choose preview-cache folder...',selectFailed:'Folder selection failed',registering:'Registering Organizer integration...',unregistering:'Removing Organizer integration...',opening:'Launching 3D preview...',registerFailed:'Could not register Organizer integration',unregisterFailed:'Could not remove Organizer integration',registerDone:'Organizer integration registered',unregisterDone:'Organizer integration removed',openDone:'3D preview launched',saveDone:'Shared appearance saved',sourceMaterial:'Source materials',neutralGrade:'Neutral livery grade',wheelMode:'Wheels / tires',wheelProxy:'Legacy wheels',wheelStock:'Recovered wheel with neutral tire',wheelVerified:'Local original wheels + tires (research comparison)',appearanceError:'Could not save rendering settings'}}
+ ja: {{description:'Organizerと連携して3Dリバリーを表示します。Livery_* フォルダーを指定してください。',language:'言語',theme:'表示テーマ',system:'システム設定',light:'ライト',dark:'ダーク',register:'Organizer連携を登録',unregister:'連携登録を解除',game:'FH6フォルダー',livery:'Livery_* フォルダー',output:'preview-cache',browse:'参照...',ready:'準備完了',log:'ログ',open:'3Dプレビューを開く',chooseGame:'FH6フォルダーを選択してください...',chooseLivery:'Livery_* フォルダーを選択してください...',chooseOutput:'preview-cache フォルダーを選択してください...',selectFailed:'フォルダー選択に失敗しました',registering:'連携を登録しています...',unregistering:'連携登録を解除しています...',opening:'3Dプレビューを開始しています...',registerFailed:'Organizer連携を登録できませんでした',unregisterFailed:'Organizer連携を解除できませんでした',registerDone:'Organizer連携を登録しました',unregisterDone:'Organizer連携を解除しました',openDone:'3Dプレビューを起動しました',saveDone:'共通表示設定を保存しました',sourceMaterial:'原本材質',neutralGrade:'色補正中立化',wheelMode:'車輪・タイヤ',wheelProxy:'従来の車輪',wheelStock:'原本車輪（タイヤ補完）',wheelVerified:'原本4輪＋タイヤ（ローカル原本・研究比較）',appearanceError:'描画設定を保存できませんでした',standby:'Organizerの起動時に3Dプレビューを準備しておく（最初の表示が速くなります。裏でメモリーを使います）',standbyDone:'Organizerの起動時の準備の設定を保存しました',standbyError:'設定を保存できませんでした'}},
+ en: {{description:'Preview liveries in 3D and connect with Organizer. Choose a Livery_* folder to start.',language:'Language',theme:'Theme',system:'Follow system',light:'Light',dark:'Dark',register:'Register Organizer integration',unregister:'Remove Organizer integration',game:'FH6 folder',livery:'Livery_* folder',output:'preview-cache',browse:'Browse...',ready:'Ready',log:'Log',open:'Open 3D preview',chooseGame:'Choose your FH6 folder...',chooseLivery:'Choose a Livery_* folder...',chooseOutput:'Choose preview-cache folder...',selectFailed:'Folder selection failed',registering:'Registering Organizer integration...',unregistering:'Removing Organizer integration...',opening:'Launching 3D preview...',registerFailed:'Could not register Organizer integration',unregisterFailed:'Could not remove Organizer integration',registerDone:'Organizer integration registered',unregisterDone:'Organizer integration removed',openDone:'3D preview launched',saveDone:'Shared appearance saved',sourceMaterial:'Source materials',neutralGrade:'Neutral livery grade',wheelMode:'Wheels / tires',wheelProxy:'Legacy wheels',wheelStock:'Recovered wheel with neutral tire',wheelVerified:'Local original wheels + tires (research comparison)',appearanceError:'Could not save rendering settings',standby:'Prepare the 3D preview when Organizer starts (faster first preview; uses memory in the background)',standbyDone:'Organizer startup preparation setting saved',standbyError:'Could not save the setting'}}
 }};
 const languageInput=document.getElementById('suite-language');
 const themeInput=document.getElementById('suite-theme');
@@ -479,7 +472,20 @@ function applySuiteUi(language,theme){{
   document.documentElement.lang=lang;
   document.body.dataset.suiteTheme=theme;
   for(const node of document.querySelectorAll('[data-i18n]'))node.textContent=I18N[lang][node.dataset.i18n]||node.textContent;
+  requestAnimationFrame(fitWindow);
 }}
+// 窓の大きさを中身に合わせる（2026-11-21）。中身の下の端を測って Python に渡し、Python が枠の分を足して窓を変える。
+// 読み終わったとき・文字が読み込まれたとき・言語を変えたとき（文の長さで折り返しが変わる）に合わせ直す。
+async function fitWindow(){{
+  try{{
+    if(!(window.pywebview&&window.pywebview.api&&window.pywebview.api.fit_window))return;
+    const main=document.querySelector('main');
+    const needHeight=Math.ceil(main.getBoundingClientRect().bottom+window.scrollY);
+    const needWidth=Math.max(document.documentElement.scrollWidth,window.innerWidth);
+    await window.pywebview.api.fit_window(needWidth,needHeight,window.innerWidth,window.innerHeight);
+  }}catch(e){{}}
+}}
+window.addEventListener('pywebviewready',()=>{{(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(fitWindow))}});
 languageInput.value=INITIAL_SUITE.language==='en'?'en':'ja';
 themeInput.value=['light','dark','system'].includes(INITIAL_SUITE.theme)?INITIAL_SUITE.theme:'system';
 applySuiteUi(languageInput.value,themeInput.value);
@@ -500,6 +506,17 @@ async function persistSuiteUi(){{
 }}
 languageInput.addEventListener('change',()=>persistSuiteUi().catch(e=>status(String(e),true)));
 themeInput.addEventListener('change',()=>persistSuiteUi().catch(e=>status(String(e),true)));
+// Organizer の起動時に Viewer を温めておくか（共有の設定 viewer_standby_with_organizer、既定はオン。2026-11-21）
+const standbyInput=document.getElementById('standby');
+standbyInput.checked=INITIAL_SUITE.standby!==false;
+standbyInput.addEventListener('change',async()=>{{
+  const wanted=standbyInput.checked;
+  try {{
+    const r=await pywebview.api.save_standby(wanted);
+    if(!(r&&r.ok)){{standbyInput.checked=!wanted;status((r&&r.message)||tr('standbyError'),true);return;}}
+    status(tr('standbyDone'));
+  }} catch(e) {{standbyInput.checked=!wanted;status(String(e),true)}}
+}});
 // 原本材質と色補正中立化は標準機能。GUIから切替えず、古い設定は読み取り専用で保全。
 const game=document.getElementById('game'), source=document.getElementById('source'), output=document.getElementById('output'), statusEl=document.getElementById('status'), logEl=document.getElementById('log');
 game.value=INITIAL.game_folder||'';source.value=INITIAL.last_livery_folder||'';output.value=INITIAL.output_root||'';
@@ -530,12 +547,67 @@ window.addEventListener('beforeunload',()=>{{pywebview.api.save_settings(source.
 </script></body></html>'''
 
 
+def _work_area_logical() -> tuple[int, int]:
+    """作業領域（タスクバーを除いた主の画面）の大きさ。pywebview と同じ、拡大率を掛ける前の値。分からなければ (0, 0)。"""
+    if sys.platform != "win32":
+        return 0, 0
+    try:
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        rect = wintypes.RECT()
+        if not user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):  # SPI_GETWORKAREA
+            return 0, 0
+        hdc = user32.GetDC(0)
+        try:
+            dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88) or 96  # LOGPIXELSX
+        finally:
+            user32.ReleaseDC(0, hdc)
+        scale = max(1.0, dpi / 96.0)
+        return int((rect.right - rect.left) / scale), int((rect.bottom - rect.top) / scale)
+    except Exception:  # noqa: BLE001
+        return 0, 0
+
+
 class LauncherApi:
     def __init__(self) -> None:
         # Keep the pywebview Window private.  pywebview introspects public
         # js_api members recursively; exposing the Window object causes it to
         # walk native WebView2/Accessibility COM objects from a worker thread.
         self._window: Any = None
+
+    def fit_window(self, need_width: Any, need_height: Any, inner_width: Any, inner_height: Any) -> dict[str, Any]:
+        """窓の大きさを、ページが測った中身の大きさ（CSS の px）に合わせる（2026-11-21）。
+
+        枠の分は「今の窓の大きさ − ページの見える大きさ」で求める（pywebview の大きさは、拡大率を掛ける前の値で、
+        CSS の px と同じ尺度）。作業領域（タスクバーを除いた画面）より大きくしない。差が小さければ変えない。
+        """
+        window = self._window
+        if window is None:
+            return {"ok": False, "message": "window is not ready"}
+        try:
+            numbers = [int(round(float(value))) for value in (need_width, need_height, inner_width, inner_height)]
+        except (TypeError, ValueError):
+            return {"ok": False, "message": "invalid size"}
+        if min(numbers) <= 0 or max(numbers) > 20000:
+            return {"ok": False, "message": "invalid size"}
+        need_w, need_h, inner_w, inner_h = numbers
+        try:
+            outer_w, outer_h = int(window.width), int(window.height)
+        except Exception as exc:  # noqa: BLE001  大きさを読めなければ変えない
+            return {"ok": False, "message": str(exc)}
+        target_w = need_w + max(0, outer_w - inner_w)
+        target_h = need_h + max(0, outer_h - inner_h)
+        work_w, work_h = _work_area_logical()
+        if work_w > 0 and work_h > 0:
+            target_w, target_h = min(target_w, work_w), min(target_h, work_h)
+        if abs(target_w - outer_w) <= 2 and abs(target_h - outer_h) <= 2:
+            return {"ok": True, "resized": False, "width": outer_w, "height": outer_h}
+        try:
+            window.resize(target_w, target_h)
+        except Exception as exc:  # noqa: BLE001  変えられなければ今の大きさのまま
+            return {"ok": False, "message": str(exc)}
+        return {"ok": True, "resized": True, "width": target_w, "height": target_h}
 
     @staticmethod
     def _folder_dialog_type(webview_module: Any) -> Any:
@@ -624,6 +696,17 @@ class LauncherApi:
         except (OSError, ValueError, TypeError, TimeoutError) as exc:
             return {'ok': False, 'message': '共通表示設定を保存できません: ' + str(exc)}
 
+    def save_standby(self, enabled: bool) -> dict[str, Any]:
+        """Organizer の起動時に Viewer を温めておくか（共有の設定 viewer_standby_with_organizer。2026-11-21）。"""
+        if not isinstance(enabled, bool):
+            return {'ok': False, 'message': '未対応の設定です'}
+        try:
+            from organizer_preview_database import update_shared_settings
+            update_shared_settings({window_reuse.STANDBY_SETTING: enabled})
+            return {'ok': True}
+        except (OSError, ValueError, TypeError) as exc:
+            return {'ok': False, 'message': '設定を保存できません: ' + str(exc)}
+
     def save_settings(self, source: str, game_folder: str, output_root: str) -> dict[str, Any]:
         save_config({
             "game_folder": game_folder,
@@ -690,9 +773,11 @@ def main() -> int:
     window = webview.create_window(
         _window_title(),
         html=_launcher_html(load_config()),
+        # 最初の大きさは目安（日本語・拡大率 100% で合わせた後の高さ 約 774 より少し大きい値。最初に中身が切れて
+        # 見えず、起動直後に窓が大きく縮んで見えないように）。読み終わったら、ページが中身に合わせ直す（fit_window、2026-11-21）
         width=1040,
-        height=680,
-        min_size=(840, 640),
+        height=780,
+        min_size=(720, 480),
         js_api=api,
         text_select=True,
     )

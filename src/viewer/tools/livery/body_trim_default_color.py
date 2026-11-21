@@ -17,6 +17,7 @@
 外部製品（参照のみ）：参照製品（MaterialBin/MTPR、SwatchBinの形式）。
 """
 from __future__ import annotations
+from .png_settings import PNG_COMPRESS_LEVEL
 
 import hashlib
 import json
@@ -27,6 +28,7 @@ from pathlib import Path
 
 from . import wheel_morph_internal as wm
 from .material_runtime import (
+    _zip_file,
     scoped_memo,
     shared_archive_reads,
     _material_source,
@@ -148,7 +150,8 @@ class _TextureReader:
             path = self.content_root / "media" / "cars" / "_library" / "Textures.zip"
             if not path.is_file():
                 return None
-            self.archive = zipfile.ZipFile(path)
+            # 目録を覚える仕組みで開く（Textures.zip の目録は数万項目で約 0.3 秒。準備の中の別の所と共有する。2026-11-21）
+            self.archive = _zip_file(path)
         found = _strict_scoped_zip_member(self.archive, member)
         return ("zip", self.archive, found) if found else None
 
@@ -182,7 +185,7 @@ class _TextureReader:
         if cars.is_dir() and all(ch.isalnum() or ch in "_-" for ch in car_folder):
             matches = [path for path in cars.glob("*.zip") if path.stem.casefold() == car_folder]
             if len(matches) == 1:
-                archive = zipfile.ZipFile(matches[0])
+                archive = _zip_file(matches[0])
                 found = (archive, {name.replace("\\", "/").casefold(): name for name in archive.namelist()})
         self.other_archives[car_folder] = found
         return found
@@ -400,22 +403,46 @@ TEXTURE_MAX_SIZE = 512
 # ベースカラーの BC7 の画像は、PNG にせず、ゲームの BC7（ミップ付き）のまま GPU へ渡す（2026-11-20、FH6 に近づける
 # 案 ①）。名前は原本の SHA-256 と .bc7 で、ファイルは書かない（サーバーが原本から読む）。一番上の段の色は PNG と
 # 同じ（BC7 の復号は規格どおり。透明度は不透明の材質では効かない）。ミップはゲームのもの。
+# TEXTURE_MAX_SIZE より大きい画像は、ゲームのミップのうち TEXTURE_MAX_SIZE 以下の最初の段から渡す（2026-11-21。
+# 以前は縮めた PNG にしていた）。
 BC7_PASSTHROUGH_SUFFIX = ".bc7"
 _BC7_ENCODING = 9
+# ゲームの画像の形（swatch の encoding）と、Viewer へそのまま渡すときの名前・4×4 の塊のバイト数（RGBA8 は塊なし）。
+# encoding 3 は BC4（1 チャンネル。fh6_swatch の DXGI 80）。
+_BC4_ENCODING = 3
+_RGBA8_ENCODING = 13
+_PASSTHROUGH_FORMATS = {_BC7_ENCODING: ("bc7", 16), _BC4_ENCODING: ("bc4", 8), _RGBA8_ENCODING: ("rgba8", None)}
+# ラベルの元の画像の大きさの上限（Viewer の GPU の画像の大きさの上限より小さく）
+LABEL_PART_MAX_SIZE = 4096
 
 
-def bc7_chain_bytes(width: int, height: int) -> int:
-    """BC7 の 1×1 までの全段の大きさ（4×4 の塊ごとに 16 バイト）。"""
+def chain_bytes(width: int, height: int, block_bytes: int) -> int:
+    """4×4 の塊の形（BC7 は 16 バイト、BC4 は 8 バイト）の、1×1 までの全段の大きさ。"""
     total, w, h = 0, int(width), int(height)
     while True:
-        total += max(1, (w + 3) // 4) * max(1, (h + 3) // 4) * 16
+        total += max(1, (w + 3) // 4) * max(1, (h + 3) // 4) * block_bytes
         if w == 1 and h == 1:
             return total
         w, h = max(1, w // 2), max(1, h // 2)
 
 
+def bc7_chain_bytes(width: int, height: int) -> int:
+    """BC7 の 1×1 までの全段の大きさ（4×4 の塊ごとに 16 バイト）。"""
+    return chain_bytes(width, height, 16)
+
+
+def _tail_chain(width: int, height: int, pixels: bytes, block_bytes: int, max_size: int) -> tuple[int, int, bytes]:
+    """全段のうち、幅と高さが max_size 以下になる最初の段から後ろ（幅・高さ・画素）。"""
+    offset, w, h = 0, width, height
+    while max(w, h) > max_size:
+        offset += max(1, (w + 3) // 4) * max(1, (h + 3) // 4) * block_bytes
+        w, h = max(1, w // 2), max(1, h // 2)
+    return w, h, bytes(pixels[offset:])
+
+
 def bc7_passthrough_surface(data: bytes) -> tuple[int, int, bytes] | None:
-    """BC7 のまま渡せる画像なら（幅, 高さ, 全段の画素）。BC7 でない・並べ替えあり・大きすぎ・段が欠けていれば None。"""
+    """BC7 のまま渡せる画像なら（幅, 高さ, 全段の画素）。TEXTURE_MAX_SIZE より大きければ、その大きさ以下の最初の段から。
+    BC7 でない・並べ替えあり・段が欠けていれば None。"""
     from .fh6_swatch import read_swatch_surface
     surface = read_swatch_surface(data)
     pixels = surface.get("pixels")
@@ -423,11 +450,35 @@ def bc7_passthrough_surface(data: bytes) -> tuple[int, int, bytes] | None:
             or int(surface.get("encoding") if surface.get("encoding") is not None else -1) != _BC7_ENCODING):
         return None
     width, height = int(surface.get("width") or 0), int(surface.get("height") or 0)
-    if width < 1 or height < 1 or max(width, height) > TEXTURE_MAX_SIZE:
+    if width < 1 or height < 1 or max(width, height) > LABEL_PART_MAX_SIZE:
         return None
     if len(pixels) != bc7_chain_bytes(width, height):
         return None
-    return width, height, bytes(pixels)
+    return _tail_chain(width, height, bytes(pixels), 16, TEXTURE_MAX_SIZE)
+
+
+def passthrough_part_surface(data: bytes) -> dict | None:
+    """ラベルの元の画像 1 枚を、ゲームの形のまま Viewer へ渡せるなら {format, width, height, pixels}。
+    BC7・BC4 は 1×1 までの全段、RGBA8 は一番上の段。ほかの形・並べ替えあり・段が欠けている・大きすぎれば None。"""
+    from .fh6_swatch import read_swatch_surface
+    surface = read_swatch_surface(data)
+    pixels = surface.get("pixels")
+    encoding = surface.get("encoding")
+    kind = _PASSTHROUGH_FORMATS.get(int(encoding) if encoding is not None else -1)
+    if not surface.get("supported_bundle") or not pixels or int(surface.get("tiled_flag") or 0) or kind is None:
+        return None
+    width, height = int(surface.get("width") or 0), int(surface.get("height") or 0)
+    if width < 1 or height < 1 or max(width, height) > LABEL_PART_MAX_SIZE:
+        return None
+    name, block_bytes = kind
+    if block_bytes is not None:
+        if len(pixels) != chain_bytes(width, height, block_bytes):
+            return None
+        return {"format": name, "width": width, "height": height, "pixels": bytes(pixels)}
+    size = width * height * 4
+    if len(pixels) < size:
+        return None
+    return {"format": name, "width": width, "height": height, "pixels": bytes(pixels[:size])}
 
 
 def _export_texture_png(reader: _TextureReader, game_ref: str, output_dir: Path | None) -> str | None:
@@ -466,62 +517,134 @@ def _export_texture_png(reader: _TextureReader, game_ref: str, output_dir: Path 
                              Image.LANCZOS)
     output_dir.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(".png.tmp")
-    image.save(temporary, format="PNG")
+    image.save(temporary, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
     temporary.replace(target)
     return name
 
 
 LABEL_TEXTURE_MAX_SIZE = 1024
+# ラベルの記号は、PNG にせず、元の 2 枚（色の画像と透明度の画像）をゲームの形のまま Viewer へ渡し、Viewer の GPU で
+# 1 回だけ合わせる（2026-11-21、FH6 に近づける案 ① の続き。全ペイントの撮影で 2,584 枚・227 MB の PNG だった）。
+# 名前は入力の SHA-256 と .label で、ファイルは書かない（サーバーが原本から読む）。合わせ方は PNG と同じ
+# （compose_label_image）。どちらかがゲームの形のまま渡せないときだけ、今までどおり PNG を書く。
+LABEL_PASSTHROUGH_SUFFIX = ".label"
 
 
-def _export_label_texture_png(reader: _TextureReader, base_ref: str | None, alpha_ref: str | None,
-                              override_linear: list[float] | None, output_dir: Path | None) -> str | None:
-    """ラベルの記号を RGBA の PNG（最大1024px）で書き出し、ファイル名（入力の SHA256）を返す。
-
-    色：上書きの色（BaseColor_OverrideColorParam、線形→sRGB）があればその色、無ければ BaseColorAlpha_Texture の色。
-    透明度：BaseColorAlpha_Texture の α × Alpha_Texture（1チャンネル）。どちらかが無ければ有る方だけを使う。
-    """
-    if output_dir is None or (base_ref is None and alpha_ref is None):
-        return None
-    from PIL import Image
-
-    from .fh6_swatch import decode_swatch_image
-
-    base_data = reader.read(base_ref) if base_ref else None
-    alpha_data = reader.read(alpha_ref) if alpha_ref else None
-    if base_data is None and alpha_data is None:
-        return None
+def _label_key(base_data: bytes | None, alpha_data: bytes | None, override_linear: list[float] | None) -> str:
     key = hashlib.sha256()
     for part in (base_data or b"", b"|", alpha_data or b"", b"|", repr(override_linear).encode("ascii")):
         key.update(part)
-    name = key.hexdigest() + ".png"
-    target = output_dir / name
-    if target.is_file():
-        return name
-    base = decode_swatch_image(base_data, mode="RGBA")[0] if base_data is not None else None
-    alpha = decode_swatch_image(alpha_data)[0] if alpha_data is not None else None
-    if base is None and alpha is None:
-        return None
-    sizes = [image.size for image in (base, alpha) if image is not None]
+    return key.hexdigest()
+
+
+def label_size(sizes: list[tuple[int, int]]) -> tuple[int, int]:
+    """ラベルの出来上がりの大きさ（2 枚の大きい方。LABEL_TEXTURE_MAX_SIZE を超えれば縦横比を保って縮める）。"""
     width, height = max(s[0] for s in sizes), max(s[1] for s in sizes)
     if max(width, height) > LABEL_TEXTURE_MAX_SIZE:
         scale = LABEL_TEXTURE_MAX_SIZE / max(width, height)
         width, height = max(1, round(width * scale)), max(1, round(height * scale))
+    return width, height
+
+
+def label_override_srgb8(override_linear: list[float] | None) -> list[int] | None:
+    """上書きの色（線形）の sRGB の 8 ビットの値。無ければ None。"""
+    if override_linear is None:
+        return None
+    return [round(_linear_to_srgb(min(1.0, max(0.0, float(v)))) * 255) for v in override_linear[:3]]
+
+
+def compose_label_image(base_data: bytes | None, alpha_data: bytes | None, override_srgb8: list[int] | None):
+    """ラベルの記号の RGBA の画像（PIL。最大1024px）。読めなければ None。
+
+    色：上書きの色（BaseColor_OverrideColorParam の sRGB の 8 ビット）があればその色、無ければ BaseColorAlpha_Texture の色。
+    透明度：BaseColorAlpha_Texture の α × Alpha_Texture（1チャンネル）。どちらかが無ければ有る方だけを使う。
+    """
+    from PIL import Image
+
+    from .fh6_swatch import decode_swatch_image
+
+    base = decode_swatch_image(base_data, mode="RGBA")[0] if base_data is not None else None
+    alpha = decode_swatch_image(alpha_data)[0] if alpha_data is not None else None
+    if base is None and alpha is None:
+        return None
+    width, height = label_size([image.size for image in (base, alpha) if image is not None])
     base = (base.convert("RGBA").resize((width, height), Image.LANCZOS) if base is not None
             else Image.new("RGBA", (width, height), (255, 255, 255, 255)))
     red, green, blue, base_alpha = base.split()
-    if override_linear is not None:
-        rgb = tuple(round(_linear_to_srgb(min(1.0, max(0.0, float(v)))) * 255) for v in override_linear[:3])
-        red, green, blue = (Image.new("L", (width, height), value) for value in rgb)
+    if override_srgb8 is not None:
+        red, green, blue = (Image.new("L", (width, height), int(value)) for value in override_srgb8[:3])
     if alpha is not None:
         mask = alpha.convert("RGB").split()[0].resize((width, height), Image.LANCZOS)
         from PIL import ImageChops
         base_alpha = ImageChops.multiply(base_alpha, mask)
+    return Image.merge("RGBA", (red, green, blue, base_alpha))
+
+
+def _export_label_texture_png(reader: _TextureReader, base_ref: str | None, alpha_ref: str | None,
+                              override_linear: list[float] | None, output_dir: Path | None) -> str | None:
+    """ラベルの記号を RGBA の PNG（最大1024px）で書き出し、ファイル名（入力の SHA256）を返す
+    （元の 2 枚のどちらかがゲームの形のまま渡せないとき。合わせ方は compose_label_image）。"""
+    if output_dir is None or (base_ref is None and alpha_ref is None):
+        return None
+    base_data = reader.read(base_ref) if base_ref else None
+    alpha_data = reader.read(alpha_ref) if alpha_ref else None
+    if base_data is None and alpha_data is None:
+        return None
+    name = _label_key(base_data, alpha_data, override_linear) + ".png"
+    target = output_dir / name
+    if target.is_file():
+        return name
+    image = compose_label_image(base_data, alpha_data, label_override_srgb8(override_linear))
+    if image is None:
+        return None
     output_dir.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(".png.tmp")
-    Image.merge("RGBA", (red, green, blue, base_alpha)).save(temporary, format="PNG")
+    image.save(temporary, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
     temporary.replace(target)
     return name
+
+
+def _label_passthrough(reader: _TextureReader, base_ref: str | None, alpha_ref: str | None,
+                       override_linear: list[float] | None, output_dir: Path | None) -> dict | None:
+    """ラベルを元の 2 枚のまま Viewer へ渡すための {file, label}。
+
+    label：出来上がりの大きさ（PNG と同じ決め方）・上書きの色（sRGB の 8 ビット）・各画像（参照・SHA-256・ZIP の中の
+    位置・形・大きさ）。どちらかがゲームの形のまま渡せなければ None（呼び出し側が PNG を書く）。
+    """
+    if output_dir is None or (base_ref is None and alpha_ref is None):
+        return None
+    datas = {"base": reader.read(base_ref) if base_ref else None,
+             "alpha": reader.read(alpha_ref) if alpha_ref else None}
+    if datas["base"] is None and datas["alpha"] is None:
+        return None
+    parts: dict[str, dict] = {}
+    for part, ref in (("base", base_ref), ("alpha", alpha_ref)):
+        data = datas[part]
+        if data is None:
+            continue
+        surface = passthrough_part_surface(data)
+        # 色の画像は BC7 か RGBA8 だけ（1 チャンネルの BC4 の色の画像は、灰色の sRGB の扱いを PNG と合わせられないので
+        # PNG にする。実原本の 40 台では無かった）
+        if surface is None or (part == "base" and surface["format"] == "bc4"):
+            return None
+        entry = {"ref": ref, "sha256": _sha(data), "format": surface["format"],
+                 "width": surface["width"], "height": surface["height"]}
+        location = reader.locate(ref)
+        if location is not None:
+            entry["location"] = location
+        parts[part] = entry
+    key = _label_key(datas["base"], datas["alpha"], override_linear)
+    width, height = label_size([(entry["width"], entry["height"]) for entry in parts.values()])
+    # 以前の版が書いた同じラベルの PNG は、もう使わないので消す（参照する古い解析は作り直される）
+    old = output_dir / (key + ".png")
+    try:
+        if old.is_file() and not old.is_symlink():
+            old.unlink()
+    except OSError:
+        pass
+    return {"file": key + LABEL_PASSTHROUGH_SUFFIX,
+            "label": {"width": width, "height": height,
+                      "override_srgb8": label_override_srgb8(override_linear), "parts": parts}}
 
 
 def _parameter_rgb(effective: dict, name: str) -> list[float] | None:
@@ -664,15 +787,25 @@ def _resolve(archive: zipfile.ZipFile, index: dict[str, str], entry: str, materi
                        "opacity": round(max(0.05, min(1.0, opacity)), 3),
                        "approximation": "label-symbols-averaged"})
         # 記号そのものを貼るための RGBA の Texture（色は上書きの色か BaseColorAlpha、透明度は両 Texture）。
+        # 元の 2 枚をゲームの形のまま渡せれば、Viewer の GPU で合わせる（名前は .label、PNG は書かない。2026-11-21）。
+        # 渡せなければ、今までどおり合わせた PNG を書く。
         # UV は材質の UVChoice_OnCh1_OffCh2Bool（実原本の全ラベルで真＝CH1＝GLBのTEXCOORD_0）。
         # 平均色と不透明度は従来どおり残し、Texture を読めない場合は Viewer がそれで描く。
         choice = (effective.get("UVChoice_OnCh1_OffCh2Bool") or {}).get("value")
-        texture_file = (_export_label_texture_png(
-            reader, textures.get("BaseColorAlpha_Texture"), textures.get("Alpha_Texture"),
-            override_color, texture_output_dir) if isinstance(choice, bool) else None)
+        texture_file, label = None, None
+        if isinstance(choice, bool):
+            base_ref, alpha_ref = textures.get("BaseColorAlpha_Texture"), textures.get("Alpha_Texture")
+            passthrough = _label_passthrough(reader, base_ref, alpha_ref, override_color, texture_output_dir)
+            if passthrough is not None:
+                texture_file, label = passthrough["file"], passthrough["label"]
+            else:
+                texture_file = _export_label_texture_png(reader, base_ref, alpha_ref, override_color,
+                                                         texture_output_dir)
         if texture_file:
             record["texture"] = {"file": texture_file, "uv_channel": 0 if choice else 1, "repeat": [1.0, 1.0],
                                  "tint_rgba_hex": "#ffffffff", "alpha": True}
+            if label is not None:
+                record["texture"]["label"] = label
             record["approximation"] = None
         return record, ""
     if family.startswith("car_carbonfiber"):

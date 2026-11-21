@@ -8,10 +8,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import marshal
 import struct
+import threading
+from collections import OrderedDict
 from pathlib import Path
 from zipfile import ZipFile
 import numpy as np
+from . import bytes_memo
 from .portable_mesh_converter import adopt_firstparty_chassis_metadata, seal_firstparty_chassis_metadata
 
 KEYS = ('front_left', 'front_right', 'rear_left', 'rear_right')
@@ -35,10 +39,49 @@ def _standard_four_corner_flags(doc) -> set:
 
 
 def digest(b: bytes) -> str:
-    return hashlib.sha256(b).hexdigest()
+    # 同じ bytes のオブジェクトの SHA は覚えた値を使う（bytes_memo、2026-11-21）
+    return bytes_memo.sha256_hex(b)
+
+
+def release_tire_stage_memos() -> None:
+    """タイヤの段で覚えた GLB（解析の結果・SHA・書いたばかりのファイル）を捨てる（2026-11-21）。
+
+    Viewer は窓を閉じても残るので、段が終わったら持ち続けない（次の車の GLB は中身が違うので、覚えても使わない）。
+    """
+    with _READ_GLB_LOCK:
+        _READ_GLB_MEMO.clear()
+    bytes_memo.release()
+
+
+# 同じ中身の GLB を続けて読むとき（法線の GLB を作った直後の確かめと、次の段の入力など）、JSON の解析と旧名の
+# 取り込み（タイヤの GLB で約 0.3 秒）をやり直さない。中身の SHA ごとに直近の数件を覚え、読むたびに新しい木を
+# 作って渡す（呼ぶ側が書き換えても、覚えた物は変わらない）。marshal で書き出せない木は覚えない（2026-11-21）。
+_READ_GLB_MEMO: "OrderedDict[bytes, tuple[bytes, bytes]]" = OrderedDict()
+_READ_GLB_LIMIT = 2
+_READ_GLB_LOCK = threading.Lock()
 
 
 def read_glb(data: bytes):
+    key = bytes_memo.sha256_digest(data)
+    with _READ_GLB_LOCK:
+        found = _READ_GLB_MEMO.get(key)
+        if found is not None:
+            _READ_GLB_MEMO.move_to_end(key)
+    if found is not None:
+        return marshal.loads(found[0]), bytearray(found[1])
+    document, binary = _read_glb_uncached(data)
+    try:
+        stored = (marshal.dumps(document), bytes(binary))
+    except ValueError:
+        return document, binary
+    with _READ_GLB_LOCK:
+        _READ_GLB_MEMO[key] = stored
+        while len(_READ_GLB_MEMO) > _READ_GLB_LIMIT:
+            _READ_GLB_MEMO.popitem(last=False)
+    return document, binary
+
+
+def _read_glb_uncached(data: bytes):
     if len(data) < 28 or data[:4] != b'glTF' or struct.unpack_from('<I', data, 4)[0] != 2:
         raise ValueError('GLB 2.0以外は拒否')
     if struct.unpack_from('<I', data, 8)[0] != len(data):

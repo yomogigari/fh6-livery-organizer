@@ -1,28 +1,35 @@
 # Livery Viewer for FH6
 
 **Forza Horizon 6 のリバリーを、ご自身のゲームのローカルデータを使って 3D プレビューする非公式ツールです。**
-「Livery Organizer for FH6」から起動できるほか、Viewer 単独の GUI からも使えます。
+「Livery Organizer for FH6」のレポートから開くほか、Viewer 単独の設定画面からも使えます。
 
-> **配布・動作状況**：このソースは公開準備中です。動作確認はテスト版の段階で、環境によってはすぐに実行できるとは限りません。正式な配布物が公開された場合は、その配布物の手順・ライセンス表記・対応バージョンを優先してください。
+> **このフォルダーについて**：Livery Viewer for FH6 のソースです（Livery Organizer for FH6 の一部として配布します）。
+> このソースは公開準備中です。ソースから動かす場合は、環境によってはすぐに実行できるとは限りません。配布の EXE は、
+> Livery Organizer for FH6 の Releases の ZIP に入れます。配布物がある場合は、配布物の説明・ライセンス表記・
+> 対応バージョンを優先してください。
 
 ## できること
 
 - ご自身の FH6 のローカルデータから、車体・ホイール・タイヤとリバリーを 3D で表示する
 - マウス操作で車両を回転・拡大縮小して外観を確認する
-- Viewer 単独の GUI、または Livery Organizer for FH6 のレポートから起動する
+- Viewer 単独の設定画面、または Livery Organizer for FH6 のレポートから開く。次のペイントも同じ窓で開く
+  （同じ車のペイントなら、窓の中で約 1 秒で差し替える）
 - プレビュー画面の **「現在視点JPEG」「現在視点PNG」「6方向JPEG」「6方向PNG」** から画像を保存する
 
-車種・ペイント・保存データの状態によって、表示できない要素や未対応の図形があります。変換できない入力は推測で補わず、エラーとして表示します。
+車種・ペイント・保存データの状態によって、表示できない要素や未対応の図形があります。推測では補いません。
+表示を止めるほどでない物（ゲームに無いステッカー、GameDB が無いときのロゴや車輪など）は、省いたり簡易にしたり
+して、画面の上に注意を出します。それ以外の読めない入力は、エラーとして表示します。
 
 ## 動作環境
 
-- **Windows 11**（画面の表示に **Microsoft Edge WebView2** を使います）
-- **uv** と **Python 3.12**
-- **初回起動時のインターネット接続**：次の 2 つを自動で取得します。
-  - Python のパッケージ（Pillow・numpy・psutil・pywebview）：`uv` が取得します。
-  - 描画ライブラリ Three.js 0.185.1（MIT ライセンス）：npm の公式配布から取得し、7 ファイルの SHA-256 を照合してから
-    `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\dependencies\three-0.185.1` に置きます。
-    Three.js はソースのみの配布には含まれません。2 回目以降は、照合済みのファイルを使います。
+- **Windows 11**（画面の表示に **Microsoft Edge WebView2** を使います）と、**WebGL2 を使える GPU**
+- ソースから動かす場合：**uv** と **Python 3.12**
+- **インターネット接続（初めてだけ）**：
+  - 描画ライブラリ Three.js 0.185.1（MIT ライセンス）：初めて 3D プレビューを開くときに、npm の公式配布から取得し、
+    7 ファイルの SHA-256 を照合してから `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\dependencies\three-0.185.1`
+    に置きます。Three.js はソースのみの配布には含まれません（配布の EXE にも含めていません）。2 回目からは、照合済みの
+    ファイルを使います。
+  - ソースから動かす場合は、`uv` が Python のパッケージ（Pillow・numpy・psutil・pywebview）も取得します。
 - **Forza Horizon 6 のご自身のインストール**（`Content` フォルダー）と、プレビューしたい `Livery_<Car ID>_*` フォルダー
 - **GameDB（任意）**：復号済みの FH6 GameDB（SQLite）をご自身で用意すると、より正確に表示できます。
   - ゲームのロゴのステッカー：GameDB で画像を引きます。無いときは省いて表示します。
@@ -30,65 +37,142 @@
   - GameDB が無いために省いたり簡易にしたりしたときは、プレビュー画面の上に注意を表示します。
   - Viewer は GameDB を作成・復号せず、同梱もしません。用意の方法は案内していません。
 
-ゲーム本体・車両データ・ペイント・GameDB などの原本は、本ツールに同梱していません。ご自身が利用を認められたデータを指定してください。ゲームのファイルやセーブデータは読み取るだけで、書き換えません。
+ゲーム本体・車両データ・ペイント・GameDB などの原本は、本ツールに同梱していません。ご自身が利用を認められたデータを
+指定してください。ゲームのファイルやセーブデータは読み取るだけで、書き換えません。
 
-## GUI から 3D プレビューを開く
+### 自前の部品（速さのため）
+
+- 配布の EXE には、重い計算を速くする自前の部品 `tools\livery\native\lo4fh6_native.dll` が入っています
+  （Rust で作成。ソースは `tools/livery/native/lo4fh6_native`。外部のライブラリは使っていません）。
+- このソースのフォルダーには DLL を入れていません。DLL が無いときは Python で同じ計算をするので、表示までの時間が
+  長くなります（仕上がりは、目で見て同じ程度です）。
+- DLL は、ソースに記録した照合値（`tools/livery/native_kernels.py` の `DLL_SHA256`）と同じ物だけを読み込みます。
+  環境変数 `LO4FH6_NATIVE=0` を指定すると使いません。
+
+### 表示までの時間の目安
+
+開発用の PC（自前の部品あり）で測った値です。PC やペイントによって変わります。
+
+| 場面 | 時間 |
+| --- | --- |
+| この PC で初めて Viewer を開くとき | 15〜28 秒（ブラウザーが描画の部品を初めて作るため。次からは作った物を使います） |
+| 初めて開く車 | 約 10 秒 |
+| 同じ車の次のペイント | 約 1 秒 |
+
+自前の部品が無いとき（ソースから動かすとき）は、これより長くかかります。
+
+## 設定画面から 3D プレビューを開く
 
 1. このフォルダー（`src/viewer`）の `start-viewer-gui.cmd` を実行します。Viewer の設定画面が開きます。
 2. **「FH6フォルダー」** で、ゲームのインストール先、またはその中の `Content` フォルダーを指定します。
 3. **「Livery_* フォルダー」** で、対象のリバリーを指定します。
-4. **「3Dプレビューを開く」** を選びます。
+4. 必要なら **「preview-cache」** で、準備の結果を残す場所を変えます（既定は
+   `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache`。下の「キャッシュ」を参照）。
+5. **「3Dプレビューを開く」** を選びます。
 
-初回は、車両データの準備と Three.js の取得に時間がかかります。表示できない場合は、画面のエラーと、下の「問題が起きた場合」のログを確認してください。
+設定画面では、言語と表示テーマ（Organizer・Navigator Bridge と共通）も選べます。3D プレビューの画面は、共通の言語の設定ではなく、
+Windows の表示言語で始まり（日本語でなければ英語）、画面の上の「言語」で切り替えます。配色は暗い色だけです。表示できない場合は、画面のエラーと、
+下の「問題が起きた場合」の記録のファイルを確認してください。
 
 ## Livery Organizer for FH6 から開く
 
-Organizer のレポートにある 3D プレビューのリンクは、Windows の URI（`liveryorganizerpreviewforfh6:`）で Viewer を起動します。
+Organizer のレポートにある 3D プレビューのリンクは、Windows の URI（`liveryorganizerpreviewforfh6:`）で Viewer を
+起動します。
 
-1. Viewer の設定画面で **「Organizer連携を登録」** を選びます。
-   - 初回は、Viewer 専用の Python の環境（`%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\runtime`）を `uv` で作ります。
-   - 現在のユーザーのレジストリ（HKCU）に URI を登録します。登録する起動の命令は、その環境の `pythonw.exe`
-     （黒い窓を出さない Python）で、**登録を実行した Viewer のフォルダー**の `organizer_preview_bridge.py` を直接起動する
-     ものです（Navigator Bridge と同じ形）。
-2. Organizer でレポートを作り、3D プレビューのリンクを開きます。
+1. Viewer の設定画面で **「Organizer連携を登録」** を選びます。先に Viewer の置き場所を決めてから登録してください
+   （登録は、そのフォルダーの場所を記録します）。登録の後は、設定画面を閉じてかまいません。
+   - 現在のユーザーのレジストリ（HKCU）に URI を登録します。
+   - ソースから動かす場合は、初回に Viewer 専用の Python の環境（`%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\runtime`）
+     を `uv` で作り、その環境の `pythonw.exe`（黒い窓を出さない Python）で、**登録を実行した Viewer のフォルダー**の
+     `organizer_preview_bridge.py` を直接起動するように登録します（Navigator Bridge と同じ形）。
+2. Organizer でレポートを作り、3D プレビューのリンクを開きます。ブラウザーが外部のアプリを開く確認を出したら、許可して
+   ください。
 
-Viewer のフォルダーを移動・コピーした場合は、新しい場所の設定画面からもう一度 **「Organizer連携を登録」** を実行してください。登録を消すには **「連携登録を解除」** を選びます。Viewer 単独で使うだけなら、連携の登録は不要です。
+Viewer のフォルダーを移動・コピーした場合や、新しい版を別のフォルダーに展開した場合は、新しい場所の設定画面から
+もう一度 **「Organizer連携を登録」** を実行してください。登録を消すには **「連携登録を解除」** を選びます。Viewer 単独で
+使うだけなら、連携の登録は不要です。
 
-## 画像を保存する
+### 窓の使い回しと、裏で待つこと
 
-3D プレビューの画面で、次のいずれかを選びます。
+- 窓は 1 つを使い回します。次のペイントのリンクを開くと、同じ窓で切り替わります。
+- 窓を閉じても、Viewer は既定で **10 分間**、窓を隠して残ります。その間に次のリンクを開くと、速く開きます。
+  残っている間もメモリーを使います。時間は `preview-settings.json`（下の表）の `viewer_keep_alive_seconds`（秒。
+  0 で残さない）で変えられます。
+- **Organizer の起動時に準備しておく**：設定画面のチェック **「Organizerの起動時に3Dプレビューを準備しておく」** が
+  オン（既定）なら、Organizer を起動したときに、Viewer が窓を出さずに起動して待ちます（窓は作らず、Python の部品だけを
+  読み込んでおきます。メモリーは約 60 MB）。最初の 3D プレビューが少し速く開きます（開発用の PC で約 0.3 秒）。Organizer が
+  動いている間は残り、Organizer を閉じた後は、上の時間で終わります。オフにすると、この準備をしません。連携を登録して
+  いないときは働きません。
 
-- **現在視点JPEG / PNG**：表示中の視点を保存
-- **6方向JPEG / PNG**：左・前・右・後・上・下の 6 方向を 1 枚にまとめて保存
+## キャッシュ（preview-cache）
 
-保存先を選ぶダイアログが開きます。JPEG は品質 95 で保存します。保存できたかどうかは、保存先のファイルで確認してください。
+車ごとの準備の結果（車体の形・タイヤ・飾りの色など）と、ペイントの準備を残し、2 回目から速く開きます。
+
+- **場所**：Organizer から開くときは、レポートの出力先の中の `preview-cache`（既定は
+  `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache`）。設定画面から開くときは「preview-cache」の欄の場所。
+- **増えすぎないようにしていること**：
+  - ペイントの準備のフォルダーは、最近の 3 件だけ残します。ペイントを解読した結果は、最近の 30 件だけ残します
+    （Viewer を起動し直した後に、同じペイントを解読し直さないため）。
+  - 最近使った 3 台のほかの車は、車体の形を消し、次に開くときに作り直します（その分、少し時間がかかります）。
+  - 古い版の Viewer が作った物は、自動で消します（Viewer を起動して最初に開いた少し後に、1 回だけ確かめます）。
+- **大きさの目安**：開発用の PC で、全ペイント（999 件）を順に開いた後に約 0.7 GB でした。
+- **容量の上限（任意）**：`preview-settings.json` に `"vehicle_cache_limit_gb": 2` のように GB で書くと、Viewer を起動して
+  最初に開いた少し後に（起動ごとに 1 回）、上限の 90% を超えていれば 75% まで消します。表示中の車と、7 日以内に使った物は
+  消しません（そのため、上限を少し超えることがあります。続けて多くの車を開いたときは、次に起動するまで超えたままのことが
+  あります）。設定画面にはありません。
+- **消し方**：Viewer が終わっているとき（窓を閉じて 10 分たった後。Organizer の起動時の準備がオンなら、Organizer も
+  閉じた後）に、`preview-cache` のフォルダーを消してかまいません。次に開くときに作り直します。
 
 ## Viewer が使うローカルの場所
 
-すべて `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge` の下です。
-
 | 場所 | 内容 |
 | --- | --- |
-| `preview-settings.json` | Organizer と共有する設定（GameDB の場所など） |
-| `preview-bridge.log` | 起動・変換のログ（UTF-8） |
-| `dependencies\three-0.185.1` | 初回起動時に取得・照合した Three.js |
-| `runtime` | Organizer 連携の起動に使う Viewer 専用の Python の環境 |
+| `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json` | Viewer の設定（窓を残す時間 `viewer_keep_alive_seconds`・Organizer の起動時の準備 `viewer_standby_with_organizer`・容量の上限 `vehicle_cache_limit_gb`・以前の形の GameDB の場所） |
+| 同じフォルダーの `viewer-gui.json` | 設定画面の入力（FH6 フォルダーなど） |
+| 同じフォルダーの `preview-bridge.log` | 準備・起動の記録（UTF-8） |
+| 同じフォルダーの `viewer-gui.log`・`viewer-gui-quiet-startup.log` | 設定画面の記録 |
+| 同じフォルダーの `viewer-host.json` | 開いている Viewer の受付（Viewer が終わると消えます） |
+| 同じフォルダーの `webview-profile` | 窓（WebView2）の保存先。描画の部品を残し、2 回目から速くします。消すと、次はこの PC で初めて開くときと同じく時間がかかります |
+| 同じフォルダーの `dependencies\three-0.185.1` | 取得・照合した Three.js |
+| 同じフォルダーの `runtime` | Organizer 連携の起動に使う Python の環境（ソースから動かす場合） |
+| `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json` | Organizer・Navigator Bridge と共通の設定（言語・表示テーマ・フォルダー・GameDB の場所） |
+| `preview-cache` | 上の「キャッシュ」 |
 
-GameDB は、次の順に探します：環境変数 `LO4FH6_GAMEDB` → 共有の設定 `preview-settings.json` →
-`%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite`。
+GameDB は、次の順に探します。
+
+1. 起動の指定（Organizer のレポートが記録した場所を含む）
+2. 環境変数 `LO4FH6_GAMEDB`
+3. 共通の設定（`desktop-suite-settings.json`）の `paths.gamedb_file`
+4. Viewer の設定（`preview-settings.json`）の以前の形の記録
+5. `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite`
+6. 5 と同じフォルダーの `fh6-gamedb-*.sqlite`（新しい順）
+
+1・2 の場所が使えない（無い・SQLite でない・必要な表が無い）ときはエラーで止まり、3〜6 が使えないときは次を見ます。
 
 ## 問題が起きた場合
 
-- **GUI が起動しない**：Windows 11、Microsoft Edge WebView2、`uv`、Python 3.12 を確認してください。`start-viewer-gui.cmd` をコマンドプロンプトから実行すると、エラーを確認できます。
-- **初回起動で止まる**：インターネット接続を確認してください（Python パッケージと Three.js の取得）。Three.js の照合に失敗した場合は、取得したファイルを使わずに止まります。
+- **設定画面が起動しない**：Windows 11、Microsoft Edge WebView2、`uv`、Python 3.12 を確認してください。
+  `start-viewer-gui.cmd` をコマンドプロンプトから実行すると、エラーを確認できます。
+- **初めて 3D プレビューを開くときに止まる**：インターネット接続を確認してください（Three.js の取得。ソースから
+  動かす場合は Python のパッケージも）。Three.js の照合に失敗した場合は、取得したファイルを使わずに止まります。
 - **車両が表示されない**：FH6 フォルダー・`Livery_*` の指定とエラーを確認し、`preview-bridge.log` を確認してください。
 - **Organizer から起動しない**：Viewer を単独で起動できるか確認し、設定画面から連携を登録し直してください。
+  ブラウザーが外部のアプリを開く確認を出していないかも確認してください。
+- **窓を閉じても Viewer が終わらない**：窓を閉じても既定で 10 分は残ります。Organizer の起動時の準備がオンなら、
+  Organizer を閉じるまで残ります。すぐ終わらせたいときは、タスクマネージャーで終えてもかまいません。
 - **画像を保存できない**：保存先フォルダーへの書き込み権限を確認してください。
 
-不具合を報告するときは、配布バージョン・再現手順・エラーメッセージを添えてください。**ゲームの原本・個人のセーブデータ・非公開のペイントファイルは、公開の場所に添付しないでください。**
+不具合を報告するときは、版（設定画面の上と 3D の画面に出る「版: …」）・再現手順・エラーメッセージ・上の記録の
+ファイルを添えてください。**ゲームの原本・個人のセーブデータ・非公開のペイントファイルは、公開の場所に添付しないで
+ください。**
 
 ## 権利と注意事項
 
-本ツールは非公式のファンメイドツールです。Microsoft、Xbox、Turn 10 Studios、Playground Games とは提携・承認の関係にありません。ゲームに関する名称・商標・データの権利は、それぞれの権利者に帰属します。
+本ツールは非公式のファンメイドツールです。Microsoft、Xbox、Turn 10 Studios、Playground Games、Forza とは提携・
+承認の関係にありません。ゲームに関する名称・商標・データの権利は、それぞれの権利者に帰属します。
 
-第三者コンポーネントは Three.js（MIT ライセンス）だけで、初回起動時に公式配布から取得します。詳しくは `tools/livery-inspector/THIRD_PARTY.md` を参照してください。**このソースが公開されていることは、第三者のファイルやゲームデータの再配布許諾を意味しません。**
+このフォルダーには、第三者コンポーネントのファイルを置いていません。3D の描画に使う Three.js（MIT ライセンス）は、初めて 3D
+プレビューを開くときに公式配布から取得します（`tools/livery-inspector/THIRD_PARTY.md`）。ソースから動かす場合は、
+`uv` が Python のパッケージ（それぞれのライセンス）を取得します。配布の EXE に含まれる第三者の部品は、ZIP の
+`THIRD-PARTY-NOTICES.txt` を参照してください。**このソースが公開されていることは、第三者のファイルやゲームデータの
+再配布許諾を意味しません。**

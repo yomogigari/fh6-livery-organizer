@@ -4330,8 +4330,9 @@ def _main() -> int:
             f"{asset.model_code}-{asset.archive_mtime_ns}-{firstparty_cache_id}.local-chassis-v{LOCAL_CHASSIS_FORMAT_REVISION}.glb"
         )
         wheel_morph_sidecar = None
-    # 最近使っていない車の車体の GLB は、圧縮した写しだけを残している（tools/livery/chassis_store.py。2026-11-20）。
-    # 無ければ元の場所・元の更新日時で戻してから使い、最後に使った印を付ける。
+    # 最近使っていない車の車体の GLB は、消して、消した印だけを残している（tools/livery/chassis_store.py。2026-11-21）。
+    # 以前の版の圧縮した写しがあれば元の場所・元の更新日時で戻してから使い、最後に使った印を付ける。
+    # 無ければ下で作り直し、中身が消す前と同じなら更新日時を戻す（adopt_evicted_identity）。
     from tools.livery import chassis_store
     chassis_store.prepare_for_use(mesh_path)
     mesh_cache_hit = mesh_path.is_file()
@@ -4480,6 +4481,10 @@ def _main() -> int:
         mesh_preparation_profile["validated_glb_reused"] = validation_reused and wheel_morph_internal is None
         if not validation_reused:
             mesh_preparation_profile["final_validation_seconds"] = round(time.perf_counter() - final_validation_started, 6)
+        # 使っていない間に消した車体の GLB を作り直したときは、大きさと SHA-256 が消す前と同じなら更新日時を戻す。
+        # 場所・大きさ・更新日時で決まる他のキャッシュ（部品の色付けの解析・タイヤの GLB など）がそのまま使える
+        # （tools/livery/chassis_store.py。2026-11-21、FH6 に近づける案 ④）。
+        mesh_preparation_profile["evicted_identity_restored"] = chassis_store.adopt_evicted_identity(mesh_path)
     else:
         if wheel_morph_internal is not None:
             print("mesh: independent WheelStyle morph cache hit")
@@ -4488,6 +4493,10 @@ def _main() -> int:
 
     # r209：ManifestのCarBody候補を一度に準備し、ViewerのUIだけでBodyKitを切り替えられるようにする。
     # Livery Packageの再生成や別Bridgeを要求せず、各記録は手動Manifest研究状態として扱う。
+    # 2026-11-21：変換するのは、表示する部品（active_body_kit_part_id）だけ。ほかの部品は、変換済みならそのまま使い、
+    # 無ければ変換を後回しにする（overlay_deferred。変換に要る計画と保存先を残し、Viewer で選ばれたときにサーバーが
+    # 同じ処理で変換する）。以前は全部を変換していて、部品の多い車で 1〜3 秒かかっていた。
+    from tools.livery.body_kit_overlay_mesh import cached_body_kit_overlay, convert_body_kit_overlay
     body_kit_variants: list[dict] = []
     for variant_part_id in body_kit_part_ids:
         plan = resolve_body_kit_overlay_plan(asset, variant_part_id)
@@ -4495,30 +4504,22 @@ def _main() -> int:
         overlay_mesh: Path | None = None
         overlay_validation: dict | None = None
         overlay_cache_hit = False
+        overlay_deferred = False
         if added_entries:
             overlay_mesh = mesh_dir / (
                 f"{asset.model_code}-{asset.archive_mtime_ns}-{firstparty_cache_id}-bodykit-{variant_part_id}.overlay-firstparty-v{BODY_KIT_OVERLAY_FORMAT_REVISION}.glb"
             )
-            # 重ね合わせの GLB も、しばらく使っていなければ圧縮した写しだけを残している（chassis_store）。
-            chassis_store.prepare_for_use(overlay_mesh)
-            overlay_cache_hit = overlay_mesh.is_file()
-            try:
-                overlay_validation = validate_local_chassis_glb(
-                    overlay_mesh, require_product_accepted=True,
-                    required_firstparty_scope="ORIGINAL_MODELBIN_LOOSE_OVERLAY__VIEWER_FUNCTIONAL_CANDIDATE"
-                ) if overlay_cache_hit else None
-            except (OSError, PortableMeshConverterError):
-                overlay_cache_hit = False
-                overlay_mesh.unlink(missing_ok=True)
-                overlay_validation = None
-            if not overlay_cache_hit:
+            overlay_validation = cached_body_kit_overlay(overlay_mesh)
+            overlay_cache_hit = overlay_validation is not None
+            if not overlay_cache_hit and variant_part_id == active_body_kit_part_id:
                 print(f"body-kit catalog: converting PartId {variant_part_id} / {len(added_entries)} selected-only local model(s)...")
-                convert_vehicle_model_to_glb(asset, overlay_mesh, loose_entries=added_entries)
-                overlay_validation = validate_local_chassis_glb(
-                    overlay_mesh, require_product_accepted=True,
-                    required_firstparty_scope="ORIGINAL_MODELBIN_LOOSE_OVERLAY__VIEWER_FUNCTIONAL_CANDIDATE")
-            else:
+                overlay_validation = convert_body_kit_overlay(asset, overlay_mesh, added_entries)
+            elif not overlay_cache_hit:
+                overlay_deferred = True
+            if overlay_cache_hit:
                 print(f"body-kit catalog: PartId {variant_part_id} overlay cache hit")
+            elif overlay_deferred:
+                print(f"body-kit catalog: PartId {variant_part_id} deferred until selected in the Viewer")
         lowered_added = [entry.casefold() for entry in added_entries]
         if variant_part_id == body_kit_baseline_part_id:
             variant_hint = "stock"
@@ -4532,9 +4533,12 @@ def _main() -> int:
             {
                 **plan,
                 "variant_hint": variant_hint,
-                "overlay_mesh": str(overlay_mesh) if overlay_mesh else "",
+                "overlay_mesh": str(overlay_mesh) if overlay_mesh and not overlay_deferred else "",
                 "overlay_cache_hit": overlay_cache_hit,
                 "overlay_validation": overlay_validation,
+                # 後回しにした部品の保存先（Viewer で選ばれたときに、サーバーがここへ変換する）
+                "overlay_deferred": overlay_deferred,
+                "overlay_mesh_planned": str(overlay_mesh) if overlay_deferred else "",
             }
         )
     if len(body_kit_variants) > 1:
@@ -4551,7 +4555,7 @@ def _main() -> int:
     body_kit_overlay_validation = active_variant.get("overlay_validation") if active_variant else None
     body_kit_overlay_cache_hit = bool(active_variant.get("overlay_cache_hit")) if active_variant else False
     timings["mesh_seconds"] = time.perf_counter() - phase
-    # 今の車と最近の数台のほか、しばらく使っていない車の車体の GLB を、裏の糸で圧縮した写しだけにする。
+    # 今の車と最近の数台のほか、しばらく使っていない車の車体の GLB を、裏の糸で消して消した印だけにする。
     chassis_store.schedule_maintenance(mesh_dir, keep=mesh_path)
 
     available_ram = psutil.virtual_memory().available
@@ -5139,7 +5143,10 @@ def _main() -> int:
             overlay_descriptor["part_selection"] = part_selection or {}
             overlay_descriptor["player_save_state_resolved"] = False
         server.set_local_body_kit_overlay(body_kit_overlay_mesh, overlay_descriptor)
-        server.set_local_body_kit_variants(body_kit_variants)
+        # 後回しにした部品は、Viewer で選ばれたときに同じ処理で変換する（2026-11-21）
+        from tools.livery.body_kit_overlay_mesh import ensure_body_kit_overlay
+        server.set_local_body_kit_variants(
+            body_kit_variants, convert=lambda planned, added: ensure_body_kit_overlay(asset, planned, added))
         server.set_local_render_contract(render_root, contract)
         if args.private_source_facing_proof is not None or args.private_source_facing_contract is not None:
             if args.private_source_facing_proof is None or args.private_source_facing_contract is None:

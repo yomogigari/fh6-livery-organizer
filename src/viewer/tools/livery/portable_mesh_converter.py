@@ -890,6 +890,24 @@ def validate_converter_product_report(report: object) -> None:
                 )
 
 
+def _source_archive_identity(path: Path) -> tuple:
+    """原本の ZIP の識別（大きさ・更新日時・番号・機器）。変換の途中で原本が変わっていないかの確かめに使う。"""
+    stat = os.stat(path)
+    return (stat.st_size, stat.st_mtime_ns, stat.st_ino, stat.st_dev)
+
+
+def _remember_validated_chassis(path: Path, result: dict, *, require_product_accepted: bool,
+                                required_firstparty_scope: str | None) -> None:
+    """検査に通った GLB とバイトが同じと確かめた GLB に、同じ検査の結果を覚えさせる（validate_local_chassis_glb の覚え）。"""
+    key = _chassis_validation_key(Path(path), require_product_accepted, required_firstparty_scope)
+    if key is None:
+        return
+    with _VALIDATED_CHASSIS_LOCK:
+        if key not in _VALIDATED_CHASSIS and len(_VALIDATED_CHASSIS) >= _VALIDATED_CHASSIS_LIMIT:
+            _VALIDATED_CHASSIS.pop(next(iter(_VALIDATED_CHASSIS)))
+        _VALIDATED_CHASSIS[key] = copy.deepcopy(result)
+
+
 def validate_firstparty_output_identity(report: dict, output_path: Path) -> None:
     """プロセス終了成功だけで判断せず、生成した実バイトを検査する。"""
     if report.get("source") != "firstparty-Carbin-ModelBin":
@@ -959,7 +977,10 @@ def convert_vehicle_model_to_glb(
     source_archive = source_archive_input.resolve()
     if not source_archive.is_file():
         raise PortableMeshConverterError("First-party source archive must be a regular original file.")
-    source_archive_sha256 = _sha256_file(source_archive)
+    # 「変換の途中で原本が変わっていないか」を、以前は原本の ZIP（20〜60 MB）の SHA を変換の前・後・出力先へ移す前の
+    # 3 回、全部読んで比べていた（1 台 約 0.1 秒、ボディキットの部品の変換では時間の大半。SHA はほかに使っていない）。
+    # ファイルの識別（大きさ・更新日時・番号・機器）で比べる（2026-11-21）。
+    source_identity = _source_archive_identity(source_archive)
     started = time.perf_counter()
     with tempfile.TemporaryDirectory(prefix="lo4fh6-firstparty-gate-") as temporary:
         candidate = Path(temporary) / "candidate.glb"
@@ -1013,11 +1034,11 @@ def convert_vehicle_model_to_glb(
             if loose_entries is not None
             else "ORIGINAL_STOCK_STATIC__VIEWER_FUNCTIONAL_CANDIDATE"
         )
-        validate_local_chassis_glb(
+        candidate_validation = validate_local_chassis_glb(
             candidate, require_product_accepted=True,
             required_firstparty_scope=required_scope,
         )
-        if _sha256_file(source_archive) != source_archive_sha256:
+        if _source_archive_identity(source_archive) != source_identity:
             raise PortableMeshConverterError("Original FH6 source archive changed during conversion.")
         # 独立検証済みの製品レポートと製品GLBゲートの両方を通った場合だけ採用する。
         # 研究専用出力はここまで到達させない。
@@ -1041,12 +1062,10 @@ def convert_vehicle_model_to_glb(
                     if cancel_event and cancel_event.is_set():
                         raise ChassisConversionCancelled("Local chassis preparation was superseded.")
                     target.write(block)
+            # 写しは、検査に通った候補とバイトが同じこと（SHA）を確かめる。中身の検査は候補と同じ結果になるので、
+            # 全部をもう一度読んで検査しない（2026-11-21）。
             validate_firstparty_output_identity(report, staging_path)
-            validate_local_chassis_glb(
-                staging_path, require_product_accepted=True,
-                required_firstparty_scope=required_scope,
-            )
-            if _sha256_file(source_archive) != source_archive_sha256:
+            if _source_archive_identity(source_archive) != source_identity:
                 raise PortableMeshConverterError("Original FH6 source archive changed before product promotion.")
             # 一時GLBのコピー・SHA計算・検証時間も呼出元の期限に算入する。
             # 期限後に結果を公開しない。
@@ -1072,6 +1091,9 @@ def convert_vehicle_model_to_glb(
                 ) from exc
         finally:
             staging_path.unlink(missing_ok=True)
+        # 出来上がりの場所の検査の結果として覚える（同じバイトなので候補の結果と同じ。準備がすぐ後に同じ検査をする）
+        _remember_validated_chassis(output_path, candidate_validation, require_product_accepted=True,
+                                    required_firstparty_scope=required_scope)
         if diagnostics is not None:
             diagnostics["firstparty_product_gate"] = "ACCEPTED_VALIDATED"
             diagnostics["converter_process_seconds"] = round(time.perf_counter() - started, 6)

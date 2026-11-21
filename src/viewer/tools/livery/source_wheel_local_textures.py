@@ -6,6 +6,7 @@ Texture2DスロットでBaseColorAlpha/Alphaが一致したメッシュのみ接
 独立研究モード用であり、Xbox外観の一致を保証するものではない。
 """
 from __future__ import annotations
+from .png_settings import PNG_COMPRESS_LEVEL
 
 from collections import defaultdict
 import hashlib
@@ -360,7 +361,7 @@ def attach_original_wheel_textures(doc:dict, binary:bytearray, *, content:Path,
                 # 色一色の小さな Texture（Viewer の原本のホイールの経路は map を条件にするため）。
                 hexcode=flat['rgba_hex'].lstrip('#')
                 tile=Image.new('RGBA',(4,4),tuple(int(hexcode[i:i+2],16) for i in (0,2,4))+(255,))
-                stream=io.BytesIO();tile.save(stream,format='PNG');payload=stream.getvalue()
+                stream=io.BytesIO();tile.save(stream,format='PNG',compress_level=PNG_COMPRESS_LEVEL);payload=stream.getvalue()
                 binary.extend(b'\0'*(-len(binary)%4));off=len(binary);binary.extend(payload)
                 vi_idx=len(doc.setdefault('bufferViews',[]));doc['bufferViews'].append({'buffer':0,'byteOffset':off,'byteLength':len(payload)})
                 img_idx=len(doc.setdefault('images',[]));doc['images'].append({'name':'local-original-wheel-flat-'+str(img_idx),'bufferView':vi_idx,'mimeType':'image/png'})
@@ -384,8 +385,8 @@ def attach_original_wheel_textures(doc:dict, binary:bytearray, *, content:Path,
                                   'sha256':digest(mask_bytes),
                                   'source_kind':source_mask['kind'],
                                   **dimensions})
-                # 画素は同じで圧縮の仕方だけを選べる。最小化（optimize=True）は約 5 倍遅いので標準の強さにする（2026-11-20）
-                stream=io.BytesIO();base.save(stream,format='PNG');payload=stream.getvalue();base.close()
+                # 画素は同じで圧縮の仕方だけを選べる。最小化（optimize=True）は約 5 倍遅い（2026-11-20）。強さは png_settings（2026-11-21）
+                stream=io.BytesIO();base.save(stream,format='PNG',compress_level=PNG_COMPRESS_LEVEL);payload=stream.getvalue();base.close()
                 binary.extend(b'\0'*(-len(binary)%4));off=len(binary);binary.extend(payload)
                 vi_idx=len(doc.setdefault('bufferViews',[]));doc['bufferViews'].append({'buffer':0,'byteOffset':off,'byteLength':len(payload)})
                 img_idx=len(doc.setdefault('images',[]));doc['images'].append({'name':'local-original-wheel-'+str(img_idx),'bufferView':vi_idx,'mimeType':'image/png'})

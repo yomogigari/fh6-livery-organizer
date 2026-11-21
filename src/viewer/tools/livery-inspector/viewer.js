@@ -569,9 +569,26 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.075;
 controls.autoRotateSpeed = 0.65;
 
-const trackedGeometries = new Set();
+// 追跡している形・画像の出し入れを数える（資源の大きさの数え直しを、変わったときだけにするため。2026-11-21）
+let trackedResourceVersion = 0;
+class TrackedResourceSet extends Set {
+  add(value) {
+    if (!this.has(value)) trackedResourceVersion += 1;
+    return super.add(value);
+  }
+  delete(value) {
+    const removed = super.delete(value);
+    if (removed) trackedResourceVersion += 1;
+    return removed;
+  }
+  clear() {
+    if (this.size) trackedResourceVersion += 1;
+    super.clear();
+  }
+}
+const trackedGeometries = new TrackedResourceSet();
 const trackedMaterials = new Set();
-const trackedTextures = new Set();
+const trackedTextures = new TrackedResourceSet();
 const trackedSkeletons = new Set();
 let animationFrameId = 0;
 let viewerDisposed = false;
@@ -653,6 +670,15 @@ function failViewer(message) {
   };
   const timeout = window.setTimeout(finish, 900);
   Promise.resolve(delivered).finally(() => { window.clearTimeout(timeout); finish(); });
+}
+
+// 知らせの診断の資源の大きさ。追跡している形・画像と描画の大きさが前に数えたときと同じなら、数え直さない
+// （差し替え 1 回で知らせは数十あり、そのたびに全部を数えていた。2026-11-21）。予算の確かめは resourceBytes を直接呼ぶ。
+let resourceBytesMemo = null;
+function resourceBytesForDiagnostics() {
+  const key = `${trackedResourceVersion}|${viewerDisposed}|${renderWidth}|${renderHeight}|${renderPixelRatio}`;
+  if (resourceBytesMemo?.key !== key) resourceBytesMemo = {key, value: resourceBytes()};
+  return {...resourceBytesMemo.value};
 }
 
 function resourceBytes() {
@@ -2687,20 +2713,25 @@ let sourceBodyTrimTextureFailures = 0;
 // （BC7 の復号は規格どおり。透明の部分が無い画像だけ）。ミップはゲームのもの。BC7 を受け取れない GPU では、
 // サーバーに PNG を頼む（?png=1）。
 const BC7_TEXTURE_MAGIC = [76, 79, 52, 66, 67, 55, 0, 1];
-function bc7MipLevels(bytes, width, height) {
+// 4×4 の塊の形（BC7 は 16 バイト、BC4 は 8 バイト）の、1×1 までの全段
+function compressedMipLevels(bytes, width, height, blockBytes) {
   const mipmaps = [];
   let offset = 0, w = width, h = height;
   for (;;) {
-    const size = Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * 16;
-    if (offset + size > bytes.byteLength) throw new Error('BC7 texture data is truncated.');
+    const size = Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * blockBytes;
+    if (offset + size > bytes.byteLength) throw new Error('Compressed texture data is truncated.');
     mipmaps.push({data: bytes.subarray(offset, offset + size), width: w, height: h});
     offset += size;
     if (w === 1 && h === 1) break;
     w = Math.max(1, w >> 1);
     h = Math.max(1, h >> 1);
   }
-  if (offset !== bytes.byteLength) throw new Error('BC7 texture data has extra bytes.');
+  if (offset !== bytes.byteLength) throw new Error('Compressed texture data has extra bytes.');
   return mipmaps;
+}
+
+function bc7MipLevels(bytes, width, height) {
+  return compressedMipLevels(bytes, width, height, 16);
 }
 
 async function loadBodyTrimBc7Texture(url) {
@@ -2733,14 +2764,168 @@ async function loadBodyTrimBc7Texture(url) {
   return texture;
 }
 
+// ラベルの記号（色の画像と透明度の画像）は、元の 2 枚をゲームの形のまま受け取り、GPU で 1 回だけ合わせる
+// （2026-11-21、FH6 に近づける案 ① の続き。以前は Python が合わせた PNG を書いていた）。合わせ方は PNG と同じ：
+// 色は上書きの色（sRGB の 8 ビット）か色の画像の色、透明度は色の画像の α × 透明度の画像の 1 チャンネル目。
+// 出来上がりは PNG と同じく sRGB の 8 ビットの RGBA の画像（ミップは GPU で作る）。BC7・BC4 を受け取れない GPU や、
+// 合わせるのに失敗したときは、サーバーに合わせた PNG を頼む（?png=1）。
+// 受け取る形：LO4TEX の印と版（8 バイト）・形（1＝BC7、2＝BC4、3＝RGBA8）・幅・高さ（各 4 バイト）・画素。
+const LABEL_TEXTURE_MAGIC = [76, 79, 52, 84, 69, 88, 0, 1];
+const LABEL_PART_FORMATS = {1: {name: 'bc7', block: 16}, 2: {name: 'bc4', block: 8}, 3: {name: 'rgba8', block: 0}};
+
+async function fetchBodyTrimLabelPart(url, color) {
+  const response = await fetch(url, {signal: loadAbort.signal});
+  if (!response.ok) throw new Error(`Texture load failed (${response.status}).`);
+  const buffer = await response.arrayBuffer();
+  if (viewerDisposed) throw new Error('Viewer closed.');
+  const bytes = new Uint8Array(buffer);
+  if (bytes.byteLength < 20 || LABEL_TEXTURE_MAGIC.some((value, index) => bytes[index] !== value)) {
+    throw new Error('Label texture header is invalid.');
+  }
+  const header = new DataView(buffer, 8, 12);
+  const format = LABEL_PART_FORMATS[header.getUint32(0, true)];
+  const width = header.getUint32(4, true);
+  const height = header.getUint32(8, true);
+  if (!format || !width || !height || Math.max(width, height) > renderer.capabilities.maxTextureSize) {
+    throw new Error('Label texture size or format is invalid.');
+  }
+  const body = bytes.subarray(20);
+  let texture;
+  if (format.block) {
+    texture = new THREE.CompressedTexture(compressedMipLevels(body, width, height, format.block), width, height,
+      format.name === 'bc7' ? THREE.RGBA_BPTC_Format : THREE.RED_RGTC1_Format);
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+  } else {
+    if (body.byteLength !== width * height * 4) throw new Error('Label texture data size is invalid.');
+    texture = new THREE.DataTexture(body, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+    texture.minFilter = THREE.LinearFilter;
+  }
+  // 色の画像の色は sRGB、透明度（α・透明度の画像の 1 チャンネル目）はそのままの値（PNG の作り方と同じ）
+  texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  texture.flipY = false;
+  texture.generateMipmaps = false;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+let bodyTrimLabelCombinerState = null;
+function bodyTrimLabelCombiner() {
+  // 合わせる場面は 1 つを使い回す（シェーダーを作るのはページで 1 回）
+  if (bodyTrimLabelCombinerState) return bodyTrimLabelCombinerState;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      baseMap: {value: null}, alphaMap: {value: null}, hasBase: {value: false}, hasAlpha: {value: false},
+      hasOverride: {value: false}, overrideColor: {value: new THREE.Vector3(1, 1, 1)},
+    },
+    vertexShader: ['varying vec2 vUv;', 'void main() {', '  vUv = uv;',
+      '  gl_Position = vec4(position.xy, 0.0, 1.0);', '}'].join('\n'),
+    fragmentShader: ['uniform sampler2D baseMap;', 'uniform sampler2D alphaMap;', 'uniform bool hasBase;',
+      'uniform bool hasAlpha;', 'uniform bool hasOverride;', 'uniform vec3 overrideColor;', 'varying vec2 vUv;',
+      'void main() {',
+      '  vec4 base = hasBase ? texture2D(baseMap, vUv) : vec4(1.0);',
+      '  float alpha = base.a * (hasAlpha ? texture2D(alphaMap, vUv).r : 1.0);',
+      '  gl_FragColor = vec4(hasOverride ? overrideColor : base.rgb, alpha);',
+      '}'].join('\n'),
+    depthTest: false, depthWrite: false, blending: THREE.NoBlending, toneMapped: false,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  mesh.frustumCulled = false;
+  const scene = new THREE.Scene();
+  scene.add(mesh);
+  bodyTrimLabelCombinerState = {material, scene, camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)};
+  return bodyTrimLabelCombinerState;
+}
+
+function srgbByteToLinear(value) {
+  const v = Math.min(255, Math.max(0, Number(value) || 0)) / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+
+function combineBodyTrimLabel(base, alpha, overrideSrgb8, width, height) {
+  const combiner = bodyTrimLabelCombiner();
+  const uniforms = combiner.material.uniforms;
+  const override = Array.isArray(overrideSrgb8) && overrideSrgb8.length === 3 ? overrideSrgb8 : null;
+  uniforms.baseMap.value = base;
+  uniforms.hasBase.value = Boolean(base);
+  uniforms.alphaMap.value = alpha;
+  uniforms.hasAlpha.value = Boolean(alpha);
+  uniforms.hasOverride.value = Boolean(override);
+  if (override) uniforms.overrideColor.value.set(...override.map(srgbByteToLinear));
+  // sRGB の 8 ビットの描き先に描き（書くときに sRGB にする）、そのままの値を読み戻す
+  const target = new THREE.WebGLRenderTarget(width, height, {
+    colorSpace: THREE.SRGBColorSpace, depthBuffer: false, stencilBuffer: false, generateMipmaps: false,
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+  });
+  const previous = renderer.getRenderTarget();
+  const pixels = new Uint8Array(width * height * 4);
+  try {
+    renderer.setRenderTarget(target);
+    renderer.render(combiner.scene, combiner.camera);
+    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+  } finally {
+    renderer.setRenderTarget(previous);
+    target.dispose();
+    uniforms.baseMap.value = null;
+    uniforms.alphaMap.value = null;
+  }
+  const texture = trackTexture(new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType));
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.anisotropy = qualityProfile().anisotropy;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+async function loadBodyTrimLabelTexture(url, label) {
+  const parts = label?.parts && typeof label.parts === 'object' ? label.parts : {};
+  const formats = Object.values(parts).map(part => String(part?.format || ''));
+  const width = Number(label?.width);
+  const height = Number(label?.height);
+  const supported = formats.length > 0 && formats.every(format => ['bc7', 'bc4', 'rgba8'].includes(format))
+    && (!formats.includes('bc7') || renderer.extensions.has('EXT_texture_compression_bptc'))
+    && (!formats.includes('bc4') || renderer.extensions.has('EXT_texture_compression_rgtc'))
+    && Number.isInteger(width) && Number.isInteger(height) && width > 0 && height > 0
+    && Math.max(width, height) <= renderer.capabilities.maxTextureSize;
+  if (!supported) return loadTexture(`${url}?png=1`, true);
+  const settled = await Promise.allSettled(['base', 'alpha'].map(part => (parts[part]
+    ? fetchBodyTrimLabelPart(`${url}?part=${part}`, part === 'base') : Promise.resolve(null))));
+  const [base, alpha] = settled.map(result => (result.status === 'fulfilled' ? result.value : null));
+  try {
+    const failure = settled.find(result => result.status === 'rejected');
+    if (failure) throw failure.reason;
+    if (viewerDisposed) throw new Error('Viewer closed.');
+    return combineBodyTrimLabel(base, alpha, label.override_srgb8, width, height);
+  } catch (error) {
+    if (viewerDisposed) throw error;
+    return loadTexture(`${url}?png=1`, true);
+  } finally {
+    base?.dispose();
+    alpha?.dispose();
+  }
+}
+
 async function preloadSourceBodyTrimTextures() {
   const groups = renderContract?.body_trim_colors?.groups || {};
+  const labels = new Map();
+  for (const record of Object.values(groups)) {
+    const file = String(record?.texture?.file || '');
+    if (file.endsWith('.label') && record.texture.label) labels.set(file, record.texture.label);
+  }
   const files = [...new Set(Object.values(groups).map(record => record?.texture?.file)
-    .filter(file => /^[0-9a-f]{64}\.(png|bc7)$/.test(String(file || '')) && !sourceBodyTrimTextures.has(file)))];
+    .filter(file => /^[0-9a-f]{64}\.(png|bc7|label)$/.test(String(file || '')) && !sourceBodyTrimTextures.has(file)))];
   await Promise.all(files.map(async file => {
     try {
       const url = `./api/local-render/body-trim-texture/${file}`;
-      const texture = file.endsWith('.bc7') ? await loadBodyTrimBc7Texture(url) : await loadTexture(url, true);
+      const texture = file.endsWith('.label') ? await loadBodyTrimLabelTexture(url, labels.get(file))
+        : file.endsWith('.bc7') ? await loadBodyTrimBc7Texture(url) : await loadTexture(url, true);
       sourceBodyTrimTextures.set(file, texture);
     } catch (error) {
       if (viewerDisposed) throw error;
@@ -8392,7 +8577,7 @@ function viewerDiagnostics() {
       stockInventories: Object.fromEntries(stockWheelAssetInventories),
     },
     timings: {...timings},
-    bytes: resourceBytes(),
+    bytes: resourceBytesForDiagnostics(),
     device: {
       ...graphicsDevice,
       pixelRatio: renderPixelRatio,

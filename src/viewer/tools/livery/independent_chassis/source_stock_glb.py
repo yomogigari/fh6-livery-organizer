@@ -35,6 +35,15 @@ from .source_wheel_identity_bridge import source_wheel_or_brake_identity
 from .source_static_role import static_mesh_role, static_livery_sides
 from .source_runtime_deformation import apply_verified_source_deformation
 from .source_pose_input_contract import validate_original_deformation_input
+try:
+    # 自前の Rust の部品でメッシュを作る道（2026-11-21）。Viewer の中（tools.livery）でだけ読み込める。研究の写し
+    # （src/research/independent_chassis）や、independent_chassis だけを読み込んだときは、今までの Python の処理で作る。
+    from ..native_mesh_geometry import NativeMeshPlanner, available as native_mesh_available
+except ImportError:
+    NativeMeshPlanner = None
+
+    def native_mesh_available():
+        return False
 
 MAX_RESEARCH_GLB_BYTES=256*1024*1024
 
@@ -85,6 +94,48 @@ class _Writer:
                 raise StockGlbResearchError('native UV source dropped or incompatible')
             attributes[f'TEXCOORD_{channel}']=self.accessor(uv,'VEC2',5126,34962)
         index=self.accessor(idx,'SCALAR',5123 if idx.dtype.itemsize==2 else 5125,34963,True)
+        self._add_mesh(attributes,index,extras)
+
+    def _store(self,data,count,kind,component,target,bounds=None):
+        """accessor と同じ並び・同じ確かめで、出来上がったバイト列（小さい端からの値）を詰める（2026-11-21）。"""
+        size=len(data)
+        if count==0 or size==0 or size>MAX_RESEARCH_GLB_BYTES:
+            raise StockGlbResearchError('source mesh has unsupported vertex/index buffer size')
+        while len(self.binary)%4:self.binary.append(0)
+        offset=len(self.binary)
+        if offset+size>MAX_RESEARCH_GLB_BYTES:
+            raise StockGlbResearchError('research full-stock GLB would exceed safety limit')
+        self.binary.extend(data)
+        view={'buffer':0,'byteOffset':offset,'byteLength':size}
+        if target is not None: view['target']=target
+        self.views.append(view)
+        accessor={'bufferView':len(self.views)-1,'componentType':component,'count':count,'type':kind}
+        if bounds is not None:
+            accessor['min'],accessor['max']=bounds
+        self.accessors.append(accessor)
+        return len(self.accessors)-1
+
+    def append_native(self,geometry,extras):
+        """自前の Rust の部品の結果（native_mesh_geometry.NativeMeshGeometry）を、append と同じ形で詰める（2026-11-21）。
+
+        部品は append と同じ型（位置・法線・UV は 32 ビットの小数、番号は頂点が 65536 未満なら 16 ビット）と、
+        位置・番号の最小・最大を返す。
+        """
+        n=geometry.vertex_count
+        if (n==0 or not geometry.index_count or geometry.index_count%3 or geometry.index_max>=n
+                or geometry.index_width!=(2 if n<65536 else 4)):
+            raise StockGlbResearchError('invalid source-authored mesh shape/indices')
+        attributes={'POSITION':self._store(geometry.positions,n,'VEC3',5126,34962,
+                        ([float(x) for x in geometry.position_min],[float(x) for x in geometry.position_max])),
+                    'NORMAL':self._store(geometry.normals,n,'VEC3',5126,34962)}
+        for channel,raw in sorted(geometry.uvs.items()):
+            attributes[f'TEXCOORD_{channel}']=self._store(raw,n,'VEC2',5126,34962)
+        index=self._store(geometry.indices,geometry.index_count,'SCALAR',
+                          5123 if geometry.index_width==2 else 5125,34963,
+                          ([int(geometry.index_min)],[int(geometry.index_max)]))
+        self._add_mesh(attributes,index,extras)
+
+    def _add_mesh(self,attributes,index,extras):
         ordinal=len(self.nodes)
         if extras.get('lo4fh6_source_static_instance_verified') is True:
             # 元参照製品 Program.AppendMeshes: ModelBin basename + 生Mesh名。
@@ -271,6 +322,11 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
             'is_stock':o['stock'],'car_body_id':o['body_id'],'parent_is_stock':o['parent_stock']}
             for o in scene['options']]
         cache={}
+        # 製品の道（静止の部品・変形の入力なし）では、メッシュ 1 つ分の数値の処理を自前の Rust の部品で行う（2026-11-21）。
+        # 部品が無い（公開のソースだけの配布など）・扱えないメッシュは、今までの Python の処理で作る。
+        native_mesh_route=(source_original_static_selection and not preserve_original_deformation
+                           and verified_deformation_inputs is None and native_mesh_available())
+        native_planners={}
         # 同じ ModelBin を使う置き場所ごとに、全部の Mesh の見出しを読み直していた（4212 で 926 個を約 4 回ずつ）。
         # 見出し（Mesh）は書き換えられない値なので、ModelBin と位置ごとに覚えて使い回す。読む順は同じ（2026-11-20）。
         mesh_memo={}
@@ -354,17 +410,29 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
                 if source_original_static_selection:
                     if b.offset not in original_static_offsets:continue
                 elif not(m.lod&lod):continue
-                decoded=extract_raw_geometry(raw,m,blobs)
-                shadow_only=original_shadow_only(m,decoded)
+                # 自前の Rust の部品で、解読・UV・姿勢・三角形の整理・範囲をまとめて求める（扱えなければ None）
+                native=None
+                if native_mesh_route and 0<=m.bone<len(bones):
+                    planner=native_planners.get(p)
+                    if planner is None:planner=native_planners[p]=NativeMeshPlanner(raw,blobs)
+                    native=planner.geometry(m,bone_matrix=bones[m.bone],instance_matrix=instance_matrix)
+                if native is not None:
+                    decoded=None
+                    shadow_only=original_shadow_only(m,{'missing_source_normal':native.missing_normal})
+                else:
+                    decoded=extract_raw_geometry(raw,m,blobs)
+                    shadow_only=original_shadow_only(m,decoded)
                 if shadow_only:
                     if not source_original_static_selection:
                         c['original_verified_shadow_only_meshes_not_rendered']+=1;continue
                     # MeshにNORMAL Semanticがない場合、参照製品 ModelImporterはNormal=0を返す。
                     # 参照製品 TransformNormalsはUnitYに置換し、ClassifyRoleは原本ShadowをHiddenとする。
                     # Static PreviewのMesh網羅性のため幾何は保持するが、欠落Normalを可視面の証拠にしない。
-                    decoded={**decoded,'missing_source_normal':False,
-                        'arrays':{**decoded['arrays'],('NORMAL',0):
-                            np.zeros_like(decoded['arrays'][('POSITION',0)])}}
+                    # 自前の部品は、元の法線が無いメッシュの法線を 0 として同じ計算をする。
+                    if decoded is not None:
+                        decoded={**decoded,'missing_source_normal':False,
+                            'arrays':{**decoded['arrays'],('NORMAL',0):
+                                np.zeros_like(decoded['arrays'][('POSITION',0)])}}
                     c['lo4_static_hidden_shadow_meshes']+=1
                 if m.bone<0 or m.bone>=len(bones):
                     raise StockGlbResearchError('original Mesh has unresolved rigid bone')
@@ -402,7 +470,7 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
                     raise StockGlbResearchError('Skin source vertex count differs from geometry')
                 if morph and morph.vertex_count!=decoded['vertices']:
                     raise StockGlbResearchError('Morph source vertex count differs from geometry')
-                uv=source_uv_affine(decoded,m)
+                uv=native.uvs if native is not None else source_uv_affine(decoded,m)
                 hidden_reason = (
                     source_static_hidden_surface_reason(b.name or '',
                         material.name if material is not None else '',p)
@@ -492,16 +560,23 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
                     else:
                         wheel_corners.add(wheel_binding['original_corner'])
                     c['source_wheelstyle_mesh_bindings']+=1
-                pose=transform_source_geometry(decoded,bone_matrix=bones[m.bone],
-                    instance_matrix=instance_matrix,
-                    source_position_scale=m.scale)
-                idx=np.asarray(decoded['indices'],dtype=np.int64).reshape((-1,3)).copy()
-                if source_original_static_selection:
+                if native is not None:
+                    pose=idx=None
+                    native_triangle_count=native.source_triangle_count
+                    triangle_count=native.index_count//3
+                else:
+                    pose=transform_source_geometry(decoded,bone_matrix=bones[m.bone],
+                        instance_matrix=instance_matrix,
+                        source_position_scale=m.scale)
+                    idx=np.asarray(decoded['indices'],dtype=np.int64).reshape((-1,3)).copy()
                     native_triangle_count=len(idx)
-                    idx=clean_original_static_triangle_indices(idx)
+                    if source_original_static_selection:
+                        idx=clean_original_static_triangle_indices(idx)
+                    triangle_count=len(idx)
+                if source_original_static_selection:
                     c['lo4_static_source_triangles']+=native_triangle_count
-                    c['lo4_static_triangles_degenerate_or_duplicate_removed']+=native_triangle_count-len(idx)
-                    if not len(idx):
+                    c['lo4_static_triangles_degenerate_or_duplicate_removed']+=native_triangle_count-triangle_count
+                    if not triangle_count:
                         # 参照製品のCleanTriangleIndices／AppendMeshesは有効TriangleのないPrimitiveを除外する。
                         # 幾何欠損ではないため、元Meshの識別子と除外Triangle数を根拠として保持し、面を捏造しない。
                         c['lo4_static_wholly_invalid_meshes_skipped']+=1
@@ -517,8 +592,9 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
                 elif pose['winding_reversed']:
                     idx[:,[1,2]]=idx[:,[2,1]]
                 if (source_original_static_selection and role in ('trim','dark','glass')
-                        and len(pose['positions'])
-                        and float(np.max(np.asarray(pose['positions'])[:,1])) < STATIC_PARKED_BELOW_GROUND_Y):
+                        and (native.vertex_count if native is not None else len(pose['positions']))
+                        and (native.position_max[1] if native is not None
+                             else float(np.max(np.asarray(pose['positions'])[:,1]))) < STATIC_PARKED_BELOW_GROUND_Y):
                     role='hidden';hidden_reason='parked_below_ground'
                     c['lo4_static_hidden_parked_below_ground_meshes']+=1
                 if source_original_static_selection:
@@ -581,14 +657,17 @@ def build_research_stock_geometry_glb(original:Path|str, *, preserve_original_de
                     'lo4fh6_not_game_runtime_appearance':True,
                 }
                 # 明示的な検証条件：このGLBは原本構造の網羅性確認専用。
-                writer.append(pose['positions'],pose['normals'],idx.ravel(),uv,extras)
+                if native is not None:
+                    writer.append_native(native,extras)
+                else:
+                    writer.append(pose['positions'],pose['normals'],idx.ravel(),uv,extras)
                 if preserve_original_deformation:
                     writer.attach_original_deformation(skin,morph,decoded['vertices'])
                     c['source_skin_payload_staged_meshes']+=skin is not None
                     c['source_morph_payload_staged_meshes']+=morph is not None
                 c['source_stock_visible_meshes']+=1
-                c['source_stock_visible_vertices']+=len(pose['positions'])
-                c['source_stock_visible_triangles']+=len(idx)
+                c['source_stock_visible_vertices']+=native.vertex_count if native is not None else len(pose['positions'])
+                c['source_stock_visible_triangles']+=triangle_count
                 c['original_skin_data_unapplied_meshes']+=(bool(m.skin_count) if source_original_static_selection else skin is not None) and not bool(deform_report.get('skin_applied_vertices'))
                 c['original_morph_data_unapplied_meshes']+=(bool(m.morph_count) if source_original_static_selection else morph is not None) and not bool(deform_report.get('morph_applied_vertices'))
                 c['original_nonroot_attachment_unverified_meshes']+=nonroot

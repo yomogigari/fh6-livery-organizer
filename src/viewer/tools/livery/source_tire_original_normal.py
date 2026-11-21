@@ -17,15 +17,18 @@ import math
 import os
 import re
 import struct
+import threading
 import zlib
 import zipfile
 from pathlib import Path
-from collections import Counter
+from collections import Counter, OrderedDict
 from xml.etree import ElementTree as ET
 
 from . import wheel_morph_internal as wm
 from .fh6_swatch import decode_swatch_image
-from .material_runtime import _game_refs_from_material
+from .png_settings import PNG_COMPRESS_LEVEL
+from .swatch_png_store import INDEX_DIR as SWATCH_PNG_INDEX_DIR, remembered_swatch_png, swatch_png_store
+from .material_runtime import _game_refs_from_material, _open_zip, zip_crc_failure, zip_infos_ending_with, zip_infos_named
 from .source_tire_texture_bridge import _texture_member
 from .source_tire_glb_bridge import read_glb
 from .source_tire_mesh_uv_affine import mesh_affines
@@ -87,7 +90,9 @@ class TireParentNormalMissingError(OriginalTireNormalError):
 
 
 def _sha(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+    # 同じ bytes のオブジェクトの SHA は覚えた値を使う（bytes_memo、2026-11-21）
+    from .bytes_memo import sha256_hex
+    return sha256_hex(data)
 
 
 def _parent_materialbin_normal(materials_zip: Path, member: str, parameter: str,
@@ -105,9 +110,8 @@ def _parent_materialbin_normal(materials_zip: Path, member: str, parameter: str,
         raise OriginalTireNormalError("元Tire Materials.zipが見つかりません")
     if not member.startswith("_fmnext/tires/") or member.count("/") != 2:
         raise OriginalTireNormalError("元Tire MaterialBinの参照がTire scope外")
-    with zipfile.ZipFile(materials_zip) as source:
-        matched = [item for item in source.infolist()
-                   if not item.is_dir() and item.filename.casefold() == member.casefold()]
+    with _open_zip(materials_zip) as source:
+        matched = [item for item in zip_infos_named(source, member) if not item.is_dir()]
         if len(matched) != 1:
             raise OriginalTireNormalError("元Tire MaterialBinが一意ではありません: " + member)
         info = matched[0]
@@ -162,9 +166,8 @@ def _parent_materialbin_param(materials_zip: Path, member: str, parameter: str,
         raise OriginalTireNormalError("元Tire Materials.zipが見つかりません")
     if not member.startswith("_fmnext/tires/") or member.count("/") != 2:
         raise OriginalTireNormalError("元Tire MaterialBinの参照がTire scope外")
-    with zipfile.ZipFile(materials_zip) as source:
-        matched = [item for item in source.infolist()
-                   if not item.is_dir() and item.filename.casefold() == member.casefold()]
+    with _open_zip(materials_zip) as source:
+        matched = [item for item in zip_infos_named(source, member) if not item.is_dir()]
         if len(matched) != 1:
             raise OriginalTireNormalError("元Tire MaterialBinが一意ではありません: " + member)
         info = matched[0]
@@ -361,7 +364,7 @@ def _source_material_proof(material_zip: Path, *, include_legacy: bool = False) 
     if include_legacy:
         required += ("_fmnext/tires/tires_pg_sidewall_legacy.materialbin",
                      "_fmnext/tires/tires_pg_tread_legacy.materialbin")
-    with zipfile.ZipFile(material_zip) as z:
+    with _open_zip(material_zip) as z:
         rows = [z.read(name) for name in required]
     if not all(b"car_tires_pg.shaderbin" in raw for raw in rows):
         raise OriginalTireNormalError("元Tire MaterialBinがcar_tires_pgを参照しません")
@@ -378,7 +381,7 @@ def source_original_tire_base_color(materials_zip: Path, shader_xml: bytes) -> t
     key = zlib.crc32(b"BaseTyreColourColorParam")
     if shader_xml_ids(shader_xml).get(key) != ("BaseTyreColourColorParam", -1):
         raise OriginalTireNormalError("Tire既定のBaseTyreColour元Shaderパラメータ不一致")
-    with zipfile.ZipFile(materials_zip) as source:
+    with _open_zip(materials_zip) as source:
         raw = source.read("_fmnext/tires/tires_pg.materialbin")
     if b"car_tires_pg.shaderbin" not in raw:
         raise OriginalTireNormalError("Tire既定色MaterialBinの元Shader参照が不一致")
@@ -437,53 +440,81 @@ def _original_swatch_images(textures_zip: Path, refs: set[str]):
     if not textures_zip.is_file() or textures_zip.name.casefold() != "textures.zip":
         raise OriginalTireNormalError("原本media/cars/_library/Textures.zipが見つかりません")
     image_map = {}
-    with zipfile.ZipFile(textures_zip) as z:
+    with _open_zip(textures_zip) as z:
         # 参照名は元MatIからだけ取得。ファイル名の曖昧な部分一致は拒否する。
-        index = {}
-        for info in z.infolist():
-            if info.is_dir():
-                continue
-            normalized = info.filename.replace("\\", "/").casefold().lstrip("/")
-            index.setdefault(normalized, []).append(info)
+        # 名前の索引は ZIP ごとに 1 回だけ作る（以前は呼ぶたびに数万項目を見ていた。2026-11-21）
         for ref in sorted(refs):
-            suffix = ref.casefold()
-            hits = [info for name, infos in index.items()
-                    if name == suffix or name.endswith("/" + suffix)
-                    for info in infos]
+            hits = zip_infos_ending_with(z, ref)
             if len(hits) != 1:
                 raise OriginalTireNormalError(f"元Normal Swatchの原本参照が一意でありません: {ref} count={len(hits)}")
             item = hits[0]
             if item.flag_bits & 1 or not 0 < item.file_size <= MAX_SWATCH:
                 raise OriginalTireNormalError("原本Swatchに暗号化/異常サイズあり")
-            raw = z.read(item)  # 読んだエントリのCRCを検証する
-            image, meta = decode_swatch_image(raw)
-            # 実FH6原本のNormal材質でもSwatch encoding=9 (BC7)が使われる。
-            # MatIの一意な*_nrml参照とShaderのUniqueNorm契約が成立する
-            # この研究経路に限りBC5(5/6)とBC7(9)の既存第一者復号を許す。
-            # BC7のRGBをBC5のXY正規化に置換しない。Xbox Shader一致は未承認。
-            # 側面文字のNormal（tire_letters_dunlop_b/michelin_white等）は
-            # 非圧縮RGBA8（encoding=13、DXGI 28）で格納されている。複合材質の
-            # 経路は既に13を受け付けており、Normal経路だけが停止していた。
-            encoding = meta.get("encoding")
-            if (image is None or type(encoding) is not int
-                    or encoding not in NORMAL_SWATCH_ENCODINGS
-                    or image.mode != "RGB" or min(image.size) <= 0):
-                raise OriginalTireNormalError(
-                    "原本SwatchのBC5/BC7/RGBA8 Normal候補を復号できません: "
-                    + ref + " / " + str(meta.get("decode_error", encoding)))
-            if encoding == UNCOMPRESSED_NORMAL_ENCODING:
-                _require_tangent_normal(image, ref)
-            encoded = io.BytesIO()
-            # 画素は同じで圧縮の仕方だけを選べる。最小化（optimize=True）は約 5 倍遅く（4212 で 0.61 秒と 0.11 秒）、
-            # 小さくなるのは約 6%（1.12 MB と 1.06 MB）。初めての車の準備を速くするため標準の強さにする（2026-11-20）
-            image.save(encoded, format="PNG")
-            image_map[ref] = {
-                "png": encoded.getvalue(),
-                "source_sha256": _sha(raw),
-                "size": list(image.size),
-                "encoding": meta["encoding"],
-            }
+            def compute(item=item, ref=ref):
+                raw = z.read(item)  # 読んだエントリのCRCを検証する
+                entry = _normal_swatch_entry(raw, ref)
+                return entry["png"], {"source_sha256": entry["source_sha256"], "size": entry["size"],
+                                      "encoding": entry["encoding"]}
+            # 標準タイヤの GLB を作る範囲では、前に作った PNG を共有の置き場から使い回す（swatch_png_store。2026-11-21）
+            png, meta = remembered_swatch_png("tire-normal-rgb", item, compute)
+            image_map[ref] = {"png": png, "source_sha256": meta["source_sha256"], "size": list(meta["size"]),
+                              "encoding": meta["encoding"]}
     return image_map
+
+
+# 同じ原本の Swatch（中身の SHA が同じ）から作った法線の画像（PNG）は、同じプロセスの中で使い回す
+# （同じタイヤの車が続くと、毎回同じ画像を復号して PNG に書いていた。2026-11-21）。失敗は覚えない。
+_NORMAL_SWATCH_ENTRIES: "OrderedDict[tuple, dict]" = OrderedDict()
+_NORMAL_SWATCH_ENTRIES_LIMIT = 16
+_NORMAL_SWATCH_ENTRIES_LOCK = threading.Lock()
+
+
+def _normal_swatch_entry(raw: bytes, ref: str) -> dict:
+    raw_sha256 = _sha(raw)
+    key = (raw_sha256, decode_swatch_image)  # 同じ中身を同じ復号で作った結果だけを使い回す
+    with _NORMAL_SWATCH_ENTRIES_LOCK:
+        found = _NORMAL_SWATCH_ENTRIES.get(key)
+        if found is not None:
+            _NORMAL_SWATCH_ENTRIES.move_to_end(key)
+    if found is None:
+        found = _build_normal_swatch_entry(raw, ref, raw_sha256)
+        with _NORMAL_SWATCH_ENTRIES_LOCK:
+            _NORMAL_SWATCH_ENTRIES[key] = found
+            while len(_NORMAL_SWATCH_ENTRIES) > _NORMAL_SWATCH_ENTRIES_LIMIT:
+                _NORMAL_SWATCH_ENTRIES.popitem(last=False)
+    return {"png": found["png"], "source_sha256": found["source_sha256"], "size": list(found["size"]),
+            "encoding": found["encoding"]}
+
+
+def _build_normal_swatch_entry(raw: bytes, ref: str, raw_sha256: str) -> dict:
+    image, meta = decode_swatch_image(raw)
+    # 実FH6原本のNormal材質でもSwatch encoding=9 (BC7)が使われる。
+    # MatIの一意な*_nrml参照とShaderのUniqueNorm契約が成立する
+    # この研究経路に限りBC5(5/6)とBC7(9)の既存第一者復号を許す。
+    # BC7のRGBをBC5のXY正規化に置換しない。Xbox Shader一致は未承認。
+    # 側面文字のNormal（tire_letters_dunlop_b/michelin_white等）は
+    # 非圧縮RGBA8（encoding=13、DXGI 28）で格納されている。複合材質の
+    # 経路は既に13を受け付けており、Normal経路だけが停止していた。
+    encoding = meta.get("encoding")
+    if (image is None or type(encoding) is not int
+            or encoding not in NORMAL_SWATCH_ENCODINGS
+            or image.mode != "RGB" or min(image.size) <= 0):
+        raise OriginalTireNormalError(
+            "原本SwatchのBC5/BC7/RGBA8 Normal候補を復号できません: "
+            + ref + " / " + str(meta.get("decode_error", encoding)))
+    if encoding == UNCOMPRESSED_NORMAL_ENCODING:
+        _require_tangent_normal(image, ref)
+    encoded = io.BytesIO()
+    # 画素は同じで圧縮の仕方だけを選べる。最小化（optimize=True）は約 5 倍遅く（4212 で 0.61 秒と 0.11 秒）、
+    # 小さくなるのは約 6%（1.12 MB と 1.06 MB）。初めての車の準備を速くするため最小化しない（2026-11-20）。
+    # 強さは png_settings で決める（2026-11-21）
+    image.save(encoded, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
+    return {
+        "png": encoded.getvalue(),
+        "source_sha256": raw_sha256,
+        "size": list(image.size),
+        "encoding": meta["encoding"],
+    }
 
 
 def _glb(doc, original_bin: bytes) -> bytes:
@@ -737,7 +768,7 @@ def _original_tire_active_lod0_material_ids(tire_zip: Path, models: dict) -> dic
         raise OriginalTireNormalError("Tire原本ZIPの名前が不正") from exc
     active: dict[str, set[int]] = {}
     with zipfile.ZipFile(tire_zip) as archive:
-        if archive.testzip() is not None:
+        if zip_crc_failure(tire_zip) is not None:  # 同じファイルなら同じプロセスで 1 回だけ全部を読む
             raise OriginalTireNormalError("Tire原本ZIPのCRCが不正")
         try:
             wheel_entries = _original_tire_model_entries(archive, source_model)
@@ -1009,22 +1040,29 @@ def _build_cached_original_tire_normal_glb(source_glb: Path, tire_zip: Path, gam
     if not original_tire_normal_signed_eligible(tire_zip, game_cars_dir):
         raise OriginalTireNormalError("標準TireのLOD0/Normal原本署名が不適合。旧材質へ後退しません")
     compound_signed = bool(original_tire_compound_signed_eligible(tire_zip, library))
-    original = source_glb.read_bytes()
+    # 書いたばかりの途中の GLB は、同じプロセスが覚えたバイト列を使う（読み直さない。bytes_memo、2026-11-21）
+    from .bytes_memo import read_file
+    original = read_file(source_glb)
     source_hash = _sha(original)
-    data, proof = build_original_tire_normal_glb(
-        original, tire_zip,
-        library / "Materials.zip", library, library / "Textures.zip",
-        source_signed_normal_auto=True,
-    )
+    # swatch を PNG にした結果は、GLB の差分の共有の置き場（wheel-tire/Shared-Blobs）と索引から使い回す（2026-11-21）
+    from .glb_delta import SHARED_DIR
+    swatch_store = (output_dir / SHARED_DIR, output_dir / SWATCH_PNG_INDEX_DIR)
+    with swatch_png_store(*swatch_store):
+        data, proof = build_original_tire_normal_glb(
+            original, tire_zip,
+            library / "Materials.zip", library, library / "Textures.zip",
+            source_signed_normal_auto=True,
+        )
     proof["source_integrated_compound_standard"] = compound_signed
     proof["source_signed_auto_compound"] = compound_signed
     if compound_signed:
         # 既存Windows受入の複合テクスチャを、新LOD0・Normal・原本色の後段へ統合。
         # AO/粗さへの割当は原本FH6 Shader全式と同値と主張しない。
-        data, compound = build_original_tire_compound_research(
-            data, tire_zip,
-            library / "Materials.zip", library, library / "Textures.zip",
-        )
+        with swatch_png_store(*swatch_store):
+            data, compound = build_original_tire_compound_research(
+                data, tire_zip,
+                library / "Materials.zip", library, library / "Textures.zip",
+            )
         proof["original_normal_glb_sha256_before_compound"] = proof["output_glb_sha256"]
         proof["output_glb_sha256"] = _sha(data)
         proof["compound_rgba_research"] = {

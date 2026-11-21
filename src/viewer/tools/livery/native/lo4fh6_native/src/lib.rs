@@ -9,11 +9,15 @@
 //!   native_canonical_layers.native_layers（図形ごとの変換と覆いの判定）・first_party_privacy_absence（保護の
 //!   印が無いことの確かめ）と同じ判定・同じ計算の順。少しでも想定外なら 0 以外を返し、Python の処理に任せる
 //!   （例外とその文言は Python の処理が出す）。
+//! - 車体の変換のメッシュ 1 つ分の数値の処理（lo4_mesh_geometry、mesh.rs）：independent_chassis の頂点の解読・姿勢・
+//!   UV・三角形の整理と同じ計算（2026-11-21）。
 //! - 三角関数などは、Python の math と同じ関数（ucrtbase.dll の cos・sin・atan2・fma・sqrt・fmod）を呼ぶ。
 //!   hypot は CPython 3.12 の vector_norm と同じ手順、atan2 の特別な値は CPython の m_atan2 と同じ扱い。
 #![no_std]
 
 extern crate alloc;
+
+mod mesh;
 
 use alloc::vec::Vec;
 use core::alloc::{GlobalAlloc, Layout};
@@ -63,10 +67,11 @@ unsafe impl GlobalAlloc for ProcessHeap {
 #[global_allocator]
 static HEAP: ProcessHeap = ProcessHeap;
 
-/// 部品の版（1 は C の版、2 は Rust の BC4 だけの版、3 は解読を足した版）。Python 側の期待と違えば使わない。
+/// 部品の版（1 は C の版、2 は Rust の BC4 だけの版、3 は解読を足した版、4 は車体の変換のメッシュの処理を足した版）。
+/// Python 側の期待と違えば使わない。
 #[no_mangle]
 pub extern "C" fn lo4_native_version() -> i32 {
-    3
+    4
 }
 
 // ---- BC4 ----

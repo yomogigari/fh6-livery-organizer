@@ -1038,7 +1038,10 @@ def _render_contract_cache_is_current(render_contract: Path, render_root: Path) 
     # r282：共有PaintはContent Addressed Rootに存在する必要がある。
     # r281の共有Mask契約ではPaintはrender_root内に残るため、そこも確認する。
     # 古いLivery別契約はこの追加検査だけで不正キャッシュ扱いしない。
-    if paint_scope == "shared-by-content" or mask_scope == "shared-by-model-archive":
+    # GPU だけで絵を描く契約（gpu-session-only）は絵の画像のファイルを作らないので求めない
+    # （2026-11-21。求めていたため、前のプロセスの出力の使い回しが必ず外れていた）。
+    if paint_scope != "gpu-session-only" and (
+            paint_scope == "shared-by-content" or mask_scope == "shared-by-model-archive"):
         paint_root_value = _string(paint_cache.get("root")) if paint_scope == "shared-by-content" else ""
         paint_root = Path(paint_root_value).resolve() if paint_root_value else render_root
         paint_candidate = paint_root / paint_name
@@ -1717,6 +1720,95 @@ def _remember_prepared_in_process(output_dir: Path, request: dict[str, Any]) -> 
             _PREPARED_IN_PROCESS[key] = guard
             while len(_PREPARED_IN_PROCESS) > _PREPARED_IN_PROCESS_LIMIT:
                 _PREPARED_IN_PROCESS.popitem(last=False)
+    _write_prepared_guard(output_dir, guard)
+
+
+# ---- プロセスをまたぐ近道（2026-11-21）----
+# Viewer を開き直したとき（新しいプロセス）、前に準備したペイントの出力を使い回す。GPU だけで絵を描くように
+# なってから、近道の判断（cached_preview_ready）は絵の画像のファイルを求めて必ず外れ、開き直すたびに準備を
+# 一からやり直していた。同じプロセスの近道と同じ値（依頼・C_livery の SHA・ライブラリ・関係するファイル）に、
+# コードの識別を足して出力のフォルダーに残し、次のプロセスで今の値と比べる。ファイルは場所・大きさ・更新日時で
+# 比べる（車体の GLB は圧縮の写しから戻すとファイルの番号が変わるが、更新日時は元に戻る）。
+PREPARED_GUARD_FILE = "prepared-guard.json"
+PREPARED_GUARD_FORMAT = "lo4fh6_prepared_guard_v1"
+_PREPARED_CODE_IDENTITY: str | None = None
+
+
+def _prepared_code_identity() -> str:
+    """準備の出力を作るコードの識別。ソースなら Viewer の .py・.json の場所・大きさ・更新日時、EXE なら EXE 自身の
+    名前・大きさ・更新日時（どちらもコードを直せば変わる）。
+
+    画面の側（tools/livery-inspector）と試験は、準備の出力に関わらないので含めない。ファイルは開かず、フォルダーの
+    一覧の情報だけを使う（中身の SHA は 143 個を開くのに約 0.2 秒かかった）。プロセスごとに 1 回だけ求める。
+    """
+    global _PREPARED_CODE_IDENTITY
+    if _PREPARED_CODE_IDENTITY is None:
+        from tools.livery import vehicle_analysis_cache
+        if vehicle_analysis_cache._is_packaged():
+            identity = vehicle_analysis_cache._packaged_program_identity().decode("utf-8")
+        else:
+            skip = {"tests", "__pycache__", "livery-inspector"}
+            rows: list[str] = []
+            folders = [(ROOT, "")]
+            while folders:
+                folder, prefix = folders.pop()
+                with os.scandir(folder) as entries:
+                    for entry in entries:
+                        if entry.is_dir(follow_symlinks=False):
+                            if entry.name not in skip:
+                                folders.append((Path(entry.path), prefix + entry.name + "/"))
+                        elif entry.name.endswith((".py", ".json")) and entry.is_file():
+                            stat = entry.stat()
+                            rows.append(f"{prefix}{entry.name}|{stat.st_size}|{stat.st_mtime_ns}")
+            identity = "source:" + hashlib.sha256("\n".join(sorted(rows)).encode("utf-8")).hexdigest()
+        _PREPARED_CODE_IDENTITY = identity
+    return _PREPARED_CODE_IDENTITY
+
+
+def _disk_guard_from(guard: dict[str, Any]) -> dict[str, Any]:
+    files = {path: [identity[3], identity[4]] for path, identity in guard["files"].items()}  # 大きさ・更新日時
+    return {"format": PREPARED_GUARD_FORMAT, "code": _prepared_code_identity(), "request": guard["request"],
+            "c_livery_sha256": guard["c_livery_sha256"], "library": guard["library"], "files": files}
+
+
+def _write_prepared_guard(output_dir: Path, guard: dict[str, Any] | None) -> None:
+    """近道の値を出力のフォルダーに残す。値を集められないときは、古い値を消す（近道を使わない）。"""
+    path = output_dir / PREPARED_GUARD_FILE
+    try:
+        if guard is None:
+            path.unlink(missing_ok=True)
+            return
+        data = _disk_guard_from(guard)
+        try:
+            if json.loads(path.read_text(encoding="utf-8")) == data:
+                return
+        except (OSError, ValueError):
+            pass
+        _write_json_atomic(path, data)
+    except (OSError, ValueError, TypeError, KeyError, IndexError):
+        with contextlib.suppress(OSError):
+            path.unlink(missing_ok=True)
+
+
+def _prepared_on_disk(output_dir: Path, request: dict[str, Any]) -> bool:
+    """前のプロセスで準備した出力が、今の依頼・原本・ゲームのファイル・コードのままか。"""
+    try:
+        recorded = json.loads((output_dir / PREPARED_GUARD_FILE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(recorded, dict) or recorded.get("format") != PREPARED_GUARD_FORMAT:
+        return False
+    try:
+        if recorded.get("code") != _prepared_code_identity():
+            return False
+        # 車体の GLB が以前の版の圧縮の写しだけになっていれば、元の場所・元の更新日時で戻す（_prepared_in_this_process と
+        # 同じ）。消した印だけのとき（2026-11-21〜、chassis_store）は、下の照合が合わず、準備をやり直す（作り直す）。
+        from tools.livery import chassis_store
+        chassis_store.prepare_for_use(Path(str(read_summary(output_dir / "vehicle-preview-summary.json")["mesh"])))
+        guard = _in_process_guard(output_dir, request)
+        return guard is not None and _disk_guard_from(guard) == recorded
+    except (OSError, ValueError, TypeError, KeyError, IndexError):
+        return False
 
 
 def _prepared_in_this_process(output_dir: Path, request: dict[str, Any]) -> bool:
@@ -1727,7 +1819,8 @@ def _prepared_in_this_process(output_dir: Path, request: dict[str, Any]) -> bool
     if recorded is None:
         return False
     try:
-        # 車体の GLB が圧縮の写しだけになっていれば、元の場所・元の更新日時で戻す（識別は変わらない）
+        # 車体の GLB が以前の版の圧縮の写しだけになっていれば、元の場所・元の更新日時で戻す（識別は変わらない）。
+        # 消した印だけのときは、下の照合が合わず、準備をやり直す（作り直す。chassis_store、2026-11-21）。
         from tools.livery import chassis_store
         chassis_store.prepare_for_use(Path(str(read_summary(output_dir / "vehicle-preview-summary.json")["mesh"])))
     except (OSError, ValueError, TypeError, KeyError):
@@ -1919,8 +2012,9 @@ def cached_preview_ready(
                 or not original_archive.is_file()
                 or sha256_file(original_archive) != archived_sha):
             return False
-        # 最近使っていない車の車体の GLB は圧縮した写しだけを残している（chassis_store）。無ければ元の場所・
-        # 元の更新日時で戻し、最後に使った印を付けてから確かめる（この準備の間に裏の整理で消されない）。
+        # 最近使っていない車の車体の GLB は消して、消した印だけを残している（chassis_store、2026-11-21）。以前の版の
+        # 圧縮した写しがあれば元の場所・元の更新日時で戻し、最後に使った印を付けてから確かめる（この準備の間に裏の
+        # 整理で消されない）。GLB が無ければ、下の確かめで外れて準備をやり直す（作り直す）。
         from tools.livery import chassis_store
         chassis_store.prepare_for_use(mesh)
         validate_local_chassis_glb(
@@ -2321,6 +2415,11 @@ def _load_output_into_server(server: LiveryInspectorServer, output_dir: Path, re
             and lookup_standard_tire(local_tire_glb, local_tire_zip, local_tire_cars_dir, tire_cache_root) is not None):
         local_tire_glb.unlink(missing_ok=True)
         local_tire_proof.unlink(missing_ok=True)
+    if request is not None and _viewer_wheel_source(request) == "source-verified":
+        # タイヤの段で覚えた GLB（解析の結果・SHA・書いたばかりのファイル）を捨てる。Viewer は窓を閉じても残るので
+        # 持ち続けない（2026-11-21、案 ⑤ の A）。
+        from tools.livery.source_tire_glb_bridge import release_tire_stage_memos
+        release_tire_stage_memos()
     # 標準準備の原本Carbin→YRVL照合は、最終Tire/FEOW結合GLBでも再監査。
     # 計数と原本SHAは診断のみで利用し、未承認Shader/色を描画へ注入しない。
     # 実車両の原本Meshごとの未対応は隠さず診断に残す。
@@ -2398,7 +2497,7 @@ def _load_output_into_server(server: LiveryInspectorServer, output_dir: Path, re
     server.set_local_body_kit_overlay(overlay_path if overlay_path and overlay_path.is_file() else None, overlay_descriptor)
     raw_variants = summary.get("body_kit_variants")
     variants = [dict(item) for item in raw_variants] if isinstance(raw_variants, list) else []
-    server.set_local_body_kit_variants(variants)
+    server.set_local_body_kit_variants(variants, convert=_deferred_body_kit_converter(summary))
     _register_part_options(server, summary)
     # 飾りの画像を BC7 のまま渡すときに読む原本（ゲームのフォルダーと車の ZIP。2026-11-20、案 ①）
     try:
@@ -2439,17 +2538,28 @@ def _remove_stale_render_roots(output_dir: Path, render_root: Path) -> None:
         return
 
 
-def _start_vehicle_cache_limit(output_dir: Path, summary: dict) -> None:
-    """共有の設定に準備のキャッシュの容量の上限（vehicle_cache_limit_gb）があれば、表示の準備の後に裏で消す。
+# キャッシュの見回し（古い版の残骸・容量の上限）は、Viewer のプロセスごと・キャッシュの場所ごとに 1 回だけ、
+# 最初の表示の準備のこの秒数の後に裏で行う（2026-11-21）。準備のたびに見回すと、キャッシュ全体（準備のフォルダーの
+# JSON・全ファイルの大きさ・参照の照らし合わせ）を毎回読み、同じプロセスの準備・ページへの受け渡しと取り合っていた。
+CACHE_MAINTENANCE_DELAY_SECONDS = 15.0
+_CACHE_MAINTENANCE_LOCK = threading.Lock()
+# 見回しを始めたキャッシュの場所 → 最新の表示中の準備のフォルダー（見回すときに、その時点で表示中の物を守る）
+_CACHE_MAINTENANCE_LATEST: dict[str, Path] = {}
 
-    設定が無いときは、古い版の残骸（名前の版が今のコードと違うもの）だけを消す（2026-11-20）。
-    表示中の車のものは消さない（tools.livery.vehicle_cache_limit）。
+
+def _start_vehicle_cache_limit(output_dir: Path, summary: dict, *,
+                               delay_seconds: float = CACHE_MAINTENANCE_DELAY_SECONDS) -> None:
+    """共有の設定に準備のキャッシュの容量の上限（vehicle_cache_limit_gb）があれば、上限を超えた分を裏で消す。
+
+    設定が無いときは、古い版の残骸（名前の版が今のコードと違うもの）だけを消す（2026-11-20）。古い版の残骸は
+    版が変わったとき（新しいプロセス）にしか増えないので、見回しはプロセスごと・キャッシュの場所ごとに 1 回だけ、
+    最初の表示の準備の delay_seconds 秒後に行う（2026-11-21。最初の表示と取り合わない）。2 回目からの準備は、
+    表示中の準備のフォルダーを覚え直すだけ。表示中の車のものは消さない（tools.livery.vehicle_cache_limit）。
     失敗しても表示は止めず、消した・消せなかった結果をブリッジのログに残す。
     """
     try:
         from tools.livery.vehicle_cache_limit import (VEHICLE_CACHE_DIR, enforce_cache_limit,
                                                       limit_bytes_from_settings, remove_obsolete)
-        limit = limit_bytes_from_settings(load_shared_settings(_settings_path()))
         cache_value = _string(summary.get("vehicle_cache_root"))
         if not cache_value:
             return
@@ -2458,20 +2568,29 @@ def _start_vehicle_cache_limit(output_dir: Path, summary: dict) -> None:
             return
         output_root = cache_root.parent
         prepared = Path(output_dir).resolve()
+        key = os.path.normcase(str(output_root))
+        with _CACHE_MAINTENANCE_LOCK:
+            started = key in _CACHE_MAINTENANCE_LATEST
+            _CACHE_MAINTENANCE_LATEST[key] = prepared
+        if started:
+            return
+        limit = limit_bytes_from_settings(load_shared_settings(_settings_path()))
     except Exception as exc:  # noqa: BLE001  容量の上限は補助。表示は止めない。
         _append_bridge_log("キャッシュの容量の上限の準備に失敗: " + f"{type(exc).__name__}: {exc}")
         return
 
     def run() -> None:
         try:
+            with _CACHE_MAINTENANCE_LOCK:
+                current = _CACHE_MAINTENANCE_LATEST.get(key, prepared)
             if limit is None:
-                result = remove_obsolete(output_root, current_prepared_dir=prepared)
+                result = remove_obsolete(output_root, current_prepared_dir=current)
                 if result["deleted_units"] or result["failed_units"]:
                     _append_bridge_log(
                         f"キャッシュの古い版の残骸：消した {result['deleted_units']} 単位 "
                         f"{result['deleted_bytes'] / 1024 ** 3:.2f} GB、消せなかった {result['failed_units']} 単位")
                 return
-            result = enforce_cache_limit(output_root, limit, current_prepared_dir=prepared)
+            result = enforce_cache_limit(output_root, limit, current_prepared_dir=current)
             if result["deleted_units"] or result["failed_units"]:
                 _append_bridge_log(
                     f"キャッシュの容量の上限 {limit / 1024 ** 3:.1f} GB：使用 {result['before_bytes'] / 1024 ** 3:.2f} GB、"
@@ -2480,7 +2599,47 @@ def _start_vehicle_cache_limit(output_dir: Path, summary: dict) -> None:
         except Exception as exc:  # noqa: BLE001
             _append_bridge_log("キャッシュの容量の上限の処理に失敗: " + f"{type(exc).__name__}: {exc}")
 
-    threading.Thread(target=run, name="lo4fh6-vehicle-cache-limit", daemon=True).start()
+    timer = threading.Timer(max(0.0, float(delay_seconds)), run)
+    timer.name = "lo4fh6-vehicle-cache-limit"
+    timer.daemon = True
+    timer.start()
+
+
+def _deferred_body_kit_converter(summary: dict) -> Callable[[Path, list[str]], None] | None:
+    """準備で変換を後回しにしたボディキットの部品を、Viewer で選ばれたときに変換する関数（2026-11-21）。
+
+    車の原本の情報（車の一覧）は、初めて変換するときに読む（ページを開く時間を延ばさない）。保存先は、この車の
+    キャッシュの meshes の中で、名前に今の原本の ZIP の SHA と更新日時が入っている物だけを受け付ける
+    （準備の後にゲームが更新されていれば、変換せずに理由を返す）。
+    """
+    cache_value = _string(summary.get("vehicle_cache_root"))
+    archive_sha = _string(summary.get("vehicle_archive_sha256")).lower()
+    game_folder = _string(summary.get("game_folder"))
+    archive_value = _string(summary.get("vehicle_archive"))
+    car_id = summary.get("car_id")
+    if not cache_value or len(archive_sha) != 64 or not game_folder or not archive_value or car_id is None:
+        return None
+    vehicle_cache_root = Path(cache_value).resolve()
+    mesh_dir = vehicle_cache_root / "meshes"
+
+    def convert(planned: Path, added_entries: list[str]) -> None:
+        from tools.livery.body_kit_overlay_mesh import ensure_body_kit_overlay
+        from tools.livery.vehicle_assets import load_or_build_vehicle_asset_index
+        target = Path(planned).resolve()
+        if target.parent != mesh_dir or archive_sha not in target.name or target.suffix.casefold() != ".glb":
+            raise ValueError("The deferred body-kit mesh is outside this vehicle cache.")
+        index = load_or_build_vehicle_asset_index(game_folder, vehicle_cache_root / "vehicle-index.json")
+        asset = index.get(int(car_id))
+        if asset is None or Path(asset.archive_path).resolve() != Path(archive_value).resolve():
+            raise ValueError("The vehicle archive for the deferred body-kit mesh is no longer available.")
+        if not target.name.startswith(f"{asset.model_code}-{asset.archive_mtime_ns}-"):
+            raise ValueError("The vehicle archive changed after the preview was prepared.")
+        started = time.perf_counter()
+        _validation, cache_hit = ensure_body_kit_overlay(asset, target, added_entries)
+        _append_bridge_log(f"ボディキットの部品を{'キャッシュから用意' if cache_hit else '変換'}しました: "
+                           f"{target.name}（{time.perf_counter() - started:.2f} 秒）")
+
+    return convert
 
 
 def _register_part_options(server: LiveryInspectorServer, summary: dict) -> None:
@@ -2871,8 +3030,10 @@ def _prepare_for_viewer(
     # r364：準備済み出力はViewer起動に必要な情報を保持している。
     # 古い全Vinyl Cacheに触れる前に出力を再利用し、必要形状だけを後からVinyls.zipから取得する。
     reusable_in_process = not rebuild and _prepared_in_this_process(output_dir, request)
+    # 前のプロセスで準備した出力は、残した近道の値が今のままのときだけ使い回す（2026-11-21）
     reusable_without_full_vinyl_cache = reusable_in_process or (
         not rebuild
+        and _prepared_on_disk(output_dir, request)
         and cached_preview_ready(
             output_dir,
             None,
@@ -2901,6 +3062,9 @@ def _prepare_for_viewer(
         (output_dir / "viewer-prepare-state.json").write_text(
             json.dumps(prepare_state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
+        if not reusable_in_process:
+            # 前のプロセスの出力を使い回したら、このプロセスの近道にも覚える（次の差し替えは確かめが軽い）
+            _remember_prepared_in_process(output_dir, request)
         if expected_database is not None:
             evidence = _gamedb_assembly_evidence(output_dir)
             if evidence is None:
@@ -2957,6 +3121,8 @@ def _prepare_for_viewer(
         update("車両とペイントの3Dプレビューを準備しています...")
         if vinyl_resource_root is None:
             print("vinyl:   GPU runtime selects required shapes from installed Vinyls.zip")
+        # 作り直しの途中で止まっても、古い近道の値で使い回さない（終わったら新しい値を残す）
+        (output_dir / PREPARED_GUARD_FILE).unlink(missing_ok=True)
         prepare_preview(request, output_dir, vinyl_resource_root, hide_window=hide_subprocess_window)
         generated = True
         _remember_prepared_in_process(output_dir, request)
@@ -3666,8 +3832,67 @@ def _forward_to_running_viewer(args: argparse.Namespace, argv: list[str]) -> boo
     return _window_reuse.forward(argv, _forwarded_cwd(args), log=_append_bridge_log)
 
 
-def _ViewerHost(accept: Callable[[list[str]], None], closed: threading.Event) -> "_window_reuse.ViewerHost":
-    return _window_reuse.ViewerHost(accept, closed, log=_append_bridge_log)
+def _ViewerHost(accept: Callable[[list[str]], None], closed: threading.Event,
+                standby: Callable[[int], None] | None = None) -> "_window_reuse.ViewerHost":
+    return _window_reuse.ViewerHost(accept, closed, log=_append_bridge_log, standby=standby)
+
+
+def _start_viewer_standby(args: argparse.Namespace, parent_pid: int) -> int:
+    """Organizer の起動で Viewer を温めておく（2026-11-21、FH6 に近づける案 ⑥ の続き）。
+
+    共有の設定 viewer_standby_with_organizer がオフなら何もしない。開いている（隠している）Viewer があれば、
+    窓を増やさずに Organizer の番号を伝えて終わる。無ければ、窓を隠したまま起動して待つ（最初の依頼は窓の使い回しと
+    同じく受付へ渡り、窓を出して開く）。
+    """
+    if not _window_reuse.standby_enabled(load_shared_settings(_settings_path())):
+        _append_bridge_log("viewer standby: off in the settings")
+        return 0
+    if _window_reuse.send_standby(parent_pid, log=_append_bridge_log):
+        return 0
+    if getattr(args, "window_mode", "standalone") == "browser":
+        return 0
+    if _spawn_uri_gui_child(args):
+        return 0
+    _append_bridge_log(f"viewer standby: starting hidden for Organizer pid={parent_pid}")
+    return launch_standalone_preview(None, None, None, rebuild=False, standby_parent_pid=parent_pid)
+
+
+def _warm_viewer_modules() -> None:
+    """温めておく起動で、準備に使う重い部品を先に読み込む（最初の依頼の準備を短くする）。失敗しても続ける。"""
+    started = time.perf_counter()
+    for name in ("vehicle_preview", "fh6_gpu_livery_production", "tools.livery.portable_mesh_converter",
+                 "tools.livery.inspector_server", "tools.livery.native_kernels"):
+        try:
+            __import__(name)
+        except Exception as exc:  # noqa: BLE001  読み込めない部品は、依頼のときに今までどおり読み込む
+            _append_bridge_log(f"viewer standby: warm import skipped {name}: {type(exc).__name__}")
+    _append_bridge_log(f"viewer standby: modules warmed in {time.perf_counter() - started:.2f}s")
+
+
+def _wait_for_standby_job(jobs: "queue.Queue[dict[str, Any]]", keep_alive: Any) -> dict[str, Any] | None:
+    """温めておく起動で、窓を作らずに最初の件を待つ（2026-11-21）。待つ前に重い部品を読み込む。
+
+    受付へ渡った件のうち最後の 1 件を、最初の件として返す。Organizer が終わり、残す時間が過ぎたら None
+    （窓を作らずに終える）。
+    """
+    _warm_viewer_modules()
+    while True:
+        if keep_alive.expired():
+            _append_bridge_log("viewer standby: ended without a request")
+            return None
+        try:
+            job = jobs.get(timeout=0.5)
+        except queue.Empty:
+            continue
+        # 続けて届いた依頼は、最後の 1 件だけ開く
+        while True:
+            try:
+                job = jobs.get_nowait()
+            except queue.Empty:
+                break
+        keep_alive.shown_for_job()
+        _append_bridge_log("viewer standby: opening the window for the first request")
+        return {**job, "first": True, "from_standby": True}
 
 
 def _standalone_title(request: dict[str, Any]) -> str:
@@ -3771,34 +3996,75 @@ def _bring_window_to_front(window: Any) -> None:
     for action in (window.restore, window.show):
         with contextlib.suppress(Exception):
             action()
+    # いったん最前面にしてすぐ戻す。pywebview の window.on_top は使わない（隠して作った窓を初めて表示するときに、
+    # 窓の糸と互いに待って止まった。2026-11-21、viewer_window_reuse.raise_own_windows の説明）。
     with contextlib.suppress(Exception):
-        window.on_top = True
-        window.on_top = False
+        _window_reuse.raise_own_windows()
 
 
 def launch_standalone_preview(
-    output_dir: Path,
-    request: dict[str, Any],
-    vinyl_cache_root: Path,
+    output_dir: Path | None,
+    request: dict[str, Any] | None,
+    vinyl_cache_root: Path | None,
     *,
     rebuild: bool,
+    standby_parent_pid: int | None = None,
 ) -> int:
+    """Viewer の窓を開き、最初の件と、別の起動から渡された件（窓の使い回し）を順に開く。
+
+    standby_parent_pid を渡すと、窓を作らずに待つ（Organizer の起動で温めておく。2026-11-21）。Python の起動・重い部品の
+    読み込み・受付だけを先に済ませ、最初の件が受付へ渡ったら、通常の起動と同じく見える窓を作って開く。その番号の
+    Organizer が動いている間は終えない。
+    （初めは窓を隠したまま作って待っていたが、その窓を初めて表示すると、最初の 1 枚が約 6 秒遅れ、前に出す操作で
+    止まることもあった。2026-11-21）
+    """
     launch_started = time.perf_counter()
     try:
         import webview  # type: ignore
     except ImportError as exc:
         raise ValueError("Standalone viewer requires pywebview / WebView2 support.") from exc
 
+    standby = standby_parent_pid is not None
+    # 窓を閉じても、決めた時間（共有の設定 viewer_keep_alive_seconds、既定 10 分）は隠して残す（2026-11-20）。
+    keep_alive = _window_reuse.KeepAlive(_window_reuse.keep_alive_seconds(load_shared_settings(_settings_path())))
+    if standby:
+        keep_alive.start_hidden()
+        keep_alive.watch_parent(int(standby_parent_pid or 0))
+    closed = threading.Event()
+    # 窓で開く件の順番。最初の件のあとは、別の起動から渡された件（窓の使い回し）が入る。
+    jobs: "queue.Queue[dict[str, Any]]" = queue.Queue()
+    if not standby:
+        jobs.put({"request": request, "output_dir": output_dir, "vinyl_cache_root": vinyl_cache_root,
+                  "rebuild": rebuild, "started": launch_started, "first": True})
+    host: _ViewerHost | None = None
+    try:
+        host = _ViewerHost(lambda argv: jobs.put(_forwarded_standalone_job(argv)), closed,
+                           standby=keep_alive.watch_parent)
+    except OSError as exc:
+        _append_bridge_log(f"viewer host unavailable; later launches open new windows: {exc}")
+        if standby:
+            return 0  # 受付が無ければ温めておいても使えない
+    if standby:
+        first_job = _wait_for_standby_job(jobs, keep_alive)
+        if first_job is None:
+            if host is not None:
+                host.close()
+            return 0
+        jobs.put(first_job)
+        request, output_dir, vinyl_cache_root = first_job["request"], first_job["output_dir"], first_job["vinyl_cache_root"]
+
+    request = request if request is not None else {}
     title = _standalone_title(request)
     initial_gpu_selection = _gpu_livery_runtime_selection()
-    _write_gpu_livery_runtime_selection(output_dir, initial_gpu_selection)
+    if output_dir is not None:
+        _write_gpu_livery_runtime_selection(output_dir, initial_gpu_selection)
     state: dict[str, Any] = {
         "server": None,
         "error": None,
         "vinyl_resource_root": None,
         "gpu_livery_runtime_selection": initial_gpu_selection,
     }
-    api = PreviewJsApi(request, output_dir, vinyl_cache_root, state)
+    api = PreviewJsApi(request, output_dir or Path(), vinyl_cache_root or Path(), state)
     window = webview.create_window(
         f"{title} - Livery Organizer for FH6",
         html=_loading_html(request),
@@ -3807,7 +4073,6 @@ def launch_standalone_preview(
         height=900,
         min_size=(960, 640),
     )
-    closed = threading.Event()
 
     def on_closed() -> None:
         closed.set()
@@ -3816,22 +4081,10 @@ def launch_standalone_preview(
         window.events.closed += on_closed
     except Exception:
         pass
-    # 窓を閉じても、決めた時間（共有の設定 viewer_keep_alive_seconds、既定 10 分）は隠して残す（2026-11-20）。
-    keep_alive = _window_reuse.KeepAlive(_window_reuse.keep_alive_seconds(load_shared_settings(_settings_path())))
     try:
         window.events.closing += lambda: keep_alive.on_closing(window)
     except Exception:
         pass
-
-    # 窓で開く件の順番。最初の件のあとは、別の起動から渡された件（窓の使い回し）が入る。
-    jobs: "queue.Queue[dict[str, Any]]" = queue.Queue()
-    jobs.put({"request": request, "output_dir": output_dir, "vinyl_cache_root": vinyl_cache_root,
-              "rebuild": rebuild, "started": launch_started, "first": True})
-    host: _ViewerHost | None = None
-    try:
-        host = _ViewerHost(lambda argv: jobs.put(_forwarded_standalone_job(argv)), closed)
-    except OSError as exc:
-        _append_bridge_log(f"viewer host unavailable; later launches open new windows: {exc}")
 
     def worker() -> None:
         while not closed.is_set():
@@ -3902,6 +4155,9 @@ def _open_standalone_job(window: Any, api: "PreviewJsApi", state: dict[str, Any]
                 with contextlib.suppress(Exception):
                     previous_server.close()
                 _append_bridge_log("viewer switched to the next paint; previous local server closed")
+    if job.get("from_standby"):
+        # 温めておいた起動の最初の件は、Organizer のリンクから渡った依頼。窓をほかの窓の上に出す（2026-11-21）
+        _bring_window_to_front(window)
     initial_gpu_selection = state.get("gpu_livery_runtime_selection")
     if swap_server is not None:
         def status_callback(message: str) -> None:
@@ -4092,6 +4348,10 @@ def main() -> int:
     if args.unregister_uri_scheme:
         unregister_uri_scheme()
         return 0
+    # Organizer の起動で温めておく依頼（liveryorganizerpreviewforfh6://standby?pid=…。2026-11-21）
+    standby_parent = _window_reuse.standby_request_pid(sys.argv[1:])
+    if standby_parent is not None:
+        return _start_viewer_standby(args, standby_parent)
     # 開いている Viewer の窓があれば、そこへ依頼を渡して終わる（窓の使い回し）。無ければ従来どおり。
     if _forward_to_running_viewer(args, sys.argv[1:]):
         return 0

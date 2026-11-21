@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .png_settings import PNG_COMPRESS_LEVEL
 
 import hashlib
 import io
@@ -374,7 +375,7 @@ def _normalize_source_mask_to_runtime(
 
 def _save_png(image: Image.Image, path: Path) -> None:
     temporary = path.with_name(path.name + ".tmp")
-    image.save(temporary, format="PNG", compress_level=3)
+    image.save(temporary, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
     os.replace(temporary, path)
 
 

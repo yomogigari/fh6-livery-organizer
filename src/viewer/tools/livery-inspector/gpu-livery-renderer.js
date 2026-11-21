@@ -212,6 +212,9 @@ function appendVertex(target, record, vertex, worldBounds, placementAlpha, raste
   return [clipX, clipY];
 }
 
+let expandScratchTransformed = new Float32Array(0);
+let expandScratchReady = new Uint8Array(0);
+
 // 配置 1 件の三角形を展開する（既定の経路）。
 // 頂点の変換は placementWorldPoint と appendVertex と同じ式・同じ演算の順で書き、配置ごとに決まる値
 // （位置・倍率・回転・範囲・色・塗りの方式）だけを先に取り出す。頂点ごとの配列・オブジェクトは作らない。
@@ -262,8 +265,17 @@ function expandPlacementTriangles(record, geometry, worldBounds, placementAlpha,
   const vertexCount = sourceVertices.length;
   const validIndexCount = Math.floor(indices.length / 3) * 3;
   const values = new Float32Array(validIndexCount * 6);
-  const transformed = new Float32Array(vertexCount * 6);
-  const ready = new Uint8Array(vertexCount);
+  // 頂点ごとの変換の結果と印は、配置ごとに作り直さず、使い回す作業用の配列に入れる（2026-11-21。差し替え 1 回で
+  // 配置は数千〜1 万件あり、そのたびに 2 つの配列を作っていた）。印は使う範囲だけ 0 に戻す。値は書いてから読む。
+  if (expandScratchTransformed.length < vertexCount * 6) {
+    expandScratchTransformed = new Float32Array(Math.max(vertexCount * 6, expandScratchTransformed.length * 2));
+  }
+  if (expandScratchReady.length < vertexCount) {
+    expandScratchReady = new Uint8Array(Math.max(vertexCount, expandScratchReady.length * 2));
+  }
+  const transformed = expandScratchTransformed;
+  const ready = expandScratchReady;
+  ready.fill(0, 0, vertexCount);
   let cursor = 0;
   let minClipX = Infinity;
   let minClipY = Infinity;

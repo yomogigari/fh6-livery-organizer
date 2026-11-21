@@ -35,6 +35,8 @@ import time
 import zlib
 from pathlib import Path
 
+from . import bytes_memo
+
 MAGIC = b"LO4GLBD1"
 FORMAT = "lo4fh6.glb-delta.v1"
 SHARED_FORMAT = "lo4fh6.glb-delta.v2-shared"
@@ -145,11 +147,70 @@ def _views(data: bytes) -> tuple[int, int, list[tuple[int, int]], set[tuple[int,
     return bin_chunk[1], bin_chunk[2], views, images
 
 
+def _prefix_delta(target: bytes, base: bytes,
+                  shared_store: Path | None) -> tuple[list[list], bytearray] | None:
+    """target の BIN が base の BIN をそのまま先頭に持つときの近道（2026-11-21、FH6 に近づける案 ⑤ の A）。
+
+    タイヤの段の出来上がりはいつもこの形（各段が「入力の BIN が出力の先頭にそのまま残る」ことを確かめている）。
+    区画ごとの照らし合わせ（土台と出来上がりの全区画の SHA-1）をせずに、[自前（BIN の見出しまで）, 土台の BIN 全体,
+    後ろの分] にする。後ろの分の画像の区画は、今までどおり共有の置き場に置く。当てはまらなければ None。
+    組み立てると target と同じバイト列になる（区画が target を隙間なく覆う）。
+    """
+    try:
+        target_bin = next((c for c in _chunks(target) if c[0] == _BIN_CHUNK), None)
+        base_bin = next((c for c in _chunks(base) if c[0] == _BIN_CHUNK), None)
+    except GlbDeltaError:
+        return None
+    if target_bin is None or base_bin is None or base_bin[2] == 0 or target_bin[2] < base_bin[2]:
+        return None
+    bin_start, base_start, base_length = target_bin[1], base_bin[1], base_bin[2]
+    # bytes に写して比べる（memoryview の比べは 1 バイトずつで、25 MB で約 3 倍遅かった）
+    if target[bin_start:bin_start + base_length] != base[base_start:base_start + base_length]:
+        return None
+    _, _, views, image_views = _views(target)
+    own = bytearray()
+    segments: list[list] = []
+
+    def add_own(start: int, end: int) -> None:
+        if end <= start:
+            return
+        if segments and segments[-1][0] == "o" and segments[-1][1] + segments[-1][2] == len(own):
+            segments[-1][2] += end - start
+        else:
+            segments.append(["o", len(own), end - start])
+        own.extend(target[start:end])
+
+    add_own(0, bin_start)  # BIN より前（GLB の見出し・JSON チャンク・BIN の見出し）
+    segments.append(["b", base_start, base_length])
+    cursor = bin_start + base_length
+    for start, size in sorted(views):
+        absolute = bin_start + start
+        if absolute < cursor:
+            continue  # 土台の BIN の中の区画（と、それに重なる区画）は、土台の分で入れ済み
+        add_own(cursor, absolute)
+        if shared_store is not None and size >= SHARED_MIN_BYTES and (start, size) in image_views:
+            segments.append(["s", _put_shared(Path(shared_store), target[absolute:absolute + size]), size])
+        else:
+            add_own(absolute, absolute + size)
+        cursor = absolute + size
+    add_own(cursor, len(target))
+    return segments, own
+
+
 def make_delta(target: bytes, base: bytes, shared_store: Path | None = None) -> bytes:
     """target（GLB）を base（GLB）との差分にする。組み立て直すと target と同じバイト列になる。
 
     shared_store を渡すと、土台に無い画像の区画を共有の置き場に置き、差分には名前だけを書く。
+    target の BIN が base の BIN をそのまま先頭に持つときは、近道（_prefix_delta）で作る。近道で作った差分は、
+    ここでは組み立て直して確かめない（区画が target を隙間なく覆うことだけ確かめる。組み立てるときは、今までどおり
+    出来上がりの SHA-256 で確かめる）。
     """
+    fast = _prefix_delta(target, base, shared_store)
+    if fast is not None:
+        segments, own = fast
+        if sum(int(segment[2]) for segment in segments) != len(target):
+            raise GlbDeltaError("GLB の差分の区画が出来上がりを覆っていない")
+        return _pack_delta(target, base, segments, own)
     bin_start, bin_length, target_views, image_views = _views(target)
     base_bin_start, _, base_views, _ = _views(base)
     # 土台の区画を (長さ, SHA-1) で引けるようにする（同じ中身の区画が複数あれば最初のもの）
@@ -194,19 +255,24 @@ def make_delta(target: bytes, base: bytes, shared_store: Path | None = None) -> 
                 add_own(absolute, absolute + size)
             cursor = absolute + size
     add_own(cursor, len(target))
+    delta = _pack_delta(target, base, segments, own)
+    if apply_delta(delta, base, shared_store) != target:
+        raise GlbDeltaError("差分から組み立てた GLB が元と一致しない")
+    return delta
+
+
+def _pack_delta(target: bytes, base: bytes, segments: list[list], own: bytearray) -> bytes:
+    """目録と自前のバイト列から、差分のバイト列を作る。"""
     manifest = {
         "format": SHARED_FORMAT if any(s[0] == "s" for s in segments) else FORMAT,
-        "target_sha256": hashlib.sha256(target).hexdigest(),
+        "target_sha256": bytes_memo.sha256_hex(target),
         "target_length": len(target),
-        "base_sha256": hashlib.sha256(base).hexdigest(),
+        "base_sha256": bytes_memo.sha256_hex(base),
         "base_length": len(base),
         "segments": segments,
     }
     packed_manifest = zlib.compress(json.dumps(manifest, separators=(",", ":")).encode("utf-8"), 9)
-    delta = MAGIC + struct.pack("<I", len(packed_manifest)) + packed_manifest + zlib.compress(bytes(own), 6)
-    if apply_delta(delta, base, shared_store) != target:
-        raise GlbDeltaError("差分から組み立てた GLB が元と一致しない")
-    return delta
+    return MAGIC + struct.pack("<I", len(packed_manifest)) + packed_manifest + zlib.compress(bytes(own), 6)
 
 
 def read_manifest(delta: bytes) -> dict:
@@ -226,7 +292,7 @@ def apply_delta(delta: bytes, base: bytes, shared_store: Path | None = None) -> 
     共有の区画（種類 "s"）は shared_store から読む。無い・壊れていれば GlbDeltaSharedMissing。
     """
     manifest = read_manifest(delta)
-    if len(base) != manifest["base_length"] or hashlib.sha256(base).hexdigest() != manifest["base_sha256"]:
+    if len(base) != manifest["base_length"] or bytes_memo.sha256_hex(base) != manifest["base_sha256"]:
         raise GlbDeltaBaseMismatch("GLB の差分の土台が違う")
     (size,) = struct.unpack_from("<I", delta, len(MAGIC))
     own = zlib.decompress(delta[len(MAGIC) + 4 + size:])
@@ -242,7 +308,7 @@ def apply_delta(delta: bytes, base: bytes, shared_store: Path | None = None) -> 
             raise GlbDeltaError("GLB の差分の参照が範囲の外")
         out.extend(source[position:position + length])
     data = bytes(out)
-    if len(data) != manifest["target_length"] or hashlib.sha256(data).hexdigest() != manifest["target_sha256"]:
+    if len(data) != manifest["target_length"] or bytes_memo.sha256_hex(data) != manifest["target_sha256"]:
         raise GlbDeltaError("差分から組み立てた GLB の SHA が記録と違う")
     return data
 
@@ -323,7 +389,7 @@ def place_materialized(store: Path, data: bytes, expected_sha: str, base: Path |
 
     base を渡すと、置いた GLB の名前にも同じ土台を登録する（次の段がこの GLB を入力にして差分で保存できる）。
     """
-    if hashlib.sha256(data).hexdigest() != expected_sha:
+    if bytes_memo.sha256_hex(data) != expected_sha:
         raise GlbDeltaError("組み立てた GLB の SHA が記録と違う")
     store.mkdir(parents=True, exist_ok=True)
     path = store / f"{expected_sha}.glb"

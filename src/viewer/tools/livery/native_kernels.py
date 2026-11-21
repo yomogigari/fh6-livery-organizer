@@ -5,7 +5,8 @@
 - 公開の fh6-livery-organizer（ソースだけ）には DLL が無いので、Python で同じ計算をする。
 - 無い・SHA が合わない・読み込めない・Windows でない・環境変数 LO4FH6_NATIVE=0 のときは None を返す。呼び出し側は
   今までの Python の処理を使う（結果は同じ）。
-- 結果は Python の処理とバイト単位で同じ（tests/viewer/test_viewer_native_kernels.py で比べる）。
+- 結果は Python の処理と同じ（tests/viewer/test_viewer_native_kernels.py で比べる）。ただしメッシュの処理（部品の版 4 の
+  mesh_geometry、2026-11-21）は、0.0 と -0.0 の違いや、1e-16 より小さい値の下の桁の違いが出ることがある（目で見て同じ）。
 """
 from __future__ import annotations
 
@@ -20,11 +21,27 @@ import threading
 from pathlib import Path
 
 DLL_NAME = "lo4fh6_native.dll"
-NATIVE_VERSION = 3  # 1 は C の版、2 は Rust の BC4 だけの版、3 は C_livery の解読を足した版（2026-11-20）
+NATIVE_VERSION = 4  # 1 は C の版、2 は Rust の BC4 だけの版、3 は C_livery の解読を足した版（2026-11-20）、
+#                     4 は車体の変換のメッシュ 1 つ分の数値の処理を足した版（2026-11-21）
 # C_livery の解読の出力の図形 1 つ（Rust の RECORD_SIZE と同じ並び）
 LIVERY_RECORD = struct.Struct("<6dIIIHBB4B")
 # 作った DLL の SHA-256（build_lo4fh6_native.py が書き込む）。違う DLL は読み込まない。
-DLL_SHA256 = "0e7c4960b8c802d0ae3816e625c07c4a8844db92a8a1671bb4fe1812661418cf"
+DLL_SHA256 = "772db2e3b59ef58f380794c4cf7067d2436286b01c25bc82c604a5efa338727d"
+
+# 車体の変換のメッシュ 1 つ分の入力（Rust の mesh.rs の MeshParams・MeshElement と同じ並び。2026-11-21）
+class MeshElement(ctypes.Structure):
+    _fields_ = [("semantic", ctypes.c_uint32), ("semantic_index", ctypes.c_int32), ("format", ctypes.c_uint32),
+                ("stride", ctypes.c_uint32), ("base", ctypes.c_int64), ("buffer_offset", ctypes.c_uint64),
+                ("buffer_length", ctypes.c_uint64)]
+
+
+class MeshParams(ctypes.Structure):
+    _fields_ = [("index_offset", ctypes.c_uint64), ("index_count", ctypes.c_uint64), ("index_width", ctypes.c_uint32),
+                ("flags", ctypes.c_uint32), ("scale", ctypes.c_float * 4), ("translate", ctypes.c_float * 4),
+                ("bone", ctypes.c_double * 16), ("instance", ctypes.c_double * 16), ("uv_affine", ctypes.c_double * 20)]
+
+
+MESH_HEADER = struct.Struct("<8I6f2I")  # Rust の mesh.rs の見出し（64 バイト）
 
 _LOCK = threading.Lock()
 _STATE: dict[str, object] = {"tried": False, "library": None, "math_ok": None}
@@ -58,6 +75,10 @@ def _load() -> ctypes.CDLL | None:
         layers.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32), ctypes.c_char_p,
                            ctypes.c_size_t, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64)]
         layers.restype = ctypes.c_int
+        mesh = library.lo4_mesh_geometry
+        mesh.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(MeshParams), ctypes.POINTER(MeshElement),
+                         ctypes.c_size_t, ctypes.c_void_p, ctypes.c_size_t]
+        mesh.restype = ctypes.c_int
         evaluate = library.lo4_math_eval
         evaluate.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_double]
         evaluate.restype = ctypes.c_double
@@ -141,3 +162,20 @@ def decode_livery_layers(body: bytes, counts, turns: bytes) -> tuple[bytes, tupl
     if code != 0:
         return None
     return out.raw[:total * LIVERY_RECORD.size], tuple(int(value) for value in evidence)
+
+
+def mesh_geometry(raw: bytes, params: MeshParams, elements, capacity: int) -> bytearray | None:
+    """車体の変換のメッシュ 1 つ分を、Rust の部品で処理する（mesh.rs の lo4_mesh_geometry）。
+
+    戻り値は「見出し（MESH_HEADER）・位置・法線・UV・番号」を書いた bytearray。部品が使えない・部品が扱わない入力の
+    ときは None（呼び出し側は今までの Python の処理で作る）。
+    """
+    lib = library()
+    if lib is None:
+        return None
+    out = bytearray(max(int(capacity), MESH_HEADER.size))
+    target = (ctypes.c_char * len(out)).from_buffer(out)
+    array = (MeshElement * max(len(elements), 1))(*elements)
+    code = lib.lo4_mesh_geometry(raw, len(raw), ctypes.byref(params), array, len(elements), ctypes.addressof(target), len(out))
+    del target
+    return out if code == 0 else None

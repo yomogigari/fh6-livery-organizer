@@ -1,8 +1,11 @@
 """準備のキャッシュ（ペイントごとの準備のフォルダーと、車種ごとの _fh6-vehicle-cache）の容量の上限。
 
-- 共有の設定 vehicle_cache_limit_gb に正の数があるときだけ、表示の準備の後に
-  上限の 90% を超えていれば 75% まで消す（vehicle_analysis_cache.plan_eviction、2026-11-17 に承認の方針）。
+- 共有の設定 vehicle_cache_limit_gb に正の数があるときだけ、上限の 90% を超えていれば 75% まで消す
+  （vehicle_analysis_cache.plan_eviction、2026-11-17 に承認の方針）。
 - 設定が無いときは、古い版の残骸だけを消す（remove_obsolete。版を上げると二度と使われないため。2026-11-20）。
+  まず名前だけで古い版の残骸があるかを調べ、あるときだけキャッシュ全体（大きさ・参照）を見回す（2026-11-21）。
+- どちらも、Viewer のプロセスごと・キャッシュの場所ごとに 1 回だけ、最初の表示の準備の少し後に裏で行う
+  （organizer_preview_bridge._start_vehicle_cache_limit。準備のたびに見回すと表示と取り合っていた。2026-11-21）。
 - 消す順番：古い版の残骸（名前の版が今のコードと違う）→ 元のペイントが無い準備のフォルダー →
   「大きさ × 使っていない期間 ÷ 作り直しの秒数」が大きいもの。
 - 消さないもの：表示中の車（今の準備のフォルダーと、それが参照するキャッシュ）・2 車種以上が参照する
@@ -154,8 +157,13 @@ def _referenced_paths(folder: Path) -> set[str]:
 
 
 def collect_cache_units(output_root: Path | str, *, revisions: CacheRevisions | None = None,
-                        current_prepared_dir: Path | str | None = None) -> list[CacheUnit]:
-    """消す単位の一覧。単位はまとめて消す（GLB と付属の JSON、タイヤのフォルダー等）。"""
+                        current_prepared_dir: Path | str | None = None, measure: bool = True) -> list[CacheUnit]:
+    """消す単位の一覧。単位はまとめて消す（GLB と付属の JSON、タイヤのフォルダー等）。
+
+    measure=False のときは、名前だけで単位と種類・古い版かどうかを分ける（2026-11-21）。準備のフォルダーの
+    JSON（元のペイントの有無・参照）を読まず、大きさも測らないので、bytes・orphan・referenced_by は空のまま、
+    in_use は表示中の準備のフォルダーだけ。古い版の残骸があるかを安く調べるのに使う。
+    """
     root = Path(output_root)
     revisions = revisions or current_revisions()
     cache = root / VEHICLE_CACHE_DIR
@@ -174,9 +182,10 @@ def collect_cache_units(output_root: Path | str, *, revisions: CacheRevisions | 
                 continue
             unit = CacheUnit("prepared", [folder], rebuild_seconds=5.0)
             unit.in_use = current_key is not None and _key(folder) == current_key
-            unit.orphan = _prepared_source_missing(folder)
             units.append(unit)
-            prepared.append((unit, _referenced_paths(folder)))
+            if measure:
+                unit.orphan = _prepared_source_missing(folder)
+                prepared.append((unit, _referenced_paths(folder)))
 
     def add(kind: str, paths: list[Path], **flags) -> CacheUnit:
         if any(DELETING_MARK in path.name for path in paths):
@@ -254,6 +263,8 @@ def collect_cache_units(output_root: Path | str, *, revisions: CacheRevisions | 
             else:
                 add("other", [entry], pinned=True)
 
+    if not measure:
+        return units
     for unit in units:
         unit.bytes, unit.last_used = _measure(unit.paths)
 
@@ -289,8 +300,15 @@ def remove_obsolete(output_root: Path | str, *, current_prepared_dir: Path | str
                     revisions: CacheRevisions | None = None) -> dict:
     """古い版の残骸（名前の版が今のコードと違う車体・重ね合わせ・部品の選択肢・タイヤと、消す途中で止まったもの）
     だけを消す。容量の上限の設定が無くても、表示の準備の後に裏で使う（版を上げると、古い版は二度と使われない。
-    2026-11-20）。表示中の車が参照するものと、リンクの先は消さない。結果の記録を返す。"""
+    2026-11-20）。表示中の車が参照するものと、リンクの先は消さない。結果の記録を返す。
+
+    まず名前だけで調べ（collect_cache_units の measure=False）、古い版の残骸が無ければ、準備のフォルダーの JSON・
+    全ファイルの大きさ・参照の照らし合わせを行わずに返す（2026-11-21。full_scan が False）。"""
     root = Path(output_root)
+    by_name = collect_cache_units(root, revisions=revisions, current_prepared_dir=current_prepared_dir, measure=False)
+    if not any(unit.obsolete for unit in by_name):
+        return {"deleted_units": 0, "deleted_bytes": 0, "failed_units": 0, "deleted": [], "failed": [],
+                "full_scan": False, "at": time.strftime("%Y-%m-%d %H:%M:%S")}
     units = collect_cache_units(root, revisions=revisions, current_prepared_dir=current_prepared_dir)
     deleted, failed = [], []
     for unit in units:
@@ -303,7 +321,7 @@ def remove_obsolete(output_root: Path | str, *, current_prepared_dir: Path | str
         else:
             failed.append({**record, "reason": reason})
     return {"deleted_units": len(deleted), "deleted_bytes": sum(row["bytes"] for row in deleted),
-            "failed_units": len(failed), "deleted": deleted, "failed": failed,
+            "failed_units": len(failed), "deleted": deleted, "failed": failed, "full_scan": True,
             "at": time.strftime("%Y-%m-%d %H:%M:%S")}
 
 

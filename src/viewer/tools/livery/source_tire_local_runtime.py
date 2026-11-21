@@ -50,7 +50,9 @@ class LocalTireSourceError(ValueError):
 
 
 def _sha(raw: bytes) -> str:
-    return hashlib.sha256(raw).hexdigest()
+    # 同じ bytes のオブジェクトの SHA は覚えた値を使う（bytes_memo、2026-11-21）
+    from .bytes_memo import sha256_hex
+    return sha256_hex(raw)
 
 
 def _file_sha(path: Path) -> str:
@@ -864,6 +866,9 @@ def build_local_tire_glb(source_glb:Path, contract:dict, game_folder:Path, outpu
     model,dimensions,game_centers=_validated_assembly(contract)
     archive=resolve_installed_tire_archive(Path(game_folder),model)
     raw=source_glb.read_bytes();doc,bin_data=read_glb(raw)
+    # 元の BIN は、元のファイルの末尾（BIN チャンクは最後で、read_glb が長さを確かめている）。最後の先頭の比べに使う
+    # （read_glb で読み直すと、25 MB の SHA と写しが走る。2026-11-21）
+    source_bin_length=len(bin_data)
     if any(x.get('extras',{}).get('lo4_part_type')=='Tire' for x in doc.get('meshes',[])):
         raise LocalTireSourceError('元GLBにTireが存在し二重追加となります')
     doc.setdefault('materials',[])
@@ -966,11 +971,13 @@ def build_local_tire_glb(source_glb:Path, contract:dict, game_folder:Path, outpu
     report['wheel_glb_integrity'] = verify_local_original_wheel_material_proof(
         glb, report, require_source=vehicle_archive is not None)
     report['result_glb_sha256']=_sha(glb)
-    base_buffer=read_glb(raw)[1]
-    report['original_bin_prefix_identical']=bytes(bin_data[:len(base_buffer)])==bytes(base_buffer)
+    report['original_bin_prefix_identical']=bytes(bin_data[:source_bin_length])==raw[len(raw)-source_bin_length:]
     if not report['original_bin_prefix_identical']:raise LocalTireSourceError('元の車体GLB BINプレフィクス変更を拒否')
     output_glb.parent.mkdir(parents=True,exist_ok=True)
     output_glb.write_bytes(glb)
+    # 次の段（標準タイヤ）がこの GLB を読み直さないよう、書いた中身を同じプロセスで覚える（bytes_memo、2026-11-21）
+    from .bytes_memo import remember_file
+    remember_file(output_glb, glb)
     output_proof.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     return report
 
@@ -983,7 +990,8 @@ def verify_local_original_wheel_material_proof(glb: bytes, proof: dict, *, requi
     材質を欠く旧キャッシュを原本Texture生成成功と誤認しない。
     これは由来の検証ゲートであり、GPU画素やShader画質の合格認定ではない。
     """
-    document, _ = read_glb(glb)
+    # 文書と BIN を 1 回で読む（2 回読むと、25 MB の SHA と写しが 2 回走る。2026-11-21）
+    document, binary = read_glb(glb)
     origin = 'fh6-local-original-modelbin-materialbin-shaderbin-texture2d-v1'
     materials = document.get('materials', [])
     meshes = document.get('meshes', [])
@@ -996,7 +1004,6 @@ def verify_local_original_wheel_material_proof(glb: bytes, proof: dict, *, requi
     images = document.get('images', [])
     views = document.get('bufferViews', [])
     buffers = document.get('buffers', [])
-    _, binary = read_glb(glb)
     referenced = 0
     for mesh in meshes:
         if mesh.get('extras', {}).get('lo4_part_type') != 'WheelStyle':
@@ -1070,6 +1077,8 @@ def prepared_local_tire_mesh(source_glb:Path,contract:dict,game_folder:Path,outp
     try:
         build_local_tire_glb(source_glb,contract,game_folder,temp_glb,temp_proof,vehicle_archive=vehicle_archive)
         temp_glb.replace(final)
+        from .bytes_memo import moved
+        moved(temp_glb, final)
         temp_proof.replace(proof)
     finally:
         temp_glb.unlink(missing_ok=True)

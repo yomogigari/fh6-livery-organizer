@@ -6,6 +6,7 @@ viewer / successful Wheel+Tire GLB is never overwritten. The resulting UV0 PBR
 preview does NOT represent the FH6 multilayer shader or Xbox parity.
 """
 from __future__ import annotations
+from .png_settings import PNG_COMPRESS_LEVEL
 
 import argparse
 import copy
@@ -303,7 +304,7 @@ def read_original_text_extract(extracted_zip:Path, expected: set[str]) -> dict[s
             if not 16<=img.width<=8192 or not 16<=img.height<=8192:
                 img.close();raise SourceTextError('元SwatchBin画像寸法が不正')
             png_stream=io.BytesIO()
-            img.convert('RGBA').save(png_stream,format='PNG',compress_level=6)
+            img.convert('RGBA').save(png_stream,format='PNG',compress_level=PNG_COMPRESS_LEVEL)
             dim=[img.width,img.height];img.close()
             out[path]={'sha256':digest,'size':len(data),'rgba_png':png_stream.getvalue(),
                        'source_dimensions':dim}

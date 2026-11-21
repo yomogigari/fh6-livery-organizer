@@ -211,8 +211,8 @@ export class GpuOnlyDirectAtlas {
         gl.uniform1i(u.uClearOnly, 0);
       }
     }
-    const error = gl.getError();
-    if (error !== gl.NO_ERROR) throw new Error(`GPU-only atlas compositor GL error ${error}`);
+    // GL のエラーは読むまで最初の 1 つが残るので、タイルごとには確かめず、finish でまとめて確かめる
+    // （タイルごとの getError は、そのたびに GPU の処理の終わりを待たせていた。2026-11-21）。
     this.tileCount++;
   }
   finish(expectedCount) {
@@ -224,7 +224,8 @@ export class GpuOnlyDirectAtlas {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, this.framebuffer);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
     gl.blitFramebuffer(0, 0, this.width, this.height, 0, 0, this.width, this.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
-    if (gl.getError() !== gl.NO_ERROR) throw new Error('GPU-only atlas blit to WebGL canvas failed');
+    const error = gl.getError();
+    if (error !== gl.NO_ERROR) throw new Error(`GPU-only atlas compositor or blit to WebGL canvas failed: GL error ${error}`);
     gl.flush();
     return this.canvas;
   }

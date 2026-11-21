@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .png_settings import PNG_COMPRESS_LEVEL
 
 import hashlib
 import json
@@ -8,6 +9,7 @@ import mimetypes
 import re
 import secrets
 import threading
+from collections.abc import Callable
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -65,6 +67,9 @@ class LiveryInspectorServer:
         self._local_body_kit: dict = {}
         self._local_body_kit_variants: list[dict] = []
         self._local_body_kit_variant_meshes: dict[int, Path] = {}
+        # 準備で変換を後回しにした部品（番号 → 保存先と原本のモデル）と、変換する関数（2026-11-21）
+        self._local_body_kit_deferred: dict[int, tuple[Path, list[str]]] = {}
+        self._local_body_kit_convert = None
         self._local_render: dict = {}
         self._manifest: dict = {}
         self._gpu_livery_runtime: dict = {}
@@ -79,6 +84,8 @@ class LiveryInspectorServer:
         self._body_trim_bc7_refs: dict[str, str] = {}
         self._body_trim_bc7_locations: dict[str, dict] = {}
         self._body_trim_bc7_cache: dict[str, bytes] = {}
+        # 元の 2 枚のまま渡すラベル（<入力の SHA-256>.label → 大きさ・上書きの色・各画像の参照と位置。2026-11-21）
+        self._body_trim_labels: dict[str, dict] = {}
         self._body_trim_bc7_lock = threading.Lock()
         self._token = secrets.token_urlsafe(18)
         self._server: ThreadingHTTPServer | None = None
@@ -105,6 +112,8 @@ class LiveryInspectorServer:
         self._local_body_kit = {}
         self._local_body_kit_variants = []
         self._local_body_kit_variant_meshes = {}
+        self._local_body_kit_deferred = {}
+        self._local_body_kit_convert = None
         self._local_render = {}
         self._gpu_livery_runtime = {}
         self._stock_body_only = {}
@@ -296,11 +305,18 @@ class LiveryInspectorServer:
             return None
         return family, option_id, mesh
 
-    def set_local_body_kit_variants(self, variants: list[dict] | None) -> None:
-        """Viewerの再読込切替に使用するManifest由来のBodyKit候補を登録する。"""
+    def set_local_body_kit_variants(self, variants: list[dict] | None,
+                                    convert: Callable[[Path, list[str]], None] | None = None) -> None:
+        """Viewerの再読込切替に使用するManifest由来のBodyKit候補を登録する。
+
+        準備で変換を後回しにした部品（overlay_deferred）は、convert（保存先, 部品の原本のモデル）を渡されたときだけ
+        受け取り口を出し、Viewer で初めて求められたときに変換する（2026-11-21）。convert が無ければ今までどおり出さない。
+        """
 
         self._local_body_kit_variants = []
         self._local_body_kit_variant_meshes = {}
+        self._local_body_kit_deferred = {}
+        self._local_body_kit_convert = convert
         for raw in variants or []:
             if not isinstance(raw, dict):
                 continue
@@ -311,7 +327,7 @@ class LiveryInspectorServer:
             descriptor = {
                 key: value
                 for key, value in raw.items()
-                if key not in {"overlay_mesh", "overlay_validation", "overlay_cache_hit"}
+                if key not in {"overlay_mesh", "overlay_validation", "overlay_cache_hit", "overlay_mesh_planned"}
             }
             mesh_value = str(raw.get("overlay_mesh") or "").strip()
             mesh = Path(mesh_value).resolve() if mesh_value else None
@@ -319,13 +335,36 @@ class LiveryInspectorServer:
                 if not mesh.is_file() or mesh.suffix.casefold() != ".glb":
                     raise FullLiveryPackageError("A local body-kit catalog mesh is not a readable GLB file.")
                 self._local_body_kit_variant_meshes[part_id] = mesh
-            descriptor["mesh_available"] = part_id in self._local_body_kit_variant_meshes
-            descriptor["endpoint"] = (
-                f"api/local-body-kit-mesh/{part_id}"
-                if part_id in self._local_body_kit_variant_meshes
-                else None
-            )
+            planned_value = str(raw.get("overlay_mesh_planned") or "").strip()
+            added = [str(entry) for entry in (raw.get("added_entries") or [])]
+            if (mesh is None and raw.get("overlay_deferred") is True and planned_value and added
+                    and convert is not None and Path(planned_value).suffix.casefold() == ".glb"):
+                self._local_body_kit_deferred[part_id] = (Path(planned_value).resolve(), added)
+            available = part_id in self._local_body_kit_variant_meshes or part_id in self._local_body_kit_deferred
+            descriptor["mesh_available"] = available
+            descriptor["endpoint"] = f"api/local-body-kit-mesh/{part_id}" if available else None
             self._local_body_kit_variants.append(descriptor)
+
+    def _local_body_kit_variant_mesh(self, part_id: int) -> Path | None:
+        """部品の重ね合わせの GLB。後回しにした部品は、ここで初めて変換する（同時に 1 つずつ）。"""
+        mesh = self._local_body_kit_variant_meshes.get(part_id)
+        if mesh is not None:
+            return mesh
+        deferred = self._local_body_kit_deferred.get(part_id)
+        convert = self._local_body_kit_convert
+        if deferred is None or convert is None:
+            return None
+        with self._part_option_lock:
+            mesh = self._local_body_kit_variant_meshes.get(part_id)
+            if mesh is None:
+                planned, added = deferred
+                convert(planned, added)
+                if not planned.is_file():
+                    raise FullLiveryPackageError("The deferred body-kit mesh was not created.")
+                self._local_body_kit_variant_meshes[part_id] = planned
+                self._local_body_kit_deferred.pop(part_id, None)
+                mesh = planned
+        return mesh
 
     def set_body_trim_source(self, content_root: Path | str | None, vehicle_archive: Path | str | None) -> None:
         """飾りの画像を BC7 のまま渡すときに読む、ゲームのフォルダーと車の ZIP。"""
@@ -339,6 +378,7 @@ class LiveryInspectorServer:
             self._body_trim_source = source
 
     def _remember_body_trim_bc7(self, groups: object) -> None:
+        """色の解析の記録から、原本から直接渡す飾りの画像（.bc7）とラベル（.label）の参照・位置を覚える。"""
         if not isinstance(groups, dict):
             return
         with self._body_trim_bc7_lock:
@@ -351,6 +391,14 @@ class LiveryInspectorServer:
                     location = texture.get("source_location")
                     if isinstance(location, dict):
                         self._body_trim_bc7_locations[name] = dict(location)
+                label = texture.get("label") if isinstance(texture, dict) else None
+                if re.fullmatch(r"[0-9a-f]{64}\.label", name) and isinstance(label, dict):
+                    parts = label.get("parts")
+                    if (isinstance(parts, dict) and parts and set(parts) <= {"base", "alpha"}
+                            and all(isinstance(entry, dict) and isinstance(entry.get("ref"), str)
+                                    and re.fullmatch(r"[0-9a-f]{64}", str(entry.get("sha256") or ""))
+                                    for entry in parts.values())):
+                        self._body_trim_labels[name] = json.loads(json.dumps(label))
 
     def _read_body_trim_located(self, location: dict, source: tuple[Path, Path]) -> bytes | None:
         """記録した位置から原本を直接読む（ZIP の目次を読まない）。場所はゲームのフォルダーか車の ZIP の中だけ。"""
@@ -394,21 +442,52 @@ class LiveryInspectorServer:
 
         原本を読んで SHA-256 が名前と同じときだけ渡す。同じプロセスでは覚える（最近の 256 個）。
         """
-        from .body_trim_default_color import _TextureReader, bc7_passthrough_surface
+        from .body_trim_default_color import TEXTURE_MAX_SIZE, bc7_passthrough_surface
         with self._body_trim_bc7_lock:
             ref = self._body_trim_bc7_refs.get(name)
             location = self._body_trim_bc7_locations.get(name)
-            source = self._body_trim_source
-            data = self._body_trim_bc7_cache.get(name)
-        if ref is None or source is None:
+        if ref is None:
             return None
-        if data is None and location is not None:
+        data = self._load_body_trim_original(name[:64], ref, location)
+        if data is None:
+            return None
+        surface = bc7_passthrough_surface(data)
+        if surface is None:
+            return None
+        width, height, pixels = surface
+        if png:
+            import io
+            from .fh6_swatch import decode_swatch_image
+            image, _meta = decode_swatch_image(data)
+            if image is None:
+                return None
+            image = image.convert("RGB")
+            if max(image.size) > TEXTURE_MAX_SIZE:
+                # 以前の PNG の書き出しと同じく縮める（2026-11-21 から大きな BC7 もそのまま渡す）
+                from PIL import Image
+                scale = TEXTURE_MAX_SIZE / max(image.size)
+                image = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+                                     Image.LANCZOS)
+            output = io.BytesIO()
+            image.save(output, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
+            return output.getvalue(), "image/png"
+        return b"LO4BC7\0\1" + struct.pack("<II", width, height) + pixels, "application/octet-stream"
+
+    def _load_body_trim_original(self, sha256: str, ref: str, location: object) -> bytes | None:
+        """飾りの画像の原本（SHA-256 が sha256 のときだけ）。同じプロセスでは覚える（最近の 256 個）。"""
+        from .body_trim_default_color import _TextureReader
+        with self._body_trim_bc7_lock:
+            source = self._body_trim_source
+            data = self._body_trim_bc7_cache.get(sha256)
+        if source is None:
+            return None
+        if data is not None:
+            return data
+        if isinstance(location, dict):
             # 記録した位置から直接読む（要求のたびに 771 MB の Textures.zip の目次を読まない。2026-11-20）
             located = self._read_body_trim_located(location, source)
-            if located is not None and hashlib.sha256(located).hexdigest() == name[:64]:
+            if located is not None and hashlib.sha256(located).hexdigest() == sha256:
                 data = located
-                with self._body_trim_bc7_lock:
-                    self._body_trim_bc7_cache[name] = data
         if data is None:
             # 位置が無い・合わない（ゲームの更新など）ときは、参照から読む（ZIP を開く）
             import zipfile
@@ -423,26 +502,57 @@ class LiveryInspectorServer:
                     for other in reader.other_archives.values():
                         if other is not None:
                             other[0].close()
-            if data is None or hashlib.sha256(data).hexdigest() != name[:64]:
+            if data is None or hashlib.sha256(data).hexdigest() != sha256:
                 return None
-            with self._body_trim_bc7_lock:
-                self._body_trim_bc7_cache[name] = data
-                while len(self._body_trim_bc7_cache) > 256:
-                    self._body_trim_bc7_cache.pop(next(iter(self._body_trim_bc7_cache)))
-        surface = bc7_passthrough_surface(data)
-        if surface is None:
+        with self._body_trim_bc7_lock:
+            self._body_trim_bc7_cache[sha256] = data
+            while len(self._body_trim_bc7_cache) > 256:
+                self._body_trim_bc7_cache.pop(next(iter(self._body_trim_bc7_cache)))
+        return data
+
+    def _body_trim_label(self, name: str, *, part: str | None, png: bool) -> tuple[bytes, str] | None:
+        """元の 2 枚のまま渡すラベルの画像 1 枚（part は base か alpha。2026-11-21）。
+
+        形：LO4TEX の印と版（8 バイト）・形（1＝BC7、2＝BC4、3＝RGBA8）・幅・高さ（各 4 バイト）と画素（BC7・BC4 は
+        1×1 までの全段、RGBA8 は一番上の段）。png なら 2 枚を合わせた PNG（色の解析が以前書いていた PNG と同じ作り方。
+        BC7・BC4 を受け取れない GPU のため）。原本を読んで SHA-256 が記録と同じときだけ渡す。
+        """
+        from .body_trim_default_color import compose_label_image, passthrough_part_surface
+        with self._body_trim_bc7_lock:
+            label = self._body_trim_labels.get(name)
+        if label is None:
             return None
-        width, height, pixels = surface
+        parts = label.get("parts") or {}
+
+        def original(entry: dict) -> bytes | None:
+            return self._load_body_trim_original(str(entry["sha256"]), str(entry["ref"]), entry.get("location"))
+
         if png:
-            import io
-            from .fh6_swatch import decode_swatch_image
-            image, _meta = decode_swatch_image(data)
+            datas: dict[str, bytes | None] = {}
+            for key in ("base", "alpha"):
+                entry = parts.get(key)
+                datas[key] = original(entry) if entry is not None else None
+                if entry is not None and datas[key] is None:
+                    return None
+            override = label.get("override_srgb8")
+            image = compose_label_image(datas["base"], datas["alpha"],
+                                        override if isinstance(override, list) and len(override) == 3 else None)
             if image is None:
                 return None
+            import io
             output = io.BytesIO()
-            image.convert("RGB").save(output, format="PNG")
+            image.save(output, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
             return output.getvalue(), "image/png"
-        return b"LO4BC7\0\1" + struct.pack("<II", width, height) + pixels, "application/octet-stream"
+        entry = parts.get(str(part or ""))
+        if entry is None:
+            return None
+        data = original(entry)
+        surface = passthrough_part_surface(data) if data is not None else None
+        if surface is None:
+            return None
+        code = {"bc7": 1, "bc4": 2, "rgba8": 3}[surface["format"]]
+        return (b"LO4TEX\0\1" + struct.pack("<III", code, surface["width"], surface["height"]) + surface["pixels"],
+                "application/octet-stream")
 
     def set_local_render_contract(self, root: Path | str, contract: dict) -> None:
         base = Path(root).resolve()
@@ -763,7 +873,11 @@ class LiveryInspectorServer:
             except ValueError:
                 self._error(request, HTTPStatus.NOT_FOUND, "Unknown local body-kit variant.")
                 return
-            mesh = self._local_body_kit_variant_meshes.get(part_id)
+            try:
+                mesh = self._local_body_kit_variant_mesh(part_id)
+            except Exception as exc:  # noqa: BLE001  変換の失敗はViewerへ理由を返す（他の表示は止めない）。
+                self._error(request, HTTPStatus.INTERNAL_SERVER_ERROR, f"Body-kit variant conversion failed: {exc}")
+                return
             if mesh is None:
                 self._error(request, HTTPStatus.NOT_FOUND, "No matching local body-kit variant mesh is ready.")
                 return
@@ -794,6 +908,19 @@ class LiveryInspectorServer:
                     served = None
                 if served is None:
                     self._error(request, HTTPStatus.NOT_FOUND, "The body trim texture is unavailable.")
+                    return
+                self._send(request, served[0], served[1])
+                return
+            if re.fullmatch(r"[0-9a-f]{64}\.label", name):
+                # 元の 2 枚のまま渡すラベル（?part=base か ?part=alpha。?png=1 なら 2 枚を合わせた PNG）
+                query = urlsplit(request.path).query.split("&")
+                part = next((item.split("=", 1)[1] for item in query if item.startswith("part=")), None)
+                try:
+                    served = self._body_trim_label(name, part=part, png="png=1" in query)
+                except (OSError, ValueError, KeyError, TypeError):
+                    served = None
+                if served is None:
+                    self._error(request, HTTPStatus.NOT_FOUND, "The body trim label is unavailable.")
                     return
                 self._send(request, served[0], served[1])
                 return

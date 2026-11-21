@@ -14,10 +14,14 @@ import io
 import json
 import math
 import struct
+import threading
 import zipfile
 from pathlib import Path
-from collections import Counter
+from collections import Counter, OrderedDict
 
+from .material_runtime import _open_zip, zip_crc_failure, zip_infos_ending_with
+from .png_settings import PNG_COMPRESS_LEVEL
+from .swatch_png_store import remembered_swatch_png
 from .json_tree_copy import json_tree_deepcopy  # GLB の中身まるごとの複製（deepcopy と同じ結果で約 3 倍速い）
 from PIL import Image
 
@@ -78,7 +82,7 @@ def source_matis(tire_zip: Path) -> dict[str,dict[int,tuple[str,bytes]]]:
         raise SourceTireCompositeError('Tire原本ZIP名にtire_接頭辞またはtireR_接頭辞がありません') from exc
     output = {}
     with zipfile.ZipFile(tire_zip) as z:
-        if z.testzip() is not None:
+        if zip_crc_failure(tire_zip) is not None:  # 同じファイルなら同じプロセスで 1 回だけ全部を読む
             raise SourceTireCompositeError('元Tire ModelBin ZIP CRC failure')
         try:
             role_entries = _original_tire_model_entries(z, source_model)
@@ -110,8 +114,9 @@ def source_matis(tire_zip: Path) -> dict[str,dict[int,tuple[str,bytes]]]:
 def material_tiling(materials_zip: Path, xml: bytes) -> dict[str, tuple[float,float]]:
     names={f'{h:08x}':name for h,(name,_type) in shader_xml_ids(xml).items()}
     output={}
-    with zipfile.ZipFile(materials_zip) as z:
-        if z.testzip() is not None:raise SourceTireCompositeError('MaterialBin ZIP CRC failure')
+    # Materials.zip の全項目の CRC の確かめは、同じファイルなら同じプロセスで 1 回だけ（約 0.15 秒。2026-11-21）
+    if zip_crc_failure(materials_zip) is not None:raise SourceTireCompositeError('MaterialBin ZIP CRC failure')
+    with _open_zip(materials_zip) as z:
         for role,member in (('sidewall','_fmnext/tires/tires_pg_sidewall.materialbin'),
                             ('tread','_fmnext/tires/tires_pg_tread.materialbin')):
             raw=z.read(member)
@@ -141,7 +146,7 @@ def decode_swatch_rgba(raw:bytes) -> tuple[bytes,dict]:
         with Image.open(io.BytesIO(_dx10_dds(w,h,pixels,fmt))) as img:
             rgba=img.convert('RGBA')
             if rgba.size!=(w,h):raise SourceTireCompositeError('DDS swatch dimensions altered')
-            data=io.BytesIO();rgba.save(data,format='PNG',compress_level=5)
+            data=io.BytesIO();rgba.save(data,format='PNG',compress_level=PNG_COMPRESS_LEVEL)
     except Exception as exc:
         raise SourceTireCompositeError('Original Swatch RGBA decode error: '+str(exc)) from exc
     return data.getvalue(),{'width':w,'height':h,'encoding':encoding,'rgba_preserved':True}
@@ -150,24 +155,45 @@ def raw_swatches(textures_zip:Path, refs:set[str]) -> dict[str,tuple[bytes,dict]
     if not textures_zip.is_file() or textures_zip.name.casefold()!='textures.zip':
         raise SourceTireCompositeError('installed original Textures.zip missing')
     result={}
-    with zipfile.ZipFile(textures_zip) as z:
+    with _open_zip(textures_zip) as z:
         # Installed Textures.zip may contain tens of thousands of unrelated originals.
         # Reading selected members validates their ZIP CRC; do not decompress all game assets.
-        names={}
-        for i in z.infolist():
-            if i.is_dir():continue
-            n=i.filename.replace('\\','/').casefold().lstrip('/')
-            names.setdefault(n,[]).append(i)
+        # 名前の索引は ZIP ごとに 1 回だけ作る（以前は呼ぶたびに数万項目を見ていた。2026-11-21）
         for ref in sorted(refs):
-            matches=[info for name,arr in names.items() if name==ref.casefold() or name.endswith('/'+ref.casefold()) for info in arr]
+            matches=zip_infos_ending_with(z, ref)
             if len(matches)!=1:raise SourceTireCompositeError('Original texture member ambiguous: '+ref)
             info=matches[0]
             if info.flag_bits&1 or not 0<info.file_size<=MAX_SOURCE_SWATCH:
                 raise SourceTireCompositeError('Original Swatch size/encryption invalid')
-            raw=z.read(info)
-            png,meta=decode_swatch_rgba(raw)
-            result[ref]=(png,dict(meta,sha256=digest(raw),bytes=len(raw)))
+            def compute(info=info):
+                raw=z.read(info)
+                png,meta=_decoded_swatch_rgba(raw)
+                return png,dict(meta,sha256=digest(raw),bytes=len(raw))
+            # 標準タイヤの GLB を作る範囲では、前に作った PNG を共有の置き場から使い回す（swatch_png_store。2026-11-21）
+            result[ref]=remembered_swatch_png('tire-compound-rgba',info,compute)
     return result
+
+
+# 同じ原本の Swatch（中身の SHA が同じ）を RGBA の PNG にした結果は、同じプロセスの中で使い回す
+# （同じタイヤの車が続くと、毎回同じ画像を復号して PNG に書いていた。2026-11-21）。失敗は覚えない。
+_DECODED_SWATCHES: 'OrderedDict[tuple, tuple[bytes, dict]]' = OrderedDict()
+_DECODED_SWATCHES_LIMIT = 16
+_DECODED_SWATCHES_LOCK = threading.Lock()
+
+
+def _decoded_swatch_rgba(raw: bytes) -> tuple[bytes, dict]:
+    key = (digest(raw), decode_swatch_rgba)  # 同じ中身を同じ復号で作った結果だけを使い回す
+    with _DECODED_SWATCHES_LOCK:
+        found = _DECODED_SWATCHES.get(key)
+        if found is not None:
+            _DECODED_SWATCHES.move_to_end(key)
+    if found is None:
+        found = decode_swatch_rgba(raw)
+        with _DECODED_SWATCHES_LOCK:
+            _DECODED_SWATCHES[key] = found
+            while len(_DECODED_SWATCHES) > _DECODED_SWATCHES_LIMIT:
+                _DECODED_SWATCHES.popitem(last=False)
+    return found[0], dict(found[1])
 
 def pack_glb(doc:dict,bin_data:bytearray)->bytes:
     bin_data.extend(b'\0'*(-len(bin_data)%4))

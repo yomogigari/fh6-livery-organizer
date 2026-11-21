@@ -23,7 +23,9 @@ from .source_tire_dxil_original2_glb import cached_original2_research_glb
 
 
 def _sha(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+    # 同じ bytes のオブジェクトの SHA は覚えた値を使う（bytes_memo、2026-11-21）
+    from .bytes_memo import sha256_hex
+    return sha256_hex(data)
 
 
 def source_tire_text_report(model_zip: Path, cars_dir: Path) -> dict | None:

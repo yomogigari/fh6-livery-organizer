@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .png_settings import PNG_COMPRESS_LEVEL
 
 import contextlib
 import contextvars
@@ -654,6 +655,76 @@ def _zip_file(path: Path) -> zipfile.ZipFile:
     return zipfile.ZipFile(path)
 
 
+_ARCHIVE_DERIVED: "OrderedDict[tuple, Any]" = OrderedDict()
+
+
+def _archive_derived(archive: zipfile.ZipFile, kind: str, build: Callable[[zipfile.ZipFile], Any]) -> Any:
+    """目録から作る索引を、ZIP ごとに 1 回だけ作る（目次を使い回す ZipFile では、同じファイルのあいだ使い回す。読むだけ）。"""
+    attribute = "_lo4fh6_derived_" + kind
+    value = getattr(archive, attribute, None)
+    if value is None:
+        identity = getattr(archive, "_lo4fh6_identity", None)
+        key = (identity, kind) if identity is not None else None
+        if key is not None:
+            with _ZIP_DIRECTORY_LOCK:
+                value = _ARCHIVE_DERIVED.get(key)
+        if value is None:
+            value = build(archive)
+            if key is not None:
+                _remember_limited(_ARCHIVE_DERIVED, key, value, 2 * _ZIP_DIRECTORY_LIMIT)
+        setattr(archive, attribute, value)
+    return value
+
+
+def zip_infos_named(archive: zipfile.ZipFile, member: str) -> list[zipfile.ZipInfo]:
+    """名前（filename の casefold）が member.casefold() と同じ目録の項目を、目録の順に返す（ディレクトリも含む）。
+
+    以前は呼ぶたびに目録の全項目（Materials.zip で数千）を casefold して比べていた（2026-11-21）。同じ名前の項目が
+    重なっていれば全部を返すので、呼ぶ側の「一意か」の確かめは今までどおり働く。
+    """
+    def build(z: zipfile.ZipFile) -> dict[str, list[zipfile.ZipInfo]]:
+        index: dict[str, list[zipfile.ZipInfo]] = {}
+        for info in z.infolist():
+            index.setdefault(info.filename.casefold(), []).append(info)
+        return index
+    return list(_archive_derived(archive, "infos-casefold", build).get(member.casefold(), ()))
+
+
+def zip_infos_ending_with(archive: zipfile.ZipFile, ref: str) -> list[zipfile.ZipInfo]:
+    """ディレクトリでない項目のうち、名前（\\ を / に、casefold、先頭の / を除く）が ref.casefold() と同じか、
+    "/" + ref.casefold() で終わるものを返す。
+
+    以前は参照ごとに目録の全項目（Textures.zip で数万）を見ていた（2026-11-21）。名前の最後の部分で引いてから
+    同じ条件で絞るので、返す項目の集まりは同じ（呼ぶ側は 1 つのときだけ使う）。
+    """
+    def build(z: zipfile.ZipFile) -> dict[str, list[tuple[str, zipfile.ZipInfo]]]:
+        index: dict[str, list[tuple[str, zipfile.ZipInfo]]] = {}
+        for info in z.infolist():
+            if info.is_dir():
+                continue
+            normalized = info.filename.replace("\\", "/").casefold().lstrip("/")
+            index.setdefault(normalized.rsplit("/", 1)[-1], []).append((normalized, info))
+        return index
+    target = ref.casefold()
+    rows = _archive_derived(archive, "infos-last-part", build).get(target.rsplit("/", 1)[-1], ())
+    return [info for name, info in rows if name == target or name.endswith("/" + target)]
+
+
+def zip_crc_failure(path: Path) -> str | None:
+    """ZIP の全項目の CRC を確かめた結果（ZipFile.testzip：壊れた最初の項目の名前か None）。
+
+    同じファイル（場所・機器と番号・大きさ・更新日時）なら、同じプロセスで 1 回だけ全部を読む（Materials.zip の
+    全項目を読むのに約 0.15 秒かかり、タイヤの準備で毎回読んでいた。2026-11-21）。壊れていた結果は覚えない。
+    """
+    from .process_file_memo import remembered
+
+    def compute() -> str | None:
+        with _zip_file(path) as archive:
+            return archive.testzip()
+    return remembered("zip-crc-failure", [path], None, compute, copy="none", limit=16,
+                      keep=lambda value: value is None)
+
+
 @contextlib.contextmanager
 def _open_zip(path: Path):
     opened = _SHARED_ARCHIVES.get()
@@ -923,8 +994,9 @@ def derived_swatch_png(source: Path, member: str | None, load: Callable[[], byte
         if image is None:
             return dict(meta), None, 0, 0
         buffer = io.BytesIO()
-        # 画素は同じで圧縮の仕方だけを選べる。最小化（optimize=True）は約 5 倍遅く、小さくなるのは約 6%（2026-11-20）
-        image.save(buffer, format="PNG")
+        # 画素は同じで圧縮の仕方だけを選べる。最小化（optimize=True）は約 5 倍遅く、小さくなるのは約 6%（2026-11-20）。
+        # 強さは png_settings で決める（2026-11-21）
+        image.save(buffer, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
         return dict(meta), buffer.getvalue(), int(image.width), int(image.height)
 
     if output.suffix.casefold() != ".png":
