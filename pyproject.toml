@@ -1,6 +1,6 @@
 [project]
 name = "fh6-livery-organizer"
-version = "0.4.63"
+version = "0.5.0"
 requires-python = ">=3.12"
 dependencies = []
 

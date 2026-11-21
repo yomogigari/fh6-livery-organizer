@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "organizer" / "livery-organizer-for-fh6.py"
 PYPROJECT = ROOT / "pyproject.toml"
 UV_LOCK = ROOT / "uv.lock"
-EXPECTED = "0.4.63"
+# 版の番号そのものは tests/test_current_version.py の1か所で固める。ここでは Organizer の VERSION とそろっているかだけを見る。
 
 
 class VersionLockR03Tests(unittest.TestCase):
@@ -24,9 +24,9 @@ class VersionLockR03Tests(unittest.TestCase):
             lock,
         )
         self.assertIsNotNone(lock_match)
-        self.assertEqual(source_match.group(1), EXPECTED)
-        self.assertEqual(project["project"]["version"], EXPECTED)
-        self.assertEqual(lock_match.group(1), EXPECTED)
+        version = source_match.group(1)
+        self.assertEqual(project["project"]["version"], version)
+        self.assertEqual(lock_match.group(1), version)
 
 
 if __name__ == "__main__":

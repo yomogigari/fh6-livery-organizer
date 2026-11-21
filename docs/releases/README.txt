@@ -1,5 +1,5 @@
-Livery Organizer for FH6 v0.4.63 Preview
-=========================================
+Livery Organizer for FH6 v0.5.0 Preview
+=======================================
 
 公開日: YYYY-MM-DD（公開時に記入）
 
@@ -17,7 +17,7 @@ Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 
 このリリースはプレビュー版です。
 
-v0.4.63では、3Dプレビューの Livery Viewer for FH6 を同梱しました。Organizerのレポートの
+v0.5.0では、3Dプレビューの Livery Viewer for FH6 を同梱しました。Organizerのレポートの
 各カードから、そのペイントを車体に貼った3D表示を開けます。Livery Viewer for FH6 は実験的な機能で、
 表示はゲーム内の見た目と完全には一致しません。
 
@@ -32,8 +32,8 @@ Python版（pythonフォルダー）は含めません。ソースコードはGi
 
 ■ 配布ファイル
 
-配布ZIP（Livery-Organizer-for-FH6-v0.4.63-preview.zip）を展開すると、
-版の名前のフォルダー（Livery-Organizer-for-FH6-v0.4.63-preview）の中に次のファイルがあります。
+配布ZIP（Livery-Organizer-for-FH6-v0.5.0-preview.zip）を展開すると、
+版の名前のフォルダー（Livery-Organizer-for-FH6-v0.5.0-preview）の中に次のファイルがあります。
 
 Livery-Organizer-for-FH6.exe
 Navigator-Bridge-for-FH6.exe
@@ -337,7 +337,7 @@ GameSaveを書き換えず、新しくHTMLを生成した場合は引き継ぎ�
 
 ■ FH6上の選択デザインへ移動する
 
-この機能には Navigator Bridge for FH6 v0.0.29 を使用します。
+この機能には Navigator Bridge for FH6 を使用します。
 Bridgeの仕組みは同梱の NAVIGATOR-BRIDGE-README.txt の冒頭で、
 #603 / #302U を例に詳しく説明しています。
 

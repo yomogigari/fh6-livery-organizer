@@ -1,14 +1,17 @@
-Navigator Bridge for FH6 v0.0.29
-================================
+Navigator Bridge for FH6 v0.5.0
+===============================
 Release date: YYYY-MM-DD (fill in at release)
 
-Navigator Bridge for FH6 v0.0.29 shares the language and theme (Follow system /
+Navigator Bridge for FH6 v0.5.0 shares the language and theme (Follow system /
 Light / Dark) settings with Livery Organizer for FH6 and Livery Viewer for FH6,
 and lets you switch the UI language (Japanese / English) and theme. A language
 change takes effect on the next launch. The window style now matches the other
 two tools. FH6 window targeting (the exact "Forza Horizon 6" title, the
 forzahorizon6.exe owning process, and revalidation immediately before every
 normal movement key) is unchanged from v0.0.28.
+Starting with this version, Bridge uses the same version number as Livery
+Organizer for FH6 and Livery Viewer for FH6 (the previous release was v0.0.28;
+the three tools will keep sharing one version number).
 
 This document describes the current behavior and usage of the optional Bridge.
 
@@ -204,15 +207,15 @@ If an EXE is replaced by a newer version at the same folder and filename, the
 absolute path does not change and registration normally does not need to be
 repeated.
 
-Example: the v0.4.63 release ZIP (Livery-Organizer-for-FH6-v0.4.63-preview.zip)
+Example: the v0.5.0 release ZIP (Livery-Organizer-for-FH6-v0.5.0-preview.zip)
 extracts into a folder named after the version
-(Livery-Organizer-for-FH6-v0.4.63-preview\), and Bridge is inside that folder.
+(Livery-Organizer-for-FH6-v0.5.0-preview\), and Bridge is inside that folder.
 The v0.4.62 release ZIP did not have this folder, so Bridge's path changes even
 if you extract the new ZIP to the same place as before. Start
 Navigator-Bridge-for-FH6.exe in the new folder by itself and run Register
 integration again.
 
-The v0.4.63 release ZIP does not include the Python version (python folder). If
+The v0.5.0 release ZIP does not include the Python version (python folder). If
 you registered Bridge with python\navigator-bridge-for-fh6-v028.py from the
 v0.4.62 release ZIP, start the EXE Bridge (Navigator-Bridge-for-FH6.exe) by
 itself and run Register integration again.

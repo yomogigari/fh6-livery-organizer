@@ -4,7 +4,12 @@
 
 ---
 
-## v0.4.63 Preview — YYYY-MM-DD（公開時に記入）
+## v0.5.0 Preview — YYYY-MM-DD（公開時に記入）
+
+### 版の番号
+
+- この版から、Livery Organizer for FH6・Livery Viewer for FH6・Navigator Bridge for FH6 の3つを同じ版の番号で公開する。これからも3つを一緒に上げる（直しだけの版は v0.5.1、機能を足した版は v0.6.0 のように上げる）。
+- Organizerは v0.4.62 の次を v0.5.0 とした（公開の準備中は v0.4.63 としていた）。Navigator Bridgeは v0.0.28 の次を v0.5.0 とした（公開の準備中は v0.0.29 としていた）。
 
 ### Livery Viewer for FH6（3Dプレビュー・実験的）を同梱
 
@@ -23,7 +28,7 @@
 
 ### Navigator Bridge
 
-- Navigator Bridge for FH6 を v0.0.29 へ更新（言語と表示テーマの切り替えを追加し、画面の見た目をOrganizer・Viewerとそろえた。FH6ウィンドウの確認と送るキーは v0.0.28 と同じ）。
+- Navigator Bridge for FH6 を v0.5.0 へ更新（言語と表示テーマの切り替えを追加し、画面の見た目をOrganizer・Viewerとそろえた。FH6ウィンドウの確認と送るキーは v0.0.28 と同じ）。
 - 新しく入れたときの「RET後の待ち時間」の初期値を 800ms から 1000ms に変更（FH6 の更新で、マイデザインを開き直して操作できるようになるまでの時間が延びたため）。保存済みの設定は変わらない。
 
 ### 3つのツールの共通化
@@ -40,8 +45,8 @@
 
 ### 配布物
 
-- 配布ZIP（`Livery-Organizer-for-FH6-v0.4.63-preview.zip`）を、EXEとEXEの動作に必要なファイルだけにした。Python版（`python` フォルダー）は含めない。
-- 配布ZIPは、展開すると版の名前のフォルダー（`Livery-Organizer-for-FH6-v0.4.63-preview`）ができる形にした。
+- 配布ZIP（`Livery-Organizer-for-FH6-v0.5.0-preview.zip`）を、EXEとEXEの動作に必要なファイルだけにした。Python版（`python` フォルダー）は含めない。
+- 配布ZIPは、展開すると版の名前のフォルダー（`Livery-Organizer-for-FH6-v0.5.0-preview`）ができる形にした。
 - Livery Viewer for FH6 のEXEはフォルダーの形（`Livery-Viewer-for-FH6\`）で、計算を速くする自前の部品 `lo4fh6_native.dll`（Rust。このリポジトリのソースから作る）を含む。
 - ソースコード（Python・Rust）はGitHubのリポジトリで公開。
 - `LICENSE.txt` と、同梱する第三者の部品とライセンスの一覧 `THIRD-PARTY-NOTICES.txt` を同梱。

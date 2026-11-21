@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Livery Organizer for FH6 v0.4.63
+Livery Organizer for FH6 v0.5.0
 ====================================
 
 非公式・非営利のファンメイド整理支援ツールです。
@@ -163,7 +163,7 @@ THEME_CODES = ("system", "light", "dark")
 
 
 APP_NAME = "Livery Organizer for FH6"
-VERSION = "0.4.63"
+VERSION = "0.5.0"
 
 DEFAULT_REPORT_DIR_NAME = "Livery-Organizer-for-FH6"
 LEGACY_REPORT_DIR_RE = re.compile(r"FH6-Livery-Report(?:-v\d+)?", re.IGNORECASE)
@@ -11274,7 +11274,7 @@ body.dark-theme .creator-color-palette {{
       <p><b class="fh6-foot-label">FH6で選択デザインへ移動</b>カードの実スロット番号 <b>#603</b> または FH6 位置 <b>#302U</b> をクリックすると、そのデザインを Organizer 全体の FH6 移動対象に設定します。メーカー順・車名順・作成者順などの他の並び順や、類似ペイント比較・再 DL 重複整理画面からも同じ対象を選択できます。選択後は「FH6で選択デザインへ移動」または <b>F</b> キーを実行します。Bridge は対象位置までのカーソル移動だけを補助し、読み込み・選択・削除・確定を行いません。目的の位置へ移動した後、利用者が FH6 で「デザインを読み込み」を実行すると、現在運転しているマシンへそのペイントを適用できます。FH6 で不要なペイントを削除した場合は「FH6で削除済み（仮）」へ反映すると、残りの実スロット番号と FH6 位置を再計算して次の整理へ進めます。</p>
       <p><b class="fh6-foot-label">#001Uへ戻す</b>このオプションを ON にした場合だけ、移動前に <b>ESC → RET</b> を各 1 回、固定順序で送って「マイデザイン」を開き直します。標準待ち時間は <b>ESC 後 500 ms / RET 後 800 ms</b> です。任意のキーコード・キー名・キー順序は指定できず、上キー、文字キー、ファンクションキーなどは送信しません。</p>
       <p><b class="fh6-foot-label">プレビュー</b>FH6本体パスを確認できたレポートでは、各カードからLivery Viewer for FH6でペイントを3D表示できます。この機能は実験的なもので、表示はゲーム内の見た目と完全には一致しません。初回だけ、Livery Viewer for FH6の設定画面で「Organizer連携を登録」を実行してください。GameSaveやFH6本体へ書き込みません。</p>
-      <p><b class="fh6-foot-label">Bridge連携</b>Navigator Bridge v0.0.29 はシングルインスタンスで動作し、Organizer から Bridge モードで起動した場合は GUI を表示しません。初回だけ Navigator Bridge 側で「連携を登録」を実行し、ブラウザが外部アプリを開く確認を表示した場合は許可してください。Bridge 本体を別フォルダへ移動した場合やファイル名を変更した場合は、移動後の場所から再登録します。Bridge は FH6 の画面内容やゲーム内部のペイント位置・カーソル位置を読み取らず、設定した間隔で固定キー入力を送信します。PC や FH6 の処理負荷で入力が取りこぼされると指定位置からずれる場合があるため、その場合はキー間隔や各待ち時間を長くしてください。</p>
+      <p><b class="fh6-foot-label">Bridge連携</b>Navigator Bridge はシングルインスタンスで動作し、Organizer から Bridge モードで起動した場合は GUI を表示しません。初回だけ Navigator Bridge 側で「連携を登録」を実行し、ブラウザが外部アプリを開く確認を表示した場合は許可してください。Bridge 本体を別フォルダへ移動した場合やファイル名を変更した場合は、移動後の場所から再登録します。Bridge は FH6 の画面内容やゲーム内部のペイント位置・カーソル位置を読み取らず、設定した間隔で固定キー入力を送信します。PC や FH6 の処理負荷で入力が取りこぼされると指定位置からずれる場合があるため、その場合はキー間隔や各待ち時間を長くしてください。</p>
     </div>
   </section>
 

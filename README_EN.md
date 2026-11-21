@@ -11,15 +11,15 @@ This repository and the release package contain three tools:
 | Tool | Role |
 | --- | --- |
 | **Livery Organizer for FH6** (main tool) | Lists, searches, and organizes downloaded liveries and generates HTML / Excel reports. |
-| **Livery Viewer for FH6** (optional, experimental) | Shows a report's livery in 3D on the FH6 car body. Bundled starting with v0.4.63. |
+| **Livery Viewer for FH6** (optional, experimental) | Shows a report's livery in 3D on the FH6 car body. Bundled starting with v0.5.0. |
 | **Navigator Bridge for FH6** (optional) | Moves the FH6 My Designs cursor to a livery position selected in Organizer. |
 
-**v0.4.63 Preview** (release date YYYY-MM-DD: fill in at release) bundles the 3D preview tool, **Livery Viewer for FH6**. Each card in an Organizer report can open a 3D view of that livery applied to the car body. This version also aligns the settings and window style of the three tools, and the release ZIP now contains only the EXEs and the files they need to run.
+**v0.5.0 Preview** (release date YYYY-MM-DD: fill in at release) bundles the 3D preview tool, **Livery Viewer for FH6**. Each card in an Organizer report can open a 3D view of that livery applied to the car body. This version also aligns the settings and window style of the three tools, and the release ZIP now contains only the EXEs and the files they need to run.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data. The 3D rendering of Livery Viewer for FH6 is experimental and does not exactly match the in-game appearance.
 
-## What's new in v0.4.63 Preview
+## What's new in v0.5.0 Preview
 
 ### Livery Viewer for FH6 (3D preview, experimental) is bundled
 
@@ -40,7 +40,7 @@ Organizer, Viewer, and Navigator Bridge share the language, theme (Follow system
 
 The release ZIP contains only the EXEs and the files they need to run. The Python version (`python` folder) included in earlier releases is no longer included. The source code (Python and Rust) is published in this repository. Bundled third-party components and their licenses are listed in `THIRD-PARTY-NOTICES.txt` in the ZIP.
 
-Navigator Bridge for FH6 is **v0.0.29**. The bundled vehicle metadata is updated to the **2026-11 update / 667 vehicles / package revision 4**.
+Starting with this version, Organizer, Livery Viewer for FH6, and Navigator Bridge for FH6 share the same version number (Navigator Bridge goes from v0.0.28 to **v0.5.0**). The bundled vehicle metadata is updated to the **2026-11 update / 667 vehicles / package revision 4**.
 
 See [docs/releases/CHANGELOG.md](docs/releases/CHANGELOG.md) (Japanese) for the detailed change history.
 
@@ -123,7 +123,7 @@ See [docs/3D-PREVIEW-GAMEDB.md](docs/3D-PREVIEW-GAMEDB.md) (Japanese) for detail
 
 ## Navigator Bridge for FH6
 
-**Navigator Bridge for FH6 v0.0.29** is an optional companion tool that moves the cursor in FH6's **My Designs** screen to a paint position selected in Organizer.
+**Navigator Bridge for FH6** is an optional companion tool that moves the cursor in FH6's **My Designs** screen to a paint position selected in Organizer.
 
 Organizer can display a position such as:
 
@@ -153,7 +153,7 @@ Register again from the new Bridge location if you:
 - move Bridge to another folder;
 - rename the Bridge file;
 - switch between the EXE and running from source (Python);
-- extract a newer release ZIP into a different folder and use it from there (the v0.4.63 release ZIP extracts into a folder named after the version);
+- extract a newer release ZIP into a different folder and use it from there (release ZIPs from v0.5.0 on extract into a folder named after the version);
 - registered the Bridge from the `python` folder of the v0.4.62 release ZIP.
 
 You do not need to remove the registration before moving. Registering again from the new Bridge overwrites the registration with the new location.
@@ -199,10 +199,10 @@ It also does not inspect the FH6 screen with image recognition, read the game's 
 
 ## Release package
 
-GitHub Releases provides a ZIP (`Livery-Organizer-for-FH6-v0.4.63-preview.zip`) containing the EXEs, the files they need to run, and the Japanese / English documentation. Extracting it creates a folder named after the version with the following files:
+GitHub Releases provides a ZIP (`Livery-Organizer-for-FH6-v0.5.0-preview.zip`) containing the EXEs, the files they need to run, and the Japanese / English documentation. Extracting it creates a folder named after the version with the following files:
 
 ```text
-Livery-Organizer-for-FH6-v0.4.63-preview\
+Livery-Organizer-for-FH6-v0.5.0-preview\
   Livery-Organizer-for-FH6.exe
   Navigator-Bridge-for-FH6.exe
   Livery-Viewer-for-FH6\

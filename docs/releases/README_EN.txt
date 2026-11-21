@@ -1,5 +1,5 @@
-Livery Organizer for FH6 v0.4.63 Preview
-========================================
+Livery Organizer for FH6 v0.5.0 Preview
+=======================================
 
 Release date: YYYY-MM-DD (fill in at release)
 
@@ -17,7 +17,7 @@ This distribution contains three tools:
 
 This release is a preview version.
 
-v0.4.63 bundles the 3D preview tool, Livery Viewer for FH6. Each card in an
+v0.5.0 bundles the 3D preview tool, Livery Viewer for FH6. Each card in an
 Organizer report can open a 3D view of that livery applied to the car body.
 Livery Viewer for FH6 is experimental, and its rendering does not exactly match
 the in-game appearance.
@@ -36,8 +36,8 @@ and metadata package revision 4.
 
 ■ Release files
 
-Extracting the release ZIP (Livery-Organizer-for-FH6-v0.4.63-preview.zip) creates
-a folder named after the version (Livery-Organizer-for-FH6-v0.4.63-preview) that
+Extracting the release ZIP (Livery-Organizer-for-FH6-v0.5.0-preview.zip) creates
+a folder named after the version (Livery-Organizer-for-FH6-v0.5.0-preview) that
 contains the following files:
 
 Livery-Organizer-for-FH6.exe
@@ -281,7 +281,7 @@ into a newly generated report. Use the built-in backup functions for data you
 want to preserve.
 
 
-■ Navigator Bridge for FH6 v0.0.29
+■ Navigator Bridge for FH6
 
 Navigator Bridge is an optional companion tool that moves the FH6 My Designs
 cursor to a paint position selected in Organizer.

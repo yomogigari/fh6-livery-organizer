@@ -11,15 +11,15 @@ GameSaveから取得した情報をもとに、サムネイル付きのHTMLレ�
 | ツール | 役割 |
 | --- | --- |
 | **Livery Organizer for FH6**（本体） | ダウンロード済みペイントを一覧化・検索・整理し、HTML / Excelのレポートを生成します。 |
-| **Livery Viewer for FH6**（任意・実験的） | レポートのペイントを、FH6の車体に貼った3Dで表示します。v0.4.63から同梱しました。 |
+| **Livery Viewer for FH6**（任意・実験的） | レポートのペイントを、FH6の車体に貼った3Dで表示します。v0.5.0から同梱しました。 |
 | **Navigator Bridge for FH6**（任意） | Organizerで選んだペイントの位置まで、FH6「マイデザイン」のカーソルを移動します。 |
 
-**v0.4.63 Preview**（公開日 YYYY-MM-DD：公開時に記入）では、3Dプレビューの **Livery Viewer for FH6** を同梱しました。Organizerのレポートの各カードから、そのペイントを車体に貼った3D表示を開けます。あわせて、3つのツールの設定と見た目をそろえ、配布ZIPをEXEとEXEの動作に必要なファイルだけにしました。
+**v0.5.0 Preview**（公開日 YYYY-MM-DD：公開時に記入）では、3Dプレビューの **Livery Viewer for FH6** を同梱しました。Organizerのレポートの各カードから、そのペイントを車体に貼った3D表示を開けます。あわせて、3つのツールの設定と見た目をそろえ、配布ZIPをEXEとEXEの動作に必要なファイルだけにしました。
 
 > [!IMPORTANT]
 > 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。Livery Viewer for FH6 の3D表示は実験的な機能で、ゲーム内の見た目と完全には一致しません。
 
-## v0.4.63 Previewの主な更新
+## v0.5.0 Previewの主な更新
 
 ### Livery Viewer for FH6（3Dプレビュー・実験的）を同梱
 
@@ -40,7 +40,7 @@ Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システ�
 
 配布ZIPには、EXEとEXEの動作に必要なファイルだけを含めます。前の版まで同梱していたPython版（`python` フォルダー）は含めません。ソースコード（Python・Rust）は、このリポジトリで公開しています。同梱する第三者の部品とそのライセンスは、ZIPの `THIRD-PARTY-NOTICES.txt` にまとめました。
 
-Navigator Bridge for FH6 は **v0.0.29** です。同梱車両メタデータは **2026-11更新 / 667車種 / package revision 4** へ更新しました。
+この版から、Organizer・Livery Viewer for FH6・Navigator Bridge for FH6 の3つの版の番号をそろえました（Navigator Bridge は v0.0.28 の次が **v0.5.0** です）。同梱車両メタデータは **2026-11更新 / 667車種 / package revision 4** へ更新しました。
 
 詳しい変更内容は [docs/releases/CHANGELOG.md](docs/releases/CHANGELOG.md) を参照してください。
 
@@ -123,7 +123,7 @@ GameDBの用意の方法は案内していません。用意する場合は、�
 
 ## Navigator Bridge for FH6
 
-**Navigator Bridge for FH6 v0.0.29** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
+**Navigator Bridge for FH6** は、Livery Organizer for FH6で選んだペイント位置へ、FH6本体の「マイデザイン」画面上のカーソルを移動するための任意の補助ツールです。
 
 Organizerでは、各ペイントに次のような現在位置を表示します。
 
@@ -162,7 +162,7 @@ Windowsの連携登録にはBridge本体の**絶対パス**が保存されます
 - Bridgeを別のフォルダーへ移動した
 - Bridge本体のファイル名を変更した
 - EXEとソースからの実行（Python）を切り替えた
-- 新しい版の配布ZIPを、別のフォルダーに展開して使う（v0.4.63の配布ZIPは、展開すると版の名前のフォルダーができます）
+- 新しい版の配布ZIPを、別のフォルダーに展開して使う（v0.5.0からの配布ZIPは、展開すると版の名前のフォルダーができます）
 - v0.4.62の配布ZIPの `python` フォルダーのBridgeで登録していた
 
 移動前に「解除」を行う必要はありません。変更後のBridgeから再登録すると、新しい場所へ登録が上書きされます。
@@ -212,10 +212,10 @@ FH6画面の画像認識や解析、ゲーム内部の現在カーソル位置�
 
 ## 配布版
 
-GitHub Releasesでは、EXEとEXEの動作に必要なファイル、日本語 / 英語のドキュメントをまとめたZIP（`Livery-Organizer-for-FH6-v0.4.63-preview.zip`）を配布します。展開すると、次のファイルが入った版の名前のフォルダーができます。
+GitHub Releasesでは、EXEとEXEの動作に必要なファイル、日本語 / 英語のドキュメントをまとめたZIP（`Livery-Organizer-for-FH6-v0.5.0-preview.zip`）を配布します。展開すると、次のファイルが入った版の名前のフォルダーができます。
 
 ```text
-Livery-Organizer-for-FH6-v0.4.63-preview\
+Livery-Organizer-for-FH6-v0.5.0-preview\
   Livery-Organizer-for-FH6.exe
   Navigator-Bridge-for-FH6.exe
   Livery-Viewer-for-FH6\

@@ -1,13 +1,15 @@
-Navigator Bridge for FH6 v0.0.29
+Navigator Bridge for FH6 v0.5.0
 
 公開日: YYYY-MM-DD（公開時に記入）
 
-Navigator Bridge for FH6 v0.0.29 では、Livery Organizer for FH6・Livery Viewer for FH6 と
+Navigator Bridge for FH6 v0.5.0 では、Livery Organizer for FH6・Livery Viewer for FH6 と
 言語・表示テーマ（システム設定 / ライト / ダーク）の設定を共有し、画面の言語（日本語 / 英語）と
 表示テーマを切り替えられるようにしました。言語の変更は次回起動時から反映されます。
 画面の見た目も、ほかの2つのツールとそろえました。
 FH6ウィンドウの確認（タイトル完全一致と所有プロセスの確認、各移動キーの送信直前の再検証）は
 v0.0.28と同じです。
+この版から、版の番号を Livery Organizer for FH6・Livery Viewer for FH6 と同じにしました
+（前の公開は v0.0.28。3つのツールは、これからも同じ版の番号で公開します）。
 この文書では現在の仕様と利用方法を説明します。
 
 =================================
@@ -244,13 +246,13 @@ navigatorbridgeforfh6:// のWindows登録にはBridge本体の絶対パスが保
 通常は再登録不要:
 - 同じフォルダー・同じファイル名のEXEを新しい版で上書きした
 
-例: v0.4.63の配布ZIP（Livery-Organizer-for-FH6-v0.4.63-preview.zip）は、展開すると
-版の名前のフォルダー（Livery-Organizer-for-FH6-v0.4.63-preview\）ができ、その中にBridgeが入ります。
+例: v0.5.0の配布ZIP（Livery-Organizer-for-FH6-v0.5.0-preview.zip）は、展開すると
+版の名前のフォルダー（Livery-Organizer-for-FH6-v0.5.0-preview\）ができ、その中にBridgeが入ります。
 v0.4.62の配布ZIPには、このフォルダーはありませんでした。そのため、前の版と同じ場所に展開しても、
 Bridgeの場所が変わります。新しいフォルダーのNavigator-Bridge-for-FH6.exeを単独起動し、
 「連携を登録」をやり直してください。
 
-v0.4.63の配布ZIPには、Python版（pythonフォルダー）は入っていません。v0.4.62の配布ZIPの
+v0.5.0の配布ZIPには、Python版（pythonフォルダー）は入っていません。v0.4.62の配布ZIPの
 python\navigator-bridge-for-fh6-v028.py で登録していた場合も、EXEのBridge（Navigator-Bridge-for-FH6.exe）を
 単独起動して「連携を登録」をやり直してください。
 

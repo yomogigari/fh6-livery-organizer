@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Navigator Bridge for FH6 v0.0.29
+"""Navigator Bridge for FH6 v0.5.0
 
 非公式・非営利のファンメイド操作支援ツールです。
 Microsoft、Xbox、Turn 10 Studios、Playground Games、Forzaとの提携・承認・後援を
@@ -80,7 +80,7 @@ except Exception:
 
 APP_NAME = "Navigator Bridge for FH6"
 PACKAGED_EXE_FILENAME = "Navigator-Bridge-for-FH6.exe"
-APP_VERSION = "v0.0.29"
+APP_VERSION = "v0.5.0"
 FH6_WINDOW_TITLE = "Forza Horizon 6"
 FH6_PROCESS_IMAGE_NAME = "forzahorizon6.exe"
 APP_USER_MODEL_ID = "LiveryTools.NavigatorBridgeForFH6"

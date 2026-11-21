@@ -22,7 +22,7 @@ Japanese is the source and primary language for the project's main documentation
 
 - `README.md` is the primary GitHub README; `README_EN.md` is the English README.
 - Normal release ZIPs contain both `README.txt` / `README_EN.txt` and `NAVIGATOR-BRIDGE-README.txt` / `NAVIGATOR-BRIDGE-README_EN.txt`.
-- When Organizer runs from source, `i18n.py` and `locales/` in `src/organizer/` are required at runtime (the release EXE already includes them). Since v0.4.63, the release ZIP no longer includes the Python version (`python/` folder).
+- When Organizer runs from source, `i18n.py` and `locales/` in `src/organizer/` are required at runtime (the release EXE already includes them). Since v0.5.0, the release ZIP no longer includes the Python version (`python/` folder).
 - `CHANGELOG.md` remains primarily Japanese. Separate changelogs are not maintained for every UI language.
 - If additional UI languages are added later, the project does not plan to maintain a complete README, changelog, release notes, and Bridge guide for each language. Users who do not read Japanese should use the English documentation as the common reference.
 
@@ -61,7 +61,7 @@ For these reasons, **reviewing and incorporating translation changes may take ti
 
 ## Livery Viewer for FH6 and Navigator Bridge for FH6
 
-Since v0.4.63, Livery Viewer for FH6 and Navigator Bridge for FH6 are also available in Japanese and English. The three tools share the language and theme (Follow system / Light / Dark) through `ui.language` and `ui.theme` in `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`. A theme change takes effect immediately in every tool.
+Since v0.5.0, Livery Viewer for FH6 and Navigator Bridge for FH6 are also available in Japanese and English. The three tools share the language and theme (Follow system / Light / Dark) through `ui.language` and `ui.theme` in `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`. A theme change takes effect immediately in every tool.
 
 | Tool / window | Strings | How the language is chosen | When a language change takes effect |
 | --- | --- | --- | --- |
