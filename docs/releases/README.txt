@@ -149,6 +149,10 @@ GameDBは配布物に含めません。Organizer・ViewerがGameDBを作成・�
 
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 
+ほかの場所に置いたときは、Livery Viewer for FH6 の設定画面（Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe を開く）の
+「GameDB」の欄で、「参照...」から選びます。使えるかを確かめてから登録し、欄の下に今の状態を表示します
+（Organizer も同じ設定を使います）。「設定を外す」で登録を外します（GameDBのファイルは消しません）。
+
 ほかの指定の仕方（環境変数など）は、GitHubのリポジトリの docs/3D-PREVIEW-GAMEDB.md を参照してください。
 
 GameDBの用意の方法は案内していません。用意する場合は、利用者自身の責任で、

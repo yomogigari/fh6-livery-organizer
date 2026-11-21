@@ -42,7 +42,7 @@ Viewerは次の順にGameDBを探し、最初に使える物を使います。�
 
 1. 起動のときの指定（Organizerのレポートから開いたときは、レポートに記録された場所）
 2. 環境変数 `LO4FH6_GAMEDB`
-3. 3つのツールの共有設定 `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json` の `paths.gamedb_file`
+3. 3つのツールの共有設定 `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json` の `paths.gamedb_file`（Viewerの設定画面の「GameDB」の欄で設定できます）
 4. 以前の形の設定 `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json` に記録された場所
 5. `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite`
 6. 5と同じフォルダーの `fh6-gamedb-*.sqlite`（更新日時の新しい順）
@@ -51,6 +51,14 @@ Viewerは次の順にGameDBを探し、最初に使える物を使います。�
 
 - 1と2が使えないとき（ファイルが無い・SQLiteのファイルでない・必要な表が無い）は、エラーで止まります。1は、レポートを作り直すか、指定を直してください。2は、環境変数を直すか、消してください（2が使えないときは、Organizerもレポートに3Dプレビューを付けません）。
 - 3～6が使えないときは、飛ばして次を見ます。どれも使えないときは、GameDBが無いときの表示になります。
+
+## Viewerの設定画面で指定する
+
+Livery Viewer for FH6 の設定画面（`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` を開く）の「GameDB」の欄で指定できます。
+
+- 「参照...」から選ぶか、場所を書いて確定すると、使えるかを確かめてから登録します（上の3。Organizerも同じ設定を使います）。使えないときは登録せず、理由を表示します。
+- 「設定を外す」で登録を外します。GameDBのファイルは消しません。
+- 欄の下に、今使うGameDBと状態（この欄の物・既定の場所で見つけた物・環境変数の物・未設定・使えない理由）を表示します。
 
 ## ソースから動かす場合
 

@@ -183,6 +183,12 @@ locally is used, read-only, when it is placed at the following location:
 
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 
+If it is somewhere else, open the Livery Viewer for FH6 settings window
+(Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe) and choose the file with
+"Browse..." in the "GameDB" field. It is checked before it is saved, and its
+current state is shown below the field (Organizer uses the same setting).
+"Clear" removes the setting (the GameDB file is not deleted).
+
 For other ways to specify it (such as an environment variable), see
 docs/3D-PREVIEW-GAMEDB.md (Japanese) in the GitHub repository.
 
