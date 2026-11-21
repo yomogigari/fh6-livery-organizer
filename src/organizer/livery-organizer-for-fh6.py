@@ -2327,6 +2327,27 @@ def display_path_text(value: object) -> str:
     return re.sub(r"(?i)(?<![A-Za-z0-9])[A-Z]:/[^\r\n]*", _drive_path, text)
 
 
+def wrap_path_lines(text: object, measure, width: int) -> str:
+    """長い場所を、区切り（\\・/・¥）の後ろで改行し、どの行も幅 width に収まるようにします（2026-11-22）。
+
+    Tk のラベルは空白の所でしか折り返さないため、空白の無い場所は名前の途中で切れます（例：Livery-V／iewer）。
+    区切りの後ろで先に改行しておくと、名前の途中では切れません。1 つの名前が width より長いときだけ、Tk が途中で切ります。
+    measure は文字列の幅を返す関数です（窓では Tk の字の measure、試験では len）。
+    """
+    lines: list[str] = []
+    current = ""
+    for part in re.split(r"(?<=[\\/¥￥])", str(text)):
+        if not part:
+            continue
+        if current and measure(current + part) > width:
+            lines.append(current)
+            current = part
+        else:
+            current += part
+    lines.append(current)
+    return "\n".join(lines)
+
+
 def native_path_text(value: object) -> str:
     """表示用の円サイン区切りをWindows本来のバックスラッシュへ戻します。"""
     return str(value).replace("¥", "\\").replace("￥", "\\")
@@ -19834,6 +19855,12 @@ class App:
                   font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold")).pack(anchor="w")
         ttk.Label(outer, text=tr("integration.intro"), wraplength=640, justify="left").pack(anchor="w", pady=(3, 9))
         targets = integration_targets()
+        # 場所は区切りの後ろで改行し、名前の途中で切れないようにする（幅は、ラベルの折り返しの 640 より少し狭く）
+        try:
+            path_font = tkfont.Font(root=win, font=ttk.Style(win).lookup("Muted.TLabel", "font") or "TkDefaultFont")
+            measure_path = path_font.measure
+        except tk.TclError:
+            measure_path = None
         state_vars = {}
         for key, target in targets.items():
             ttk.Label(outer, text=target["name"], font=(GUI_FONT_FAMILY, GUI_FONT_SIZE, "bold")).pack(anchor="w",
@@ -19852,6 +19879,8 @@ class App:
 
         def state_text(state: str, path: str) -> str:
             shown = display_path_text(path)
+            if measure_path is not None:
+                shown = wrap_path_lines(shown, measure_path, 620)
             if state == "here":
                 return tr("integration.state.here", path=shown)
             if state == "elsewhere":
@@ -20727,7 +20756,7 @@ def run_integration(action: str, targets: Optional[dict] = None) -> list:
             continue
         if not Path(target["path"]).exists():
             results.append({"key": key, "ok": False,
-                            "detail": tr("integration.state.missing", path=display_path_text(str(target["path"])))})
+                            "detail": tr("integration.result.missing", path=display_path_text(str(target["path"])))})
             continue
         env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
         try:

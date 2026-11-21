@@ -38,20 +38,25 @@ STRINGS = {
     "button.integration": "連携の登録・解除",
     "integration.title": "Viewer・Bridge の連携",
     "integration.intro": (
-        "レポートから Livery Viewer for FH6（プレビュー）と Navigator Bridge for FH6"
-        "（FH6で選択デザインへ移動）を開けるように、Windows に登録します。まとめて登録・解除できます。"
+        "レポートから Livery Viewer for FH6（プレビュー）と\n"
+        "Navigator Bridge for FH6（FH6で選択デザインへ移動）を開けるように、\n"
+        "Windowsに登録します。まとめて登録・解除できます。"
     ),
-    "integration.state.here": "登録済み（この Organizer と同じ配布の物）：{path}",
-    "integration.state.elsewhere": "別の場所の物が登録されています：{path}",
+    "integration.state.here": "登録済み（この Organizer と同じ配布の物）\n{path}",
+    "integration.state.elsewhere": "別の場所の物が登録されています\n{path}",
     "integration.state.none": "未登録",
-    "integration.state.missing": "見つかりません：{path}",
+    "integration.state.missing": "見つかりません\n{path}",
     "integration.register_all": "まとめて登録",
     "integration.unregister_all": "まとめて解除",
     "integration.running": "処理しています...（初めてのときは少し時間がかかります）",
     "integration.result.register": "登録しました",
     "integration.result.unregister": "解除しました",
     "integration.result.failed": "失敗しました（{detail}）",
-    "integration.moved_note": "Viewer・Bridgeのフォルダーを動かしたとき・新しい版にしたときは、もう一度「まとめて登録」してください。",
+    "integration.result.missing": "見つかりません：{path}",
+    "integration.moved_note": (
+        "Viewer・Bridgeのフォルダーを動かしたとき・新しい版にしたときは、\n"
+        "もう一度「まとめて登録」してください。"
+    ),
     "integration.uv_missing": "uv が見つかりません（ソースから動かす場合の Viewer の登録に使います）",
     "button.browse": "参照…",
     "log.ready": "準備完了。{app} v{version} / FH6を完全終了してから実行してください。",

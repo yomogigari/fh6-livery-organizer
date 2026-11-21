@@ -204,6 +204,7 @@ class OrganizerRunIntegrationTests(unittest.TestCase):
             results = organizer.run_integration("register", targets)
         run.assert_not_called()
         self.assertEqual([r["ok"] for r in results], [False, False])
+        self.assertNotIn("\n", results[1]["detail"])  # 失敗の理由（ログにも出る）は 1 行のまま
 
 
 class OrganizerIntegrationUiTests(unittest.TestCase):
@@ -218,10 +219,41 @@ class OrganizerIntegrationUiTests(unittest.TestCase):
                     "integration.state.elsewhere", "integration.state.none", "integration.state.missing",
                     "integration.register_all", "integration.unregister_all", "integration.running",
                     "integration.result.register", "integration.result.unregister", "integration.result.failed",
+                    "integration.result.missing",
                     "integration.moved_note", "integration.uv_missing"):
             with self.subTest(key=key):
                 self.assertIn(key, ja.STRINGS if hasattr(ja, "STRINGS") else ja.TEXT)
                 self.assertIn(key, en.STRINGS if hasattr(en, "STRINGS") else en.TEXT)
+
+
+class OrganizerIntegrationPathWrapTests(unittest.TestCase):
+    """連携の窓の場所の表示：区切りの後ろで改行し、名前の途中で切らない（2026-11-22）。"""
+
+    def test_breaks_after_separators_and_keeps_names_whole(self) -> None:
+        path = "E:¥Source¥Python¥test¥Livery-Organizer-for-FH6-v0.5.0¥Livery-Viewer-for-FH6¥Livery-Viewer-for-FH6.exe"
+        lines = organizer.wrap_path_lines(path, len, 40).split("\n")
+        self.assertEqual("".join(lines), path)
+        self.assertTrue(all(len(line) <= 40 for line in lines))
+        self.assertTrue(all(line.endswith("¥") for line in lines[:-1]))
+        self.assertEqual(lines[-1], "Livery-Viewer-for-FH6.exe")
+
+    def test_short_path_and_backslashes(self) -> None:
+        self.assertEqual(organizer.wrap_path_lines("C:\\a\\b.exe", len, 40), "C:\\a\\b.exe")
+        self.assertEqual(organizer.wrap_path_lines("C:\\aaaa\\bbbb\\c.exe", len, 8), "C:\\aaaa\\\nbbbb\\\nc.exe")
+
+    def test_name_longer_than_width_stays_whole(self) -> None:
+        self.assertEqual(organizer.wrap_path_lines("C:\\" + "x" * 20 + "\\y.exe", len, 10),
+                         "C:\\\n" + "x" * 20 + "\\\ny.exe")
+
+    def test_state_words_put_the_path_on_its_own_line(self) -> None:
+        import locales.en as en
+        import locales.ja as ja
+        for module in (ja, en):
+            strings = module.STRINGS if hasattr(module, "STRINGS") else module.TEXT
+            for key in ("integration.state.here", "integration.state.elsewhere", "integration.state.missing"):
+                with self.subTest(language=module.__name__, key=key):
+                    self.assertTrue(strings[key].endswith("\n{path}"))
+            self.assertNotIn("\n", strings["integration.result.missing"])
 
 
 if __name__ == "__main__":
