@@ -15,7 +15,7 @@ SOURCE = ORGANIZER_DIR / "livery-organizer-for-fh6.py"
 HELP_HEADING = "プレビュー"
 HELP_BODY = (
     "FH6本体パスを確認できたレポートでは、各カードからLivery Viewer for FH6でペイントを3D表示できます。"
-    "この機能は実験的なもので、表示はゲーム内の見た目と完全には一致しません。"
+    "表示はゲーム内の見た目と完全には一致しません。"
     "初回だけ、Livery Viewer for FH6の設定画面で「Organizer連携を登録」を実行してください。"
     "GameSaveやFH6本体へ書き込みません。"
 )
@@ -39,7 +39,7 @@ class Experimental3DPreviewI18nR02Tests(unittest.TestCase):
         self.assertEqual(
             en_locale.REPORT_TEXT.get(HELP_BODY),
             "When the FH6 installation path is available, each card can show the paint in 3D with Livery Viewer for FH6. "
-            "This experimental feature does not exactly match the in-game appearance. "
+            "The display does not exactly match the in-game appearance. "
             "On first use, run 'Register Organizer integration' in the Livery Viewer for FH6 settings window. "
             "It does not write to GameSave or the FH6 installation.",
         )

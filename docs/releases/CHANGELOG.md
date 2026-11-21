@@ -11,7 +11,7 @@
 - この版から、Livery Organizer for FH6・Livery Viewer for FH6・Navigator Bridge for FH6 の3つを同じ版の番号で公開する。これからも3つを一緒に上げる（直しだけの版は v0.5.1、機能を足した版は v0.6.0 のように上げる）。
 - Organizerは v0.4.62 の次を v0.5.0 とした（公開の準備中は v0.4.63 としていた）。Navigator Bridgeは v0.0.28 の次を v0.5.0 とした（公開の準備中は v0.0.29 としていた）。
 
-### Livery Viewer for FH6（3Dプレビュー・実験的）を同梱
+### Livery Viewer for FH6（3Dプレビュー）を同梱
 
 - Organizerのレポートの各カードへ「プレビュー」を追加し、ペイントを車体に貼った3D表示を開けるようにした。
 - 3D表示を行う Livery Viewer for FH6 を配布物へ同梱（`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe`、フォルダーごと使用）。

@@ -11,17 +11,17 @@ GameSaveから取得した情報をもとに、サムネイル付きのHTMLレ�
 | ツール | 役割 |
 | --- | --- |
 | **Livery Organizer for FH6**（本体） | ダウンロード済みペイントを一覧化・検索・整理し、HTML / Excelのレポートを生成します。 |
-| **Livery Viewer for FH6**（任意・実験的） | レポートのペイントを、FH6の車体に貼った3Dで表示します。v0.5.0から同梱しました。 |
+| **Livery Viewer for FH6**（任意） | レポートのペイントを、FH6の車体に貼った3Dで表示します。v0.5.0から同梱しました。 |
 | **Navigator Bridge for FH6**（任意） | Organizerで選んだペイントの位置まで、FH6「マイデザイン」のカーソルを移動します。 |
 
 **v0.5.0 Preview**（公開日 YYYY-MM-DD：公開時に記入）では、3Dプレビューの **Livery Viewer for FH6** を同梱しました。Organizerのレポートの各カードから、そのペイントを車体に貼った3D表示を開けます。あわせて、3つのツールの設定と見た目をそろえ、配布ZIPをEXEとEXEの動作に必要なファイルだけにしました。
 
 > [!IMPORTANT]
-> 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。Livery Viewer for FH6 の3D表示は実験的な機能で、ゲーム内の見た目と完全には一致しません。
+> 本リリースはプレビュー版です。FH6の内部データ形式は公式仕様として公開されているものではなく、解析処理の一部は実データの観測に基づいています。Livery Viewer for FH6 の3D表示は、ゲーム内の見た目と完全には一致しません。
 
 ## v0.5.0 Previewの主な更新
 
-### Livery Viewer for FH6（3Dプレビュー・実験的）を同梱
+### Livery Viewer for FH6（3Dプレビュー）を同梱
 
 Organizerのレポートの各カードに「プレビュー」を追加しました。クリックすると、Livery Viewer for FH6 の窓に、そのペイントを貼った車が表示されます。
 
@@ -51,7 +51,7 @@ Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システ�
 - サムネイルを埋め込んだローカルHTMLレポート
 - サムネイル付きExcel出力
 - 車種・メーカー・作成者・年式などによる検索、絞り込み、並び替え
-- レポートの各カードから、ペイントを車体に貼った3D表示（Livery Viewer for FH6・実験的）
+- レポートの各カードから、ペイントを車体に貼った3D表示（Livery Viewer for FH6）
 - Organizer GUI / Viewer / Navigator Bridge / 生成HTML / Excelの日本語・英語表示
 - 3つのツールで共有する言語・表示テーマ（システム設定 / ライト / ダーク）・フォルダーの設定
 - `/` で検索欄へ移動、`?` でヘルプを開くキーボードショートカット
@@ -78,7 +78,7 @@ Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システ�
 
 ## Livery Viewer for FH6
 
-**Livery Viewer for FH6** は、Organizerのレポートのペイントを、FH6の車体に貼って3Dで表示する実験的なツールです。FH6本体のゲームアセットと、GameSaveのペイント（`Livery_*` フォルダー）を読み取り専用で読み、パソコンの中で描画します（WebGL2）。
+**Livery Viewer for FH6** は、Organizerのレポートのペイントを、FH6の車体に貼って3Dで表示するツールです。FH6本体のゲームアセットと、GameSaveのペイント（`Livery_*` フォルダー）を読み取り専用で読み、パソコンの中で描画します（WebGL2）。
 
 1. 配布のフォルダーを使う場所に置いてから、`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` を起動し、設定画面で **「Organizer連携を登録」** を一度実行します（登録にはViewerの場所が保存されるため、先に置き場所を決めてください）。Organizerの **「連携の登録・解除」** で「まとめて登録」を実行すると、ViewerとNavigator Bridgeをまとめて登録できます。登録の後は、設定画面を閉じてかまいません。3Dプレビューを開くと、Viewerが自動で起動します。
 2. Organizerでレポートを生成します。FH6本体のインストール先を確認できたレポートでは、各カードに「プレビュー」が表示されます。

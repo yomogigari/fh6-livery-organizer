@@ -10,7 +10,7 @@ This distribution contains three tools:
 
 - Livery Organizer for FH6 (main tool)
   Lists, searches, and organizes downloaded liveries and generates HTML / Excel reports.
-- Livery Viewer for FH6 (optional, experimental)
+- Livery Viewer for FH6 (optional)
   Shows a report's livery in 3D on the FH6 car body. Bundled starting with this version.
 - Navigator Bridge for FH6 (optional)
   Moves the FH6 My Designs cursor to a livery position selected in Organizer.
@@ -19,8 +19,8 @@ This release is a preview version.
 
 v0.5.0 bundles the 3D preview tool, Livery Viewer for FH6. Each card in an
 Organizer report can open a 3D view of that livery applied to the car body.
-Livery Viewer for FH6 is experimental, and its rendering does not exactly match
-the in-game appearance.
+The rendering of Livery Viewer for FH6 does not exactly match the in-game
+appearance.
 
 The three tools now share settings such as the language, theme (Follow system /
 Light / Dark), and the FH6 installation and GameSave folders, and use the same
@@ -107,7 +107,7 @@ should use the English documentation as the common reference.
 
 ■ Livery Viewer for FH6
 
-Livery Viewer for FH6 is an experimental tool that shows a report's livery in 3D
+Livery Viewer for FH6 is a tool that shows a report's livery in 3D
 on the FH6 car body. It reads the FH6 game assets and the GameSave livery
 (Livery_* folder) as read-only input and renders them on your PC (WebGL2).
 
@@ -220,7 +220,7 @@ responsibility and check the game's terms of use.
 - Temporary "Deleted in FH6" state that recalculates remaining positions
 - FH6 move-target selection from normal lists and comparison dialogs
 - F key or Move to Selected Design in FH6 to send a target to Navigator Bridge
-- 3D view of a livery from each report card with Livery Viewer for FH6 (experimental)
+- 3D view of a livery from each report card with Livery Viewer for FH6
 - / shortcut to focus search
 - ? shortcut to open Help
 - Optimized live search for large reports

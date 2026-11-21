@@ -10,7 +10,7 @@ Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 
 ・Livery Organizer for FH6（本体）
   ダウンロード済みペイントを一覧化・検索・整理し、HTML / Excelのレポートを生成します。
-・Livery Viewer for FH6（任意・実験的）
+・Livery Viewer for FH6（任意）
   レポートのペイントを、FH6の車体に貼った3Dで表示します。この版から同梱しました。
 ・Navigator Bridge for FH6（任意）
   Organizerで選んだペイントの位置まで、FH6「マイデザイン」のカーソルを移動します。
@@ -18,8 +18,8 @@ Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 このリリースはプレビュー版です。
 
 v0.5.0では、3Dプレビューの Livery Viewer for FH6 を同梱しました。Organizerのレポートの
-各カードから、そのペイントを車体に貼った3D表示を開けます。Livery Viewer for FH6 は実験的な機能で、
-表示はゲーム内の見た目と完全には一致しません。
+各カードから、そのペイントを車体に貼った3D表示を開けます。Livery Viewer for FH6 の表示は、
+ゲーム内の見た目と完全には一致しません。
 
 3つのツールは、言語・表示テーマ（システム設定 / ライト / ダーク）・FH6本体とGameSaveの
 フォルダーなどの設定を共有し、同じ見た目の画面にそろえました。
@@ -91,7 +91,7 @@ Liveryタイトル、説明、作成者名、車名、タグ、メモ等の利�
 ■ Livery Viewer for FH6 とは
 
 Livery Viewer for FH6 は、Organizerのレポートのペイントを、FH6の車体に貼って3Dで表示する
-実験的なツールです。FH6本体のゲームアセットと、GameSaveのペイント（Livery_* フォルダー）を
+ツールです。FH6本体のゲームアセットと、GameSaveのペイント（Livery_* フォルダー）を
 読み取り専用で読み、パソコンの中で描画します（WebGL2）。
 
 ・レポートの各カードの「プレビュー」から、そのペイントを開けます。

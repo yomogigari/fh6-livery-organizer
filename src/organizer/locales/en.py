@@ -462,7 +462,7 @@ REPORT_TEXT = {
     "整理完了": "Organization complete",
     "バックアップ 未保存": "Backup not saved",
     "プレビュー": "Preview",
-    "FH6本体パスを確認できたレポートでは、各カードからLivery Viewer for FH6でペイントを3D表示できます。この機能は実験的なもので、表示はゲーム内の見た目と完全には一致しません。初回だけ、Livery Viewer for FH6の設定画面で「Organizer連携を登録」を実行してください。GameSaveやFH6本体へ書き込みません。": "When the FH6 installation path is available, each card can show the paint in 3D with Livery Viewer for FH6. This experimental feature does not exactly match the in-game appearance. On first use, run 'Register Organizer integration' in the Livery Viewer for FH6 settings window. It does not write to GameSave or the FH6 installation.",
+    "FH6本体パスを確認できたレポートでは、各カードからLivery Viewer for FH6でペイントを3D表示できます。表示はゲーム内の見た目と完全には一致しません。初回だけ、Livery Viewer for FH6の設定画面で「Organizer連携を登録」を実行してください。GameSaveやFH6本体へ書き込みません。": "When the FH6 installation path is available, each card can show the paint in 3D with Livery Viewer for FH6. The display does not exactly match the in-game appearance. On first use, run 'Register Organizer integration' in the Livery Viewer for FH6 settings window. It does not write to GameSave or the FH6 installation.",
     "FH6移動:": "FH6 move:",
     "未選択": "Not selected",
     "FH6で選択デザインへ移動": "Move to Selected Design in FH6",
