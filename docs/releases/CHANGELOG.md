@@ -28,6 +28,7 @@
 
 ### 3つのツールの共通化
 
+- Organizerに「連携の登録・解除」を追加し、Livery Viewer for FH6とNavigator BridgeのOrganizer連携を、まとめて登録・解除できるようにした（それぞれの画面の登録もそのまま使える）。
 - Organizer・Viewer・Navigator Bridgeで、言語・表示テーマ（システム設定 / ライト / ダーク）・FH6本体とGameSaveのフォルダー等を共有（`%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`）。
 - OrganizerとNavigator Bridgeの画面を、Viewerと同じ配色・文字・余白にそろえた。
 - Navigator Bridgeへ、言語と表示テーマの切り替えを追加。

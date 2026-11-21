@@ -1304,6 +1304,38 @@ def protocol_registration_target_display(command: str) -> str:
     return text
 
 
+def _cli_write(text: str) -> None:
+    """標準出力へ 1 行書く（窓だけの EXE で標準出力が無いときは書かない）。"""
+    stream = sys.stdout
+    if stream is None:
+        return
+    try:
+        stream.write(text + "\n")
+        stream.flush()
+    except Exception:
+        pass
+
+
+def run_integration_command(unregister: bool) -> int:
+    """Organizer 連携の登録・解除だけを行い、結果を標準出力に書く（窓は出さない。成功は 0、失敗は 1。2026-11-21）。
+
+    Organizer の「まとめて登録・解除」が、この Bridge を --register-integration / --unregister-integration で動かす。
+    登録の中身は、画面の「連携を登録」「解除」と同じ（register_protocol・unregister_protocol）。
+    """
+    try:
+        if unregister:
+            unregister_protocol()
+            _cli_write(f"unregistered: {PROTOCOL_SCHEME}://")
+        else:
+            register_protocol()
+            _cli_write(f"registered: {PROTOCOL_SCHEME}://")
+            _cli_write(f"command: {protocol_handler_command()}")
+        return 0
+    except Exception as exc:  # noqa: BLE001  失敗は理由を書いて 1 を返す
+        _cli_write(f"error: {exc}")
+        return 1
+
+
 def register_protocol() -> None:
     if not IS_WINDOWS or winreg is None:
         raise RuntimeError(_("Organizer連携の登録はWindows専用です。"))
@@ -2636,6 +2668,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--autostart", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--protocol-self-test-output", help=argparse.SUPPRESS)
     p.add_argument("--protocol-self-test-diagnostics-output", help=argparse.SUPPRESS)
+    # Organizer の「まとめて登録・解除」から使う（窓を出さない。2026-11-21）
+    p.add_argument("--register-integration", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--unregister-integration", action="store_true", help=argparse.SUPPRESS)
     args = p.parse_args()
     args.from_protocol = False
     args.protocol_action = ""
@@ -2666,6 +2701,11 @@ def main() -> None:
         except Exception as exc:
             raise RuntimeError(f"protocol self-test output failed: {exc}") from exc
         return
+
+    # Organizer の「まとめて登録・解除」から、窓を出さずに Organizer 連携を登録・解除する（2026-11-21）。
+    # 起動中の Bridge へ受け渡さないよう、二重起動の確かめより前に行う。
+    if bool(getattr(args, "register_integration", False)) or bool(getattr(args, "unregister_integration", False)):
+        raise SystemExit(run_integration_command(bool(getattr(args, "unregister_integration", False))))
 
     mutex_handle = None
     try:

@@ -19457,6 +19457,8 @@ class App:
             )
             theme_combo.pack(side="left", padx=(8, 8))
             theme_combo.bind("<<ComboboxSelected>>", self._on_theme_selected)
+        # Viewer と Navigator Bridge の Organizer 連携を、まとめて登録・解除する（2026-11-21。窓の高さを増やさないよう、この行の右に置く）
+        ttk.Button(language_row, text=tr("button.integration"), command=self.show_integration_dialog).pack(side="right")
         ttk.Label(
             language_row,
             text=tr("language.env_override") if self._language_env_override else tr("language.note"),
@@ -19809,6 +19811,113 @@ class App:
         ttk.Button(buttons, text=tr("button.copy_clipboard"), command=copy_info).pack(side="left", padx=(8, 0))
         ttk.Button(buttons, text=tr("button.close"), command=win.destroy).pack(side="right")
         position_child_window(win, self.master, 920, 700)
+        win.deiconify()
+        win.lift()
+
+    def show_integration_dialog(self):
+        """Viewer と Navigator Bridge の Organizer 連携を、まとめて登録・解除する窓（2026-11-21）。
+
+        今の登録の状態（この Organizer と同じ配布の物か）を出し、「まとめて登録」「まとめて解除」で 2 つを続けて
+        処理します（裏の糸で動かし、結果はこの窓とログに出します）。
+        """
+        import queue
+        win = tk.Toplevel(self.master)
+        win.withdraw()
+        win.title(f"{APP_NAME} — {tr('integration.title')}")
+        try:
+            win.transient(self.master)
+        except Exception:
+            pass
+        outer = ttk.Frame(win, padding=14)
+        outer.pack(fill="both", expand=True)
+        ttk.Label(outer, text=tr("integration.title"),
+                  font=(GUI_FONT_FAMILY, GUI_HEADING_FONT_SIZE, "bold")).pack(anchor="w")
+        ttk.Label(outer, text=tr("integration.intro"), wraplength=640, justify="left").pack(anchor="w", pady=(3, 9))
+        targets = integration_targets()
+        state_vars = {}
+        for key, target in targets.items():
+            ttk.Label(outer, text=target["name"], font=(GUI_FONT_FAMILY, GUI_FONT_SIZE, "bold")).pack(anchor="w",
+                                                                                                    pady=(4, 0))
+            state_vars[key] = tk.StringVar()
+            ttk.Label(outer, textvariable=state_vars[key], style="Muted.TLabel", wraplength=640,
+                      justify="left").pack(anchor="w")
+        ttk.Label(outer, text=tr("integration.moved_note"), style="Muted.TLabel", wraplength=640,
+                  justify="left").pack(anchor="w", pady=(10, 0))
+        message_var = tk.StringVar(value="")
+        ttk.Label(outer, textvariable=message_var, wraplength=640, justify="left").pack(anchor="w", pady=(8, 0))
+        buttons = ttk.Frame(outer)
+        buttons.pack(fill="x", pady=(12, 0))
+        results_queue: "queue.Queue" = queue.Queue()
+        action_buttons: list = []
+
+        def state_text(state: str, path: str) -> str:
+            shown = display_path_text(path)
+            if state == "here":
+                return tr("integration.state.here", path=shown)
+            if state == "elsewhere":
+                return tr("integration.state.elsewhere", path=shown)
+            if state == "missing":
+                return tr("integration.state.missing", path=shown)
+            return tr("integration.state.none")
+
+        def refresh():
+            for key, target in targets.items():
+                state_vars[key].set(state_text(*integration_state(target)))
+
+        def grow():
+            # 結果の文が増えたら、中身が隠れないように窓を伸ばす
+            try:
+                win.update_idletasks()
+                win.geometry(f"{win.winfo_width()}x{max(win.winfo_height(), win.winfo_reqheight())}")
+            except tk.TclError:
+                pass
+
+        def finish(action, results):
+            lines = []
+            for result in results:
+                name = targets[result["key"]]["name"]
+                if not result["ok"]:
+                    text = tr("integration.result.failed", detail=result["detail"])
+                elif action == "register":
+                    text = tr("integration.result.register")
+                else:
+                    text = tr("integration.result.unregister")
+                lines.append(f"{name}: {text}")
+                self.log(f"{tr('integration.title')} — {name}: {text}")
+            if win.winfo_exists():
+                message_var.set("\n".join(lines))
+                refresh()
+                for button in action_buttons:
+                    button.configure(state="normal")
+                grow()
+
+        def poll():
+            try:
+                action, results = results_queue.get_nowait()
+            except queue.Empty:
+                # 窓を閉じた後も、結果を待ってログに残す
+                (win if win.winfo_exists() else self.master).after(150, poll)
+                return
+            finish(action, results)
+
+        def run(action):
+            for button in action_buttons:
+                button.configure(state="disabled")
+            message_var.set(tr("integration.running"))
+            grow()
+            threading.Thread(target=lambda: results_queue.put((action, run_integration(action, targets))),
+                             name="lo4fh6-integration", daemon=True).start()
+            win.after(150, poll)
+
+        action_buttons.append(ttk.Button(buttons, text=tr("integration.register_all"), command=lambda: run("register")))
+        action_buttons.append(ttk.Button(buttons, text=tr("integration.unregister_all"),
+                                         command=lambda: run("unregister")))
+        action_buttons[0].pack(side="left")
+        action_buttons[1].pack(side="left", padx=(8, 0))
+        ttk.Button(buttons, text=tr("button.close"), command=win.destroy).pack(side="right")
+        refresh()
+        win.update_idletasks()
+        position_child_window(win, self.master, max(700, win.winfo_reqwidth()), win.winfo_reqheight())
         win.deiconify()
         win.lift()
 
@@ -20507,6 +20616,107 @@ def _viewer_uri_registered(scheme: str) -> bool:
             return True
     except OSError:
         return False
+
+
+# Viewer と Navigator Bridge の Organizer 連携（URI）を、まとめて登録・解除する（2026-11-21）
+VIEWER_INTEGRATION_SCHEME = "liveryorganizerpreviewforfh6"
+BRIDGE_INTEGRATION_SCHEME = "navigatorbridgeforfh6"
+
+
+def running_as_packaged_organizer() -> bool:
+    """EXE（Nuitka・PyInstaller）で動いているか。Nuitka は sys.frozen を付けず、__compiled__ を付けます。"""
+    return bool(getattr(sys, "frozen", False) or globals().get("__compiled__") is not None)
+
+
+def integration_targets() -> dict:
+    """まとめて登録・解除する Viewer と Navigator Bridge の、命令と目印（登録先がこの Organizer と同じ物か）。
+
+    配布の EXE では、この Organizer と同じフォルダーの EXE を使います。ソースから動かす場合は、同じリポジトリの
+    台本を使います（Viewer は設定画面と同じく uv で部品をそろえて動かし、Bridge は今の Python で動かします）。
+    """
+    if running_as_packaged_organizer():
+        base = Path(sys.executable).resolve().parent
+        viewer = base / "Livery-Viewer-for-FH6" / "Livery-Viewer-for-FH6.exe"
+        bridge = base / "Navigator-Bridge-for-FH6.exe"
+        viewer_command = [str(viewer), "--lo4fh6-run=bridge"]
+        bridge_command = [str(bridge)]
+    else:
+        source = Path(__file__).resolve().parents[1]
+        viewer = source / "viewer" / "organizer_preview_bridge.py"
+        bridge = source / "navigator_bridge" / "navigator-bridge-for-fh6.py"
+        uv = shutil.which("uv")
+        viewer_command = [uv, "run", "--no-project", "--python", "3.12", "--script", str(viewer)] if uv else []
+        bridge_command = [sys.executable, str(bridge)]
+    return {
+        "viewer": {"name": "Livery Viewer for FH6", "scheme": VIEWER_INTEGRATION_SCHEME, "path": viewer,
+                   "command": viewer_command, "register": "--register-uri-scheme", "unregister": "--unregister-uri-scheme"},
+        "bridge": {"name": "Navigator Bridge for FH6", "scheme": BRIDGE_INTEGRATION_SCHEME, "path": bridge,
+                   "command": bridge_command, "register": "--register-integration",
+                   "unregister": "--unregister-integration"},
+    }
+
+
+def registered_integration_command(scheme: str) -> str:
+    """Windows に登録された起動の命令（無ければ空）。"""
+    if sys.platform != "win32":
+        return ""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Classes\{scheme}\shell\open\command") as key:
+            value, _kind = winreg.QueryValueEx(key, None)
+            return str(value or "")
+    except OSError:
+        return ""
+
+
+def integration_state(target: dict) -> tuple:
+    """登録の状態と、表示する場所を返します。
+
+    状態：here（この Organizer と同じ配布の物が登録済み）・elsewhere（別の場所の物）・none（未登録）・
+    missing（未登録で、この Organizer と同じ配布の物も見つからない）。
+    """
+    path = Path(target["path"])
+    command = registered_integration_command(target["scheme"])
+    if not command:
+        return ("none" if path.exists() else "missing"), str(path)
+    if str(path).casefold() in command.casefold():
+        return "here", str(path)
+    quoted = re.findall(r'"([^"]+)"', command)
+    shown = next((item for item in quoted if item.casefold().endswith((".exe", ".py"))
+                  and "python" not in Path(item).name.casefold()), quoted[0] if quoted else command)
+    return "elsewhere", shown
+
+
+def run_integration(action: str, targets: Optional[dict] = None) -> list:
+    """Viewer と Bridge の Organizer 連携を、まとめて登録（register）・解除（unregister）します。
+
+    それぞれの物を、登録・解除の命令（窓を出さない）で動かし、結果（成功・理由）を 1 つずつ返します。
+    """
+    import subprocess
+    results = []
+    for key, target in (targets or integration_targets()).items():
+        command = list(target["command"])
+        if not command:
+            results.append({"key": key, "ok": False, "detail": tr("integration.uv_missing")})
+            continue
+        if not Path(target["path"]).exists():
+            results.append({"key": key, "ok": False,
+                            "detail": tr("integration.state.missing", path=display_path_text(str(target["path"])))})
+            continue
+        env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+        try:
+            completed = subprocess.run(command + [target[action]], capture_output=True, text=True, encoding="utf-8",
+                                       errors="replace", timeout=900, env=env,
+                                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        except (OSError, subprocess.SubprocessError) as exc:
+            results.append({"key": key, "ok": False, "detail": f"{type(exc).__name__}: {exc}"})
+            continue
+        lines = [line.strip() for line in ((completed.stdout or "") + "\n" + (completed.stderr or "")).splitlines()
+                 if line.strip()]
+        detail = next((line for line in reversed(lines) if "error" in line.casefold()), lines[-1] if lines else "")
+        results.append({"key": key, "ok": completed.returncode == 0,
+                        "detail": detail[:300] or f"exit {completed.returncode}"})
+    return results
 
 
 def start_viewer_standby() -> bool:

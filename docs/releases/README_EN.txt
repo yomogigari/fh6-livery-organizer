@@ -52,8 +52,9 @@ LICENSE.txt
 THIRD-PARTY-NOTICES.txt
 
 When you update from an earlier version and use the new folder, run
+"Register Both" in the new Organizer's "Integration..." window (or run
 "Register Organizer integration" in the Viewer and "Register integration" in
-Navigator Bridge again (both registrations store the absolute path of the EXE).
+Navigator Bridge again; both registrations store the absolute path of the EXE).
 
 Livery Viewer for FH6 uses the files inside the Livery-Viewer-for-FH6 folder.
 Keep the folder together; do not move the EXE out of it by itself.
@@ -300,7 +301,8 @@ Bridge calculates the cursor moves from #001U, foregrounds the unique FH6 window
 that passed the title + process checks, and sends the fixed Left / Right / Down
 cursor sequence through the standard Windows input API.
 
-On first use, start Bridge by itself and run "Register integration" once.
+On first use, start Bridge by itself and run "Register integration" once
+(or run "Register Both" in Organizer's "Integration..." window).
 The navigatorbridgeforfh6:// Windows registration stores Bridge's absolute path
 (see "Moving, renaming, or removing Navigator Bridge" below).
 

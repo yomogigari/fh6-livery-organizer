@@ -80,7 +80,7 @@ Navigator Bridge for FH6 は **v0.0.29** です。同梱車両メタデータは
 
 **Livery Viewer for FH6** は、Organizerのレポートのペイントを、FH6の車体に貼って3Dで表示する実験的なツールです。FH6本体のゲームアセットと、GameSaveのペイント（`Livery_*` フォルダー）を読み取り専用で読み、パソコンの中で描画します（WebGL2）。
 
-1. 配布のフォルダーを使う場所に置いてから、`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` を起動し、設定画面で **「Organizer連携を登録」** を一度実行します（登録にはViewerの場所が保存されるため、先に置き場所を決めてください）。登録の後は、設定画面を閉じてかまいません。3Dプレビューを開くと、Viewerが自動で起動します。
+1. 配布のフォルダーを使う場所に置いてから、`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` を起動し、設定画面で **「Organizer連携を登録」** を一度実行します（登録にはViewerの場所が保存されるため、先に置き場所を決めてください）。Organizerの **「連携の登録・解除」** で「まとめて登録」を実行すると、ViewerとNavigator Bridgeをまとめて登録できます。登録の後は、設定画面を閉じてかまいません。3Dプレビューを開くと、Viewerが自動で起動します。
 2. Organizerでレポートを生成します。FH6本体のインストール先を確認できたレポートでは、各カードに「プレビュー」が表示されます。
 3. 「プレビュー」をクリックすると、Viewerの窓にそのペイントを貼った車が表示されます。ブラウザが外部のアプリを開く確認を出したときは、許可してください。別のペイントをクリックすると、同じ窓で表示が切り替わります。
 
@@ -146,7 +146,7 @@ Navigator Bridgeは任意機能です。Organizer単体でも一覧化・検索�
 
 ### Organizer連携の登録
 
-Navigator Bridgeを初めて使用するときは、Bridgeを単独起動し、**「連携を登録」** を一度実行します。
+Navigator Bridgeを初めて使用するときは、Bridgeを単独起動し、**「連携を登録」** を一度実行します（Organizerの「連携の登録・解除」で「まとめて登録」を実行しても同じです）。
 
 BridgeのGUIには次の情報を表示します。
 
@@ -230,7 +230,7 @@ Livery-Organizer-for-FH6-v0.4.63-preview\
   THIRD-PARTY-NOTICES.txt
 ```
 
-前の版から更新して、新しいフォルダーから使う場合は、Viewerの「Organizer連携を登録」とNavigator Bridgeの「連携を登録」をやり直してください（どちらの登録にも、EXEの絶対パスが保存されるため）。
+前の版から更新して、新しいフォルダーから使う場合は、新しいOrganizerの「連携の登録・解除」で「まとめて登録」を実行してください（Viewerの「Organizer連携を登録」とNavigator Bridgeの「連携を登録」をそれぞれ行っても同じです。どちらの登録にも、EXEの絶対パスが保存されるため）。
 
 Livery Viewer for FH6 は、`Livery-Viewer-for-FH6` フォルダーの中のファイルを一緒に使います。フォルダーごと置いて使い、EXEだけを別の場所へ取り出さないでください。
 

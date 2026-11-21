@@ -46,8 +46,9 @@ CHANGELOG.md
 LICENSE.txt
 THIRD-PARTY-NOTICES.txt
 
-前の版から更新して、新しいフォルダーから使う場合は、Viewerの「Organizer連携を登録」と
-Navigator Bridgeの「連携を登録」をやり直してください（どちらの登録にも、EXEの絶対パスが保存されるため）。
+前の版から更新して、新しいフォルダーから使う場合は、新しいOrganizerの「連携の登録・解除」で
+「まとめて登録」を実行してください（Viewerの「Organizer連携を登録」とNavigator Bridgeの「連携を登録」を
+それぞれ行っても同じです。どちらの登録にも、EXEの絶対パスが保存されるため）。
 
 Livery Viewer for FH6 は、Livery-Viewer-for-FH6 フォルダーの中のファイルを一緒に使います。
 フォルダーごと置いて使い、EXEだけを別の場所へ取り出さないでください。
@@ -119,6 +120,8 @@ Viewerはペイントを読み取って表示するだけで、GameSaveやFH6本
    Windowsへの登録にはViewerの絶対パスが保存されるので、先に置き場所を決めてください。
    Viewerを別のフォルダーへ移動した場合は、移動後のViewerから「Organizer連携を登録」をもう一度実行してください。
    登録の後は、設定画面を閉じてかまいません。3Dプレビューを開くと、Viewerが自動で起動します。
+   Organizerの「連携の登録・解除」で「まとめて登録」を実行すると、ViewerとNavigator Bridgeを
+   まとめて登録できます（この手順と同じです）。
 2. Organizerでレポートを生成します。
    FH6本体のインストール先を確認できたレポートでは、各カードに「プレビュー」が表示されます。
 3. 「プレビュー」をクリックします。
@@ -338,7 +341,8 @@ GameSaveを書き換えず、新しくHTMLを生成した場合は引き継ぎ�
 Bridgeの仕組みは同梱の NAVIGATOR-BRIDGE-README.txt の冒頭で、
 #603 / #302U を例に詳しく説明しています。
 
-1. Navigator Bridgeを単独起動し、「連携を登録」を一度実行します。
+1. Navigator Bridgeを単独起動し、「連携を登録」を一度実行します（Organizerの「連携の登録・解除」で
+   「まとめて登録」を実行しても同じです）。
    GUIには「実行形式: Windows EXE / Python」と現在の「連携登録先」が表示されます。
    Bridge本体を別のフォルダーへ移動した場合、ファイル名を変更した場合、EXEとソースからの実行（Python）を
    切り替えた場合、新しい版の配布ZIPを別のフォルダーに展開して使う場合、v0.4.62の配布ZIPの
