@@ -1,7 +1,7 @@
 Livery Organizer for FH6 v0.5.0 Preview
 =======================================
 
-Release date: YYYY-MM-DD (fill in at release)
+Release date: 2026-11-22
 
 Livery Organizer for FH6 is a Windows tool for listing, searching, and organizing
 paint designs (liveries) downloaded in the PC version of Forza Horizon 6.

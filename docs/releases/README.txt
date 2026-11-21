@@ -1,7 +1,7 @@
 Livery Organizer for FH6 v0.5.0 Preview
 =======================================
 
-公開日: YYYY-MM-DD（公開時に記入）
+公開日: 2026-11-22
 
 Livery Organizer for FH6 は、PC版 Forza Horizon 6 でダウンロードした
 ペイント（Livery）を、ローカル環境で一覧化・検索・整理するためのツールです。

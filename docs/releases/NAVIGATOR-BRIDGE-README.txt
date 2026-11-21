@@ -1,6 +1,6 @@
 Navigator Bridge for FH6 v0.5.0
 
-公開日: YYYY-MM-DD（公開時に記入）
+公開日: 2026-11-22
 
 Navigator Bridge for FH6 v0.5.0 では、Livery Organizer for FH6・Livery Viewer for FH6 と
 言語・表示テーマ（システム設定 / ライト / ダーク）の設定を共有し、画面の言語（日本語 / 英語）と

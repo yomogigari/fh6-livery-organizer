@@ -1,6 +1,6 @@
 Navigator Bridge for FH6 v0.5.0
 ===============================
-Release date: YYYY-MM-DD (fill in at release)
+Release date: 2026-11-22
 
 Navigator Bridge for FH6 v0.5.0 shares the language and theme (Follow system /
 Light / Dark) settings with Livery Organizer for FH6 and Livery Viewer for FH6,

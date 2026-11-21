@@ -14,7 +14,7 @@ This repository and the release package contain three tools:
 | **Livery Viewer for FH6** (optional) | Shows a report's livery in 3D on the FH6 car body. Bundled starting with v0.5.0. |
 | **Navigator Bridge for FH6** (optional) | Moves the FH6 My Designs cursor to a livery position selected in Organizer. |
 
-**v0.5.0 Preview** (release date YYYY-MM-DD: fill in at release) bundles the 3D preview tool, **Livery Viewer for FH6**. Each card in an Organizer report can open a 3D view of that livery applied to the car body. This version also aligns the settings and window style of the three tools, and the release ZIP now contains only the EXEs and the files they need to run.
+**v0.5.0 Preview** (release date 2026-11-22) bundles the 3D preview tool, **Livery Viewer for FH6**. Each card in an Organizer report can open a 3D view of that livery applied to the car body. This version also aligns the settings and window style of the three tools, and the release ZIP now contains only the EXEs and the files they need to run.
 
 > [!IMPORTANT]
 > This is a Preview release. FH6's internal save-data and asset formats are not public specifications, and some parsing behavior is based on observations from real data. The 3D rendering of Livery Viewer for FH6 does not exactly match the in-game appearance.
