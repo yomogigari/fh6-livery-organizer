@@ -20420,6 +20420,72 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# Livery Viewer for FH6 の 3D プレビューを、Organizer の起動で温めておく（2026-11-21）。
+# Viewer の設定（preview-settings.json の viewer_standby_with_organizer。既定はオン、切り替えは Viewer の設定画面）が
+# オンで、Organizer連携（URI）が登録されているときだけ、起動の少し後に
+# liveryorganizerpreviewforfh6://standby?pid=<この Organizer のプロセスの番号> を開く。Viewer は窓を隠したまま
+# 起動して待ち、最初の 3D プレビューを速く開く。この Organizer が動いている間は終わらず、終わった後は Viewer の窓を
+# 閉じたときと同じ時間で終わる。失敗しても Organizer の動きは変えない。
+VIEWER_STANDBY_DELAY_MS = 3000
+VIEWER_STANDBY_SETTING = "viewer_standby_with_organizer"
+
+
+def _viewer_standby_enabled() -> bool:
+    try:
+        try:
+            from .organizer_preview_database import load_shared_settings
+        except ImportError:
+            from organizer_preview_database import load_shared_settings
+        value = load_shared_settings().get(VIEWER_STANDBY_SETTING)
+    except Exception:
+        return False
+    return value if isinstance(value, bool) else True
+
+
+def _viewer_uri_scheme() -> str:
+    try:
+        from .organizer_preview_handoff import URI_SCHEME
+    except ImportError:
+        from organizer_preview_handoff import URI_SCHEME
+    return URI_SCHEME
+
+
+def _viewer_uri_registered(scheme: str) -> bool:
+    """Organizer連携（URI）が登録されているか。未登録の URI を開くと Windows がアプリを選ぶ画面を出すため。"""
+    if sys.platform != "win32":
+        return False
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"Software\Classes\{scheme}\shell\open\command"):
+            return True
+    except OSError:
+        return False
+
+
+def start_viewer_standby() -> bool:
+    """3D プレビューを温めておく依頼を Viewer に出す（出したら True）。"""
+    try:
+        if not _viewer_standby_enabled():
+            return False
+        scheme = _viewer_uri_scheme()
+        if not _viewer_uri_registered(scheme):
+            return False
+        os.startfile(f"{scheme}://standby?pid={os.getpid()}")
+    except Exception:
+        return False
+    return True
+
+
+def schedule_viewer_standby(root) -> None:
+    """画面を出した少し後に、裏の糸で start_viewer_standby を呼ぶ（Organizer の起動を待たせない）。"""
+    def run() -> None:
+        threading.Thread(target=start_viewer_standby, name="viewer-standby", daemon=True).start()
+    try:
+        root.after(VIEWER_STANDBY_DELAY_MS, run)
+    except Exception:
+        pass
+
+
 def main() -> int:
     initialize_ui_language()
     args = build_parser().parse_args()
@@ -20515,6 +20581,7 @@ def main() -> int:
         root = tk.Tk()
         apply_app_icon(root)
         App(root)
+        schedule_viewer_standby(root)
         root.mainloop()
         return 0
 
