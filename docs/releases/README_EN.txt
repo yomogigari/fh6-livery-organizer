@@ -396,7 +396,7 @@ Horizontal -> vertical         200 ms
 Extra wait after left wrap     400 ms
 Return to #001U                OFF
 Wait after Esc                 500 ms
-Wait after Return              800 ms
+Wait after Return              1000 ms
 
 Shared setting file:
 %APPDATA%\Livery-Organizer-for-FH6\navigator-bridge-settings.json

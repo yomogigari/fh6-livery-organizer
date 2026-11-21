@@ -229,7 +229,7 @@ Horizontal -> vertical         200 ms
 Extra wait after left wrap     400 ms
 Return to #001U                OFF
 Wait after Esc                 500 ms
-Wait after Return              800 ms
+Wait after Return              1000 ms
 
 PC/FH6 performance can require longer waits than the defaults.
 

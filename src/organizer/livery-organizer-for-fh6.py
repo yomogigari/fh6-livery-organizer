@@ -175,7 +175,7 @@ NAVIGATOR_SHARED_SETTINGS_DEFAULTS = {
     "wrap_delay_ms": 400.0,
     "reset_origin": False,
     "reset_esc_delay_ms": 500.0,
-    "reset_ret_delay_ms": 800.0,
+    "reset_ret_delay_ms": 1000.0,  # 800 → 1000（2026-11-21。Bridge と同じ）
 }
 
 def navigator_shared_settings_path() -> Path:
