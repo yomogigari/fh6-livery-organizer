@@ -789,11 +789,13 @@ class ExcelLocalizationTests(unittest.TestCase):
 
 
 class GuiLocalizationAuditTests(unittest.TestCase):
-    def test_log_area_reserves_about_three_lines(self) -> None:
+    def test_log_area_shows_about_ten_lines_and_window_fits_content(self) -> None:
+        # 2026-11-21：窓の大きさを決め打ち（1000×840）にせず、中身に合わせる。ログ欄は 10 行。
         source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
-        self.assertIn('self.master.geometry("1000x840")', source)
-        self.assertIn('self.status = tk.Text(frm, height=3, wrap="word")', source)
-        self.assertIn('requested_height = self.master.winfo_reqheight()', source)
+        self.assertNotIn('self.master.geometry("1000x840")', source)
+        self.assertIn('self.status = tk.Text(frm, height=10, wrap="word")', source)
+        self.assertIn('fit_window_to_content(self.master, min_width=1000)', source)
+        self.assertIn('required_width, required_height = win.winfo_reqwidth(), win.winfo_reqheight()', source)
 
     def test_long_translation_layout_has_wrapping_and_adaptive_buttons(self) -> None:
         source = ORGANIZER_SOURCE.read_text(encoding="utf-8")

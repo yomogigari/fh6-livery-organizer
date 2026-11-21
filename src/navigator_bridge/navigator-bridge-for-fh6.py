@@ -91,6 +91,9 @@ SINGLE_INSTANCE_MUTEX = r"Local\NavigatorBridgeForFH6.SingleInstance.v2"
 IPC_DIR_NAME = "ipc-v2"
 IPC_COMMAND_PREFIX = "command-"
 IPC_POLL_MS = 180
+# 説明の文の折り返し幅：置かれた幅からこの余白を引く。狭すぎるときは変えない（2026-11-21）
+WRAP_MARGIN = 8
+WRAP_MIN = 120
 
 # Livery Organizer for FH6 のデスクトップGUIと同じ可読性基準を使います。
 # Windows 11では Segoe UI Variable を優先し、利用できない環境では
@@ -1608,6 +1611,38 @@ def send_origin_reset_step(step: str) -> None:
     _send_allowed_vk(mapping[key])
 
 
+def _work_area_rect(win) -> tuple[int, int, int, int]:
+    """作業領域（タスクバーを除いた主の画面）の (左, 上, 右, 下)。分からなければ画面全体。"""
+    if sys.platform == "win32":
+        try:
+            from ctypes import wintypes
+            rect = wintypes.RECT()
+            if ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):  # SPI_GETWORKAREA
+                return rect.left, rect.top, rect.right, rect.bottom
+        except Exception:
+            pass
+    return 0, 0, win.winfo_screenwidth(), win.winfo_screenheight()
+
+
+def fit_window_to_content(win) -> tuple[int, int]:
+    """窓の大きさを中身が求める大きさ（Tk の reqwidth・reqheight）に合わせ、作業領域の中に置く（2026-11-21）。
+
+    収まるときは位置だけを決める（大きさは Tk に任せるので、中身の配置や文の長さが変わっても自動で合う）。
+    作業領域より大きいときだけ、大きさを作業領域に合わせる。決めた大きさ（幅・高さ）を返す。
+    """
+    win.update_idletasks()
+    required_width, required_height = win.winfo_reqwidth(), win.winfo_reqheight()
+    left, top, right, bottom = _work_area_rect(win)
+    work_width, work_height = right - left, bottom - top
+    width, height = min(required_width, work_width), min(required_height, work_height)
+    x = left + max(0, (work_width - width) // 2)
+    y = top + max(0, (work_height - height) // 3)
+    if (width, height) == (required_width, required_height):
+        win.geometry(f"+{x}+{y}")
+    else:
+        win.geometry(f"{width}x{height}+{x}+{y}")
+    return width, height
+
 
 class NavigatorApp:
     def __init__(self, root: tk.Tk, args: argparse.Namespace) -> None:
@@ -1715,7 +1750,47 @@ class NavigatorApp:
         if bool(payload.get("autostart", True)):
             self.root.after(80, self.start_move)
 
+    def _follow_width(self, label: ttk.Label) -> ttk.Label:
+        """文の折り返し幅を、置かれた幅（枠の幅）に合わせる（2026-11-21）。
+
+        窓の幅は、見出しなど折り返さない項目で決まる。説明の文はその幅いっぱいまで使い、
+        枠の右側が空いたまま窓が縦に長くなるのを防ぐ。文が変わったときも、置かれた幅に合わせ直す。
+        """
+        self._wrapping_labels.append(label)
+        label.bind("<Configure>", lambda event, widget=label: self._set_wrap_length(widget, event.width), add="+")
+        return label
+
+    @staticmethod
+    def _horizontal_padding(label) -> int:
+        """項目の左右の余白（padding）の合計。分からなければ 0。"""
+        try:
+            values = [int(float(str(value))) for value in label.tk.splitlist(label.cget("padding"))]
+        except Exception:
+            return 0
+        if not values:
+            return 0
+        if len(values) < 4:
+            return 2 * values[0]
+        return values[0] + values[2]
+
+    @classmethod
+    def _set_wrap_length(cls, label, width: int) -> None:
+        """折り返し幅を「置かれた幅 − 項目の左右の余白 − 縁の分」にする。
+
+        項目の余白と縁の分を引くので、折り返した文が置かれた幅を超えず、窓を少しずつ広げ続けることはない。
+        """
+        target = int(width) - cls._horizontal_padding(label) - WRAP_MARGIN
+        if target < WRAP_MIN:
+            return
+        try:
+            current = int(float(str(label.cget("wraplength")) or 0))
+        except (TypeError, ValueError, tk.TclError):
+            current = 0
+        if abs(current - target) > 2:
+            label.configure(wraplength=target)
+
     def _build_ui(self) -> None:
+        self._wrapping_labels: list[ttk.Label] = []
         outer = ttk.Frame(self.root, padding=14)
         outer.grid(sticky="nsew")
 
@@ -1769,6 +1844,8 @@ class NavigatorApp:
 
         settings = ttk.LabelFrame(outer, text=_("入力・共通移動設定"), padding=10)
         settings.grid(row=1, column=0, sticky="ew")
+        # 2 列目を枠の幅まで広げる（区切り線と説明の文が、枠の幅いっぱいを使う）
+        settings.columnconfigure(1, weight=1)
 
         def setting_row(row: int, label: str, variable: tk.StringVar, width: int, unit: str, note: str):
             ttk.Label(settings, text=label).grid(row=row, column=0, sticky="e", padx=(0, 10), pady=4)
@@ -1804,14 +1881,15 @@ class NavigatorApp:
         setting_row(9, _("ESC後の待ち時間"), self.reset_esc_delay_var, 10, "ms", _("初期値500"))
         setting_row(10, _("RET後の待ち時間"), self.reset_ret_delay_var, 10, "ms", _("初期値800。再入場後の待機"))
 
-        ttk.Label(
+        self._follow_width(ttk.Label(
             settings,
             text=(
                 _("「FH6へ移動」でFH6を前面化します。通常移動は左・右・下のみ、リセットON時だけ固定の ESC → RET を移動前に1回実行します。\nFH6の画面内容や内部のカーソル位置は読み取らず、設定された間隔でキー入力を送るだけです。\nPCやFH6の負荷などで入力が取りこぼされると指定位置からずれる場合があります。ずれる場合は待ち時間を長めにしてください。\n共通設定は自動保存されます: {0}").format(shared_move_settings_path())
             ),
             style="Muted.TLabel",
             wraplength=650,
-        ).grid(row=11, column=0, columnspan=2, sticky="w", pady=(8, 0))
+            anchor="w",
+        )).grid(row=11, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
         integration = ttk.LabelFrame(outer, text=_("Livery Organizer for FH6 連携"), padding=9)
         integration.grid(row=2, column=0, sticky="ew", pady=(10, 0))
@@ -1828,13 +1906,14 @@ class NavigatorApp:
             textvariable=self.execution_format_var,
             style="Muted.TLabel",
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
-        ttk.Label(
+        self._follow_width(ttk.Label(
             integration,
             textvariable=self.protocol_target_var,
             style="Muted.TLabel",
             wraplength=650,
-        ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(3, 0))
-        ttk.Label(
+            anchor="w",
+        )).grid(row=2, column=0, columnspan=2, sticky="ew", pady=(3, 0))
+        self._follow_width(ttk.Label(
             integration,
             text=(
                 _("一度登録すると、Organizerの「FH6で選択デザインへ移動」から現在位置と最終実スロット数を受け取れます。\n"
@@ -1842,11 +1921,15 @@ class NavigatorApp:
             ),
             style="Muted.TLabel",
             wraplength=650,
-        ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(5, 0))
+            anchor="w",
+        )).grid(row=3, column=0, columnspan=2, sticky="ew", pady=(5, 0))
 
         plan_frame = ttk.LabelFrame(outer, text=_("移動計画"), padding=10)
         plan_frame.grid(row=3, column=0, sticky="ew", pady=(12, 8))
-        ttk.Label(plan_frame, textvariable=self.plan_var, justify="left", wraplength=650).grid(row=0, column=0, sticky="w")
+        plan_frame.columnconfigure(0, weight=1)
+        self._follow_width(
+            ttk.Label(plan_frame, textvariable=self.plan_var, justify="left", wraplength=650, anchor="w")
+        ).grid(row=0, column=0, sticky="ew")
         ttk.Label(
             plan_frame,
             textvariable=self.operation_var,
@@ -1865,20 +1948,22 @@ class NavigatorApp:
         self.abort_button = ttk.Button(btns, text=_("中止"), command=self.request_abort, state="disabled")
         self.abort_button.grid(row=0, column=2, padx=(8, 0))
 
-        ttk.Label(
+        # 状態の行も、長い知らせは窓を横に広げず折り返す
+        self._follow_width(ttk.Label(
             outer,
             textvariable=self.status_var,
             relief="sunken",
             anchor="w",
             padding=(6, 4),
-        ).grid(row=5, column=0, sticky="ew", pady=(8, 0))
+        )).grid(row=5, column=0, sticky="ew", pady=(8, 0))
 
-        ttk.Label(
+        self._follow_width(ttk.Label(
             outer,
             text=_("通常移動は左・右・下だけです。画面内容や内部位置は読み取らず、指定間隔でキー入力を送るため、PC/FH6の負荷で位置がずれる場合があります。"),
             style="Muted.TLabel",
             wraplength=650,
-        ).grid(row=6, column=0, sticky="w", pady=(8, 0))
+            anchor="w",
+        )).grid(row=6, column=0, sticky="ew", pady=(8, 0))
 
     def _on_language_selected(self, *_args) -> None:
         code = {label: code for code, label in BRIDGE_LANGUAGES}.get(self.language_var.get(), "ja")
@@ -2015,12 +2100,12 @@ class NavigatorApp:
         self.root.destroy()
 
     def _center_window(self) -> None:
+        # 説明の文の折り返し幅を枠の幅に合わせてから、窓の大きさを中身に合わせ、
+        # 作業領域（タスクバーを除いた画面）の中に置く（2026-11-21）
         self.root.update_idletasks()
-        w = self.root.winfo_width()
-        h = self.root.winfo_height()
-        x = max(0, (self.root.winfo_screenwidth() - w) // 2)
-        y = max(0, (self.root.winfo_screenheight() - h) // 3)
-        self.root.geometry(f"+{x}+{y}")
+        for label in self._wrapping_labels:
+            self._set_wrap_length(label, label.winfo_width())
+        fit_window_to_content(self.root)
 
     def read_settings(self):
         try:

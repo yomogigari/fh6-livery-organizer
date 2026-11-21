@@ -1099,6 +1099,36 @@ def configure_gui_fonts(root) -> None:
         pass
 
 
+def _work_area_size(win) -> tuple[int, int]:
+    """作業領域（タスクバーを除いた主の画面）の大きさ。分からなければ画面の大きさ。"""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            from ctypes import wintypes
+            rect = wintypes.RECT()
+            if ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):  # SPI_GETWORKAREA
+                return rect.right - rect.left, rect.bottom - rect.top
+        except Exception:
+            pass
+    return win.winfo_screenwidth(), win.winfo_screenheight()
+
+
+def fit_window_to_content(win, *, min_width: int = 0, min_height: int = 0) -> tuple[int, int]:
+    """窓の大きさを、中身が求める大きさ（Tk の reqwidth・reqheight）に合わせます（2026-11-21）。
+
+    中身の配置を変えても、呼べば自動で合います。作業領域（タスクバーを除いた画面）より大きくせず、
+    小さくできる下限も中身の大きさにします（中身が隠れないように）。決めた大きさ（幅・高さ）を返します。
+    """
+    win.update_idletasks()
+    required_width, required_height = win.winfo_reqwidth(), win.winfo_reqheight()
+    work_width, work_height = _work_area_size(win)
+    width = min(max(required_width, int(min_width)), work_width)
+    height = min(max(required_height, int(min_height)), work_height)
+    win.minsize(min(required_width, work_width), min(required_height, work_height))
+    win.geometry(f"{width}x{height}")
+    return width, height
+
+
 def apply_child_window_theme(win) -> None:
     """子ウィンドウのタイトルバーを、今のテーマ（ライト・ダーク）に合わせます。"""
     if SUITE_TK_THEME is None or ACTIVE_GUI_PALETTE is None:
@@ -19295,7 +19325,7 @@ class App:
         self.master = master
         configure_gui_fonts(self.master)
         self.master.title(f"{APP_NAME} v{VERSION}")
-        self.master.geometry("1000x840")
+        # 窓の大きさは、中身を作った後に fit_window_to_content で中身に合わせます（2026-11-21）
 
         self._first_run = not settings_path().exists()
         self._quick_start_window = None
@@ -19502,18 +19532,15 @@ class App:
         self.progress = ttk.Progressbar(frm, mode="indeterminate")
         self.progress.pack(fill="x", pady=(14, 8))
 
-        self.status = tk.Text(frm, height=3, wrap="word")
+        # ログ欄は 10 行（窓を広げると、ログ欄が広がります）
+        self.status = tk.Text(frm, height=10, wrap="word")
         self.status.pack(fill="both", expand=True)
         self.log(tr("log.ready", app=APP_NAME, version=VERSION))
         self.log(tr("log.settings_file", path=settings_path()))
 
-        # 翻訳が長い場合だけ必要高さへ広げます。通常の日本語 / 英語では1000×840を維持し、
-        # 疑似ローカライズや将来の長い言語でもログ欄3行を潰さないようにします。
-        self.master.update_idletasks()
-        requested_height = self.master.winfo_reqheight()
-        if requested_height > 840:
-            screen_limit = max(840, self.master.winfo_screenheight() - 80)
-            self.master.geometry(f"1000x{min(requested_height, screen_limit)}")
+        # 窓の大きさを中身に合わせます（2026-11-21）。幅は 1000 を下限にします。翻訳が長いときや、
+        # 今後項目を足したときも、中身が求める大きさに自動で合います（作業領域より大きくしません）。
+        fit_window_to_content(self.master, min_width=1000)
 
         if self._suite and self._suite.get("writable") and not self._suite.get("exists") and not self._first_run:
             self.master.after(500, self._save_suite_now)
