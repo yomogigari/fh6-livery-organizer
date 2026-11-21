@@ -32,6 +32,9 @@ Python版（pythonフォルダー）は含めません。ソースコードはGi
 
 ■ 配布ファイル
 
+配布ZIP（Livery-Organizer-for-FH6-v0.4.63-preview.zip）を展開すると、
+版の名前のフォルダー（Livery-Organizer-for-FH6-v0.4.63-preview）の中に次のファイルがあります。
+
 Livery-Organizer-for-FH6.exe
 Navigator-Bridge-for-FH6.exe
 Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe（と、同じフォルダーの動作に必要なファイル）
@@ -42,6 +45,9 @@ NAVIGATOR-BRIDGE-README_EN.txt
 CHANGELOG.md
 LICENSE.txt
 THIRD-PARTY-NOTICES.txt
+
+前の版から更新して、新しいフォルダーから使う場合は、Viewerの「Organizer連携を登録」と
+Navigator Bridgeの「連携を登録」をやり直してください（どちらの登録にも、EXEの絶対パスが保存されるため）。
 
 Livery Viewer for FH6 は、Livery-Viewer-for-FH6 フォルダーの中のファイルを一緒に使います。
 フォルダーごと置いて使い、EXEだけを別の場所へ取り出さないでください。
@@ -58,7 +64,9 @@ Windows EXEを自分でビルドするためのBuild Kitや詳細なビルド手
 
 Organizer・Viewer・Navigator Bridgeの利用者向け表示は、日本語と英語に対応しています。
 言語と表示テーマ（システム設定 / ライト / ダーク）は3つのツールで共有します。
-言語の変更は、次回起動時から反映されます。
+言語の変更は、OrganizerとNavigator Bridgeでは次回起動時から、Viewerの設定画面では選んだときに反映されます。
+3Dプレビューの画面は、共有の言語の設定ではなく、Windowsの表示言語で始まり（日本語でなければ英語）、
+画面の上の「言語」で切り替えられます。3Dプレビューの画面の配色は、暗い色だけです。
 生成HTML / Excelは、レポート生成時点のOrganizer言語を使用します。
 Liveryタイトル、説明、作成者名、車名、タグ、メモ等の利用者データは翻訳しません。
 
@@ -66,8 +74,12 @@ Liveryタイトル、説明、作成者名、車名、タグ、メモ等の利�
 英語の概要は同梱の README_EN.txt、Bridgeの英語詳細は NAVIGATOR-BRIDGE-README_EN.txt を参照してください。
 
 英語表示で不自然な表現や誤訳を見つけた場合は、Issue等でのフィードバックを歓迎します。
-可能であれば、GitHubリポジトリの src/organizer/locales/en.py に対する具体的な変更、
+可能であれば、GitHubリポジトリの次のファイルに対する具体的な変更、
 またはPull Requestとして提案していただけると助かります。
+・Organizer：src/organizer/locales/en.py
+・Livery Viewer for FH6：src/viewer/viewer_gui.py の中の対訳（設定画面）、
+  src/viewer/tools/livery-inspector/locales/en.js（3Dの画面）
+・Navigator Bridge：src/navigator_bridge/navigator-bridge-for-fh6.py の中の対訳の表
 翻訳は機能の意味、既存用語、UIレイアウト、テスト等も確認してから反映するため、
 レビュー・反映には時間がかかる場合があります。
 
@@ -83,11 +95,17 @@ Livery Viewer for FH6 は、Organizerのレポートのペイントを、FH6の�
 
 ・レポートの各カードの「3Dプレビュー（実験）」から、そのペイントを開けます。
 ・Viewerの設定画面から、Livery_* フォルダーを選んで開くこともできます。
-・初めて表示する車は、準備に時間がかかります（開発用のPCで10～20秒ほど）。
+・初めて表示する車は、準備に開発用のPCで約10秒かかります。
+  このPCで初めてViewerを開くときは、描画の部品を初めて作るため、15～28秒ほどかかります。
   準備した結果は preview-cache に残すので、同じ車の2回目からは速くなります。
-・同じ車の別のペイントへの切り替えは、開いている窓の中で行います（開発用のPCで約1秒）。
+・次のペイントも同じ窓で開きます（同じ車のペイントなら、開発用のPCで約1秒で切り替わります）。
 ・窓を閉じても、次に開くときに速いよう、10分間は裏で待機します（窓は表示しません）。
-  10分たつと終了します。
+  10分たつと終了します。待っている間もメモリーを使い、タスクマネージャーに残って見えます。
+・Organizerを起動すると、Viewerを窓を出さずに起動して準備しておくので、最初の3Dプレビューが
+  少し速く開きます（開発用のPCで約0.3秒。既定はオン）。Organizerが動いている間はViewerも残り、Organizerを閉じた後は
+  上と同じ10分で終わります。Viewerの設定画面のチェック
+  「Organizerの起動時に3Dプレビューを準備しておく」で切り替えます。
+  Organizer連携を登録していないときは動きません。
 ・表示はゲーム内の見た目と完全には一致しません。Xbox版・PC版のゲーム画面と同じであることは
   確認していません。
 
@@ -96,9 +114,11 @@ Viewerはペイントを読み取って表示するだけで、GameSaveやFH6本
 
 ■ Livery Viewer for FH6 の使い方
 
-1. Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe を起動し、設定画面で「Organizer連携を登録」を一度実行します。
+1. 配布のフォルダーを使う場所に置いてから、Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe を起動し、
+   設定画面で「Organizer連携を登録」を一度実行します。
+   Windowsへの登録にはViewerの絶対パスが保存されるので、先に置き場所を決めてください。
    Viewerを別のフォルダーへ移動した場合は、移動後のViewerから「Organizer連携を登録」をもう一度実行してください。
-   Windowsへの登録にはViewerの絶対パスが保存されます。
+   登録の後は、設定画面を閉じてかまいません。3Dプレビューを開くと、Viewerが自動で起動します。
 2. Organizerでレポートを生成します。
    FH6本体のインストール先を確認できたレポートでは、各カードに「3Dプレビュー（実験）」が表示されます。
 3. 「3Dプレビュー（実験）」をクリックします。
@@ -110,7 +130,7 @@ Viewerはペイントを読み取って表示するだけで、GameSaveやFH6本
 設定画面から開く場合は、「FH6フォルダー」「Livery_* フォルダー」「preview-cache」を確認して
 「3Dプレビューを開く」を実行します。
 
-初回の起動では、3D表示に使う three.js（MIT License）を、npmの公式配布から取得します
+初めて3Dプレビューを開くときは、3D表示に使う three.js（MIT License）を、npmの公式配布から取得します
 （インターネットへの接続が必要です）。取得したファイルは照合値を確かめてから使い、次回からは再利用します。
 
 
@@ -125,9 +145,11 @@ Livery Viewer for FH6 は、FH6のGameDB（ゲームのデータベースを復�
 GameDBが無いために省いたり簡易にしたりしたときは、Viewerの画面の上に注意を表示します。
 
 GameDBは配布物に含めません。Organizer・ViewerがGameDBを作成・復号・コピー・変更することもありません。
-利用者がローカルに用意したGameDBを、次の場所に置いた場合だけ、読み取り専用で使用します。
+利用者がローカルに用意したGameDBを、次の場所に置くと、読み取り専用で使用します。
 
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
+
+ほかの指定の仕方（環境変数など）は、GitHubのリポジトリの docs/3D-PREVIEW-GAMEDB.md を参照してください。
 
 GameDBの用意の方法は案内していません。用意する場合は、利用者自身の責任で、
 ゲームの利用規約等を確認してください。
@@ -135,7 +157,7 @@ GameDBの用意の方法は案内していません。用意する場合は、�
 
 ■ Navigator Bridge for FH6 とは
 
-Navigator Bridgeは、Organizerで選んだ `#603 / #302U` などの位置番号に対応する
+Navigator Bridgeは、Organizerで選んだ #603 / #302U などの位置番号に対応する
 FH6「マイデザイン」上のペイントへ、カーソルを自動で移動するための任意の補助ツールです。
 
 Organizerは選択した移動先と現在の最終実スロット番号、移動設定をBridgeへ渡します。
@@ -143,7 +165,7 @@ BridgeはFH6「マイデザイン」の #001U を起点として、指定位置�
 左 / 右 / 下のカーソル操作を計算し、FH6を前面化して、設定された間隔でキー入力します。
 左右は、右へ進む経路と左キーで最終列へ循環する経路のうち、入力回数が少ない方を使います。
 
-つまり、`#603 / #302U` をクリックして F キーまたは「FH6で選択デザインへ移動」を実行すると、
+つまり、#603 / #302U をクリックして F キーまたは「FH6で選択デザインへ移動」を実行すると、
 Bridgeが #001U から #302U までのカーソル移動を計算してFH6へ自動入力し、
 指定したペイント位置までカーソルを移動します。
 
@@ -163,7 +185,7 @@ Bridgeが行うのは対象位置までのカーソル移動で、読み込み�
 
 BridgeはFH6の画面や内部の現在カーソル位置を読み取って追跡する仕組みではありません。
 そのため、PCやFH6の負荷によってキー入力が取りこぼされると位置がずれる場合があります。
-詳しい仕組み、開始位置、調整方法、安全境界は `NAVIGATOR-BRIDGE-README.txt` を参照してください。
+詳しい仕組み、開始位置、調整方法、安全境界は NAVIGATOR-BRIDGE-README.txt を参照してください。
 
 
 ■ 動作環境
@@ -175,7 +197,7 @@ PC版 Forza Horizon 6
 Livery Viewer for FH6 には、さらに次が必要です。
 ・WebGL2を使えるGPU
 ・Microsoft Edge WebView2 ランタイム（Windows 11には標準で入っています）
-・初回の three.js の取得のためのインターネット接続
+・初めて3Dプレビューを開くときの、three.js の取得のためのインターネット接続
 
 開発・動作確認はMicrosoft Store / Xbox App版を中心に行っています。
 OrganizerについてはSteam版でも利用者から正常動作の報告がありますが、開発側でSteam環境を
@@ -309,13 +331,14 @@ GameSaveを書き換えず、新しくHTMLを生成した場合は引き継ぎ�
 ■ FH6上の選択デザインへ移動する
 
 この機能には Navigator Bridge for FH6 v0.0.29 を使用します。
-Bridgeの仕組みは同梱の `NAVIGATOR-BRIDGE-README.txt` の冒頭で、
+Bridgeの仕組みは同梱の NAVIGATOR-BRIDGE-README.txt の冒頭で、
 #603 / #302U を例に詳しく説明しています。
 
 1. Navigator Bridgeを単独起動し、「連携を登録」を一度実行します。
    GUIには「実行形式: Windows EXE / Python」と現在の「連携登録先」が表示されます。
-   Bridge本体を別フォルダへ移動した場合、ファイル名を変更した場合、EXEとソースからの実行（Python）を
-   切り替えた場合は、移動・変更後のBridgeから「連携を登録」を再実行してください。
+   Bridge本体を別のフォルダーへ移動した場合、ファイル名を変更した場合、EXEとソースからの実行（Python）を
+   切り替えた場合、新しい版の配布ZIPを別のフォルダーに展開して使う場合、v0.4.62の配布ZIPの
+   pythonフォルダーのBridgeで登録していた場合は、新しいBridgeから「連携を登録」を再実行してください。
    Windows登録にはBridgeの絶対パスが保存されます。
    同じパス・同じファイル名のEXEを新しい版で上書きしただけであれば、通常は再登録不要です。
 2. Organizerで生成したHTMLを開きます。
@@ -414,27 +437,44 @@ Organizer設定:
 Organizer / Bridge共通のFH6移動設定:
 %APPDATA%\Livery-Organizer-for-FH6\navigator-bridge-settings.json
 
-Vehicle DBキャッシュ:
+Organizerのキャッシュ（車両DB・作成方法監査）:
 %LOCALAPPDATA%\Livery-Organizer-for-FH6\cache\
 
 Navigator BridgeのIPC / ログ:
 %LOCALAPPDATA%\Navigator-Bridge-for-FH6\
 
-Livery Viewer for FH6 の設定・ログ・取得した three.js:
+Livery Viewer for FH6 の設定・ログ・取得した three.js・窓（WebView2）の保存:
 %LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\
+（Organizerの %LOCALAPPDATA%\Livery-Organizer-for-FH6 と名前が似ていますが、別のフォルダーです。
+中の webview-profile は、2回目から速く開くための保存です。消すと、次はこのPCで初めて開くときと
+同じく時間がかかります。）
 
 Livery Viewer for FH6 の準備の結果（車ごとの形・画像など）:
-%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache\
-表示した車の数に応じて大きくなります。しばらく使っていない車の分は自動で圧縮し、
-古い版のViewerが作った分は自動で削除します。大きさの上限による自動削除は行いません。
-削除しても、次に表示するときに作り直します（その車の初回の表示は時間がかかります）。
+Organizerから開くときは、レポートの出力先の中の preview-cache
+（既定は %USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache\）。
+Viewerの設定画面から開くときは、設定画面の「preview-cache」の欄の場所。
 
-参考：開発者の環境で、GameSaveにあるダウンロード済みの全ペイント 997件（359車種）を
-3D表示用に準備した場合、preview-cache は約 3.2 GB でした（1車種あたり平均 約 9 MB）。
-1台だけ表示した場合は約 40 MB です（最近使った車の分は、すぐ使えるように圧縮せずに置いておくため）。
+増えすぎないように、次のようにしています。
+・ペイントの準備は、最近の3件だけ残します。
+・最近使った3台のほかの車は、車体の形を消し、次にその車を開くときに作り直します（その分、時間がかかります）。
+・古い版のViewerが作った物は、自動で消します。
 
-窓を閉じた後に裏で待機する時間は、%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json の
-viewer_keep_alive_seconds（秒。0で待機しない）で変更できます。
+参考：開発者の環境で、GameSaveにあるダウンロード済みの全ペイント 999件を順に表示した後、
+preview-cache は約 0.7 GB でした。
+
+大きさの上限は、既定では決めていません。決めるときは、下の preview-settings.json に
+"vehicle_cache_limit_gb": 2 のようにGBで書きます。上限の90%を超えると75%まで消します。
+表示中の車と、7日以内に使った物は消さないので、少し超えることがあります。
+
+preview-cache を消すときは、Viewerが終わってから消してください（窓を閉じて10分たった後。
+Organizerの起動時の準備がオンなら、Organizerも閉じた後）。次に表示するときに作り直します。
+
+Viewerの設定（preview-settings.json）:
+%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json
+・viewer_keep_alive_seconds：窓を閉じた後に裏で待機する時間（秒。0で待機しない。既定は600）
+・viewer_standby_with_organizer：Organizerの起動時の準備（true / false。既定はtrue。
+  ふだんはViewerの設定画面のチェックで切り替えます）
+・vehicle_cache_limit_gb：preview-cache の大きさの上限（GB。既定は上限なし）
 
 旧バージョンの設定・キャッシュが見つかった場合は、互換性維持のため必要に応じて
 旧 FH6-Livery-Organizer 系の保存場所や旧localStorageキーから移行します。
@@ -448,27 +488,31 @@ Livery-Viewer-for-FH6 フォルダーを別の場所へ移動した場合は、�
 
 Viewerを削除する場合は、先にViewerを起動して設定画面の「連携登録を解除」を実行し、
 liveryorganizerpreviewforfh6:// のWindows登録を解除してください。
-その後、不要であれば Livery-Viewer-for-FH6 フォルダーと、上記のViewer用の保存場所を削除できます。
+その後、Viewerが終わってから（窓を閉じて10分たった後。Organizerの起動時の準備がオンなら、
+Organizerも閉じた後。すぐに終わらせたいときは、タスクマネージャーで Livery-Viewer-for-FH6.exe を
+終えてもかまいません）、不要であれば Livery-Viewer-for-FH6 フォルダーと、上記のViewer用の保存場所を
+削除できます。使用中のファイルは削除できません。
 
 
 ■ Navigator Bridgeを移動・名前変更した場合
 
 Organizer連携のWindows登録には、Navigator Bridge本体の絶対パスが保存されます。
-そのため、Bridgeを別フォルダへ移動した場合、Bridgeのファイル名を変更した場合、
-またはEXEとソースからの実行（Python）を切り替えた場合は、変更後のBridgeを単独起動し、
+そのため、Bridgeを別のフォルダーへ移動した場合、Bridgeのファイル名を変更した場合、
+EXEとソースからの実行（Python）を切り替えた場合、新しい版の配布ZIPを別のフォルダーに展開して使う場合、
+またはv0.4.62の配布ZIPのpythonフォルダーのBridgeで登録していた場合は、変更後のBridgeを単独起動し、
 「連携を登録」をもう一度実行してください。事前に「解除」を行う必要はありません。
 現在のBridgeから再登録すると、navigatorbridgeforfh6:// の登録先が新しい場所へ更新されます。
 
 Bridge GUIの「実行形式」と「連携登録先」で、現在の実行形式とWindowsに登録されている対象を確認できます。
 登録先が現在のBridgeと一致しない場合、Organizer連携欄は「再登録が必要」と表示します。
 
-同じフォルダ・同じファイル名のままEXEを新しいバージョンへ置き換えただけの場合は、
+同じフォルダー・同じファイル名のままEXEを新しい版へ置き換えただけの場合は、
 登録されている絶対パスが変わらないため、通常は再登録する必要はありません。
 
 
 ■ Navigator Bridgeの連携解除 / 削除
 
-Navigator Bridgeを削除する場合は、先にBridgeを単独起動し、GUIから「連携を解除」を
+Navigator Bridgeを削除する場合は、先にBridgeを単独起動し、Organizer連携の欄の「解除」を
 実行して navigatorbridgeforfh6:// のWindows登録を解除してください。
 その後、不要であればBridge本体と上記のBridge用ローカルフォルダーを削除できます。
 
@@ -489,6 +533,27 @@ https://yomogigari.github.io/fh6-livery-organizer/fh6-livery-organizer-demo.html
 
 デモは公開用のダミーデータを使用しています。
 実際のGameSave、作成者、タイトル、説明、サムネイル等は公開デモへ使用しません。
+安全のため、デモではNavigator Bridgeの起動とFH6へのキー入力を無効にしています。
+3Dプレビュー（Livery Viewer for FH6）は、デモでは使えません。デモの画面は、v0.4.62で生成したものです。
+
+
+■ 困ったときは（Livery Viewer for FH6）
+
+・「3Dプレビュー（実験）」を押しても開かない：
+  Viewerの設定画面で「Organizer連携を登録」を実行したか、ブラウザが外部のアプリを開く確認を
+  出していないかを確かめてください。Viewerのフォルダーを移動した場合は、登録し直してください。
+・初めて開くときに止まったように見える：
+  このPCで初めて開くときは15～28秒ほどかかります。初めて3Dプレビューを開くときは、
+  three.js の取得のためにインターネットへの接続が必要です。
+・車が表示されない・エラーが出る：
+  画面のエラーと、次の記録のファイルを確かめてください。
+  %LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-bridge.log（準備・起動の記録）
+  %LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\viewer-gui.log（設定画面の記録）
+・窓を閉じてもViewerが終わらない：
+  窓を閉じても10分は裏で待機します。Organizerの起動時の準備がオンなら、Organizerを閉じるまで残ります。
+
+不具合を報告するときは、版・手順・エラーの文と、上の記録のファイルを添えてください。
+ゲームの原本・個人のセーブデータ・非公開のペイントのファイルは、公開の場所に添付しないでください。
 
 
 ■ 安全性について
@@ -501,7 +566,7 @@ Livery Organizer for FH6・Livery Viewer for FH6 は、FH6のGameSaveおよびFH
 
 Organizer / Viewer / Navigator Bridgeのいずれにも、利用者のLiveryデータを外部サーバーへ
 送信するためのネットワーク機能はありません。
-Livery Viewer for FH6 が外部へ接続するのは、初回に three.js を npm の公式配布
+Livery Viewer for FH6 が外部へ接続するのは、初めて3Dプレビューを開くときに three.js を npm の公式配布
 （registry.npmjs.org）から取得するときだけです。
 
 

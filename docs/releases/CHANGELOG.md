@@ -11,13 +11,19 @@
 - Organizerのレポートの各カードへ「3Dプレビュー（実験）」を追加し、ペイントを車体に貼った3D表示を開けるようにした。
 - 3D表示を行う Livery Viewer for FH6 を配布物へ同梱（`Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe`、フォルダーごと使用）。
 - FH6本体のゲームアセットとGameSaveのペイントを読み取り専用で読み、パソコンの中でWebGL2で描画。
-- 同じ車の別のペイントは、開いている窓の中で切り替える。
-- 初めて表示する車の準備の結果を `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache` に残し、2回目から速くする。
-- 窓を閉じた後、10分間は裏で待機し、次の表示を速くする。
+- 窓は1つを使い回し、次のペイントも同じ窓で開く（同じ車のペイントは約1秒で切り替える）。
+- 初めて表示する車の準備の結果を、レポートの出力先の中の `preview-cache`（既定は `%USERPROFILE%\Documents\Livery-Organizer-for-FH6\preview-cache`）に残し、2回目から速くする。
+- `preview-cache` が増えすぎないように、ペイントの準備は最近の3件だけ残し、最近使った3台のほかの車の車体の形は消して次に開くときに作り直し、古い版のViewerが作った物は消す。大きさの上限は、任意で `preview-settings.json` の `vehicle_cache_limit_gb`（GB）に決められる。
+- 窓を閉じた後、10分間は裏で待機し、次の表示を速くする（待つ時間は `preview-settings.json` の `viewer_keep_alive_seconds`。`0` で待たない）。
+- Organizerの起動時に、Viewerを窓を出さずに起動して準備しておき、最初の3Dプレビューを少し速く開く（開発用のPCで約0.3秒。待つ間は窓を作らない。既定はオン。Viewerの設定画面のチェック「Organizerの起動時に3Dプレビューを準備しておく」で切り替え。Organizer連携を登録していないときは動かない）。
 - 利用者がローカルに用意したFH6のGameDBがあれば、ゲームのロゴのステッカーの画像と、ホイールとタイヤの位置・寸法・種類に使用（配布物へ同梱しない）。
 - GameDBが無いときは、ゲームのロゴのステッカーを省き、ホイールとタイヤを簡易の形で表示し、画面に注意を表示。
-- 初回に three.js を npm の公式配布から取得し、照合値を確認してから使用。
+- 初めて3Dプレビューを開くときに three.js を npm の公式配布から取得し、照合値を確認してから使用。
 - 表示はゲーム内の見た目と完全には一致しない。
+
+### Navigator Bridge
+
+- Navigator Bridge for FH6 を v0.0.29 へ更新（言語と表示テーマの切り替えを追加し、画面の見た目をOrganizer・Viewerとそろえた。FH6ウィンドウの確認と送るキーは v0.0.28 と同じ）。
 
 ### 3つのツールの共通化
 
@@ -32,13 +38,21 @@
 
 ### 配布物
 
-- 配布ZIPを、EXEとEXEの動作に必要なファイルだけにした。Python版（`python` フォルダー）は含めない。
+- 配布ZIP（`Livery-Organizer-for-FH6-v0.4.63-preview.zip`）を、EXEとEXEの動作に必要なファイルだけにした。Python版（`python` フォルダー）は含めない。
+- 配布ZIPは、展開すると版の名前のフォルダー（`Livery-Organizer-for-FH6-v0.4.63-preview`）ができる形にした。
+- Livery Viewer for FH6 のEXEはフォルダーの形（`Livery-Viewer-for-FH6\`）で、計算を速くする自前の部品 `lo4fh6_native.dll`（Rust。このリポジトリのソースから作る）を含む。
 - ソースコード（Python・Rust）はGitHubのリポジトリで公開。
 - `LICENSE.txt` と、同梱する第三者の部品とライセンスの一覧 `THIRD-PARTY-NOTICES.txt` を同梱。
 
+### 更新するときの注意
+
+- 新しいフォルダーから使う場合は、Viewerの「Organizer連携を登録」と、Navigator Bridgeの「連携を登録」をやり直す（どちらの登録にも、EXEの絶対パスが保存されるため）。
+- v0.4.62の配布ZIPの `python\navigator-bridge-for-fh6-v028.py` でBridgeを登録していた場合も、EXEのBridgeから「連携を登録」をやり直す。
+
 ### ソースから動かす場合
 
-- Navigator Bridgeをソースから動かすとき、黒いウィンドウを出さずに起動する `start-navigator-bridge-quiet.vbs` を追加。
+- Livery Viewer for FH6 のソース（`src/viewer`）を公開。uv と Python 3.12 を使い、`start-viewer-gui.cmd`（黒い窓を出さない場合は `start-viewer-gui-quiet.vbs`）で設定画面を開く。ソースには速くする部品（DLL）が無く、同じ計算をPythonで行う（表示までの時間は長くなる）。
+- Navigator Bridgeをソースから動かすとき、黒い窓を出さずに起動する `start-navigator-bridge-quiet.vbs` を追加。
 
 ---
 

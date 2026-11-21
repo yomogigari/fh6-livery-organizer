@@ -2,9 +2,11 @@
 
 **Japanese / 日本語:** [I18N.md](I18N.md)
 
-This document describes the localization architecture, documentation-language policy, and translation contribution rules used by Livery Organizer for FH6.
+This document describes the localization architecture, documentation-language policy, and translation contribution rules used by Livery Organizer for FH6, Livery Viewer for FH6, and Navigator Bridge for FH6. Most sections describe Organizer; see [Livery Viewer for FH6 and Navigator Bridge for FH6](#livery-viewer-for-fh6-and-navigator-bridge-for-fh6) for the other two tools.
 
 ## Core rules
+
+These rules apply to Organizer.
 
 - Japanese (`ja`) is the fallback language.
 - Japanese and English (`en`) are the minimum user-facing languages.
@@ -12,7 +14,7 @@ This document describes the localization architecture, documentation-language po
 - `src/organizer/locales/ja.py` and `src/organizer/locales/en.py` must contain matching translation-key sets.
 - Format placeholders such as `{path}` and `{count}` must also match between languages.
 - Unsupported or invalid language selections fall back to Japanese.
-- Internationalization must not add external Python package dependencies.
+- Internationalization must not add external Python package dependencies (this is an Organizer rule; Livery Viewer for FH6 uses Pillow and other packages).
 
 ## Documentation languages
 
@@ -20,7 +22,7 @@ Japanese is the source and primary language for the project's main documentation
 
 - `README.md` is the primary GitHub README; `README_EN.md` is the English README.
 - Normal release ZIPs contain both `README.txt` / `README_EN.txt` and `NAVIGATOR-BRIDGE-README.txt` / `NAVIGATOR-BRIDGE-README_EN.txt`.
-- The Python Organizer requires `i18n.py` and `locales/` at runtime, so the normal release ZIP keeps them together with the Organizer script under `python/`.
+- When Organizer runs from source, `i18n.py` and `locales/` in `src/organizer/` are required at runtime (the release EXE already includes them). Since v0.4.63, the release ZIP no longer includes the Python version (`python/` folder).
 - `CHANGELOG.md` remains primarily Japanese. Separate changelogs are not maintained for every UI language.
 - If additional UI languages are added later, the project does not plan to maintain a complete README, changelog, release notes, and Bridge guide for each language. Users who do not read Japanese should use the English documentation as the common reference.
 
@@ -30,16 +32,17 @@ Feedback about awkward wording, mistranslations, inconsistent terminology, or un
 
 When possible, please propose the correction as a concrete change to:
 
-```text
-src/organizer/locales/en.py
-```
+- Organizer: `src/organizer/locales/en.py`
+- Livery Viewer for FH6 settings window: the `I18N` table in `src/viewer/viewer_gui.py`
+- Livery Viewer for FH6 preview window: `src/viewer/tools/livery-inspector/locales/en.js`
+- Navigator Bridge for FH6: the `BRIDGE_EN` table in `src/navigator_bridge/navigator-bridge-for-fh6.py`
 
 A pull request that changes the relevant locale entry is especially helpful because it makes the proposed wording and context easy to review.
 
 Translation changes are not accepted solely on grammatical preference. Review may also check:
 
 - whether the English matches the actual behavior and the Japanese source meaning;
-- terminology consistency across Organizer;
+- terminology consistency across the three tools;
 - whether longer text affects buttons, dialogs, the generated HTML, or other layouts;
 - translation-key and format-placeholder compatibility;
 - existing localization and regression tests.
@@ -48,11 +51,27 @@ For these reasons, **reviewing and incorporating translation changes may take ti
 
 ## Language setting
 
-- The selected language is stored in `settings.json` as `language`.
-- A language change in the main window takes effect on the next launch.
-- During development/testing, `FH6_ORGANIZER_LANG=en` can temporarily override the saved language.
+- The Organizer GUI uses the language in the settings shared by the three tools (`ui.language` in `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`) first. When you choose a language, Organizer saves it both there and as `language` in its own `settings.json` (`%APPDATA%\Livery-Organizer-for-FH6\settings.json`).
+- If the shared settings are missing or unreadable (including running from source without `src/viewer/lo4fh6_desktop_suite`), Organizer uses `language` in `settings.json`.
+- The CLI uses only `language` in `settings.json`; it does not read the shared settings.
+- A language change in the main window takes effect on the next launch (the same applies to Navigator Bridge; the Viewer settings window switches immediately).
+- During development/testing, `FH6_ORGANIZER_LANG=en` can temporarily override the saved language (Organizer only).
 - The environment-variable override does not rewrite the saved preference.
 - Generated HTML and Excel reports use the Organizer language that is active when the report is generated.
+
+## Livery Viewer for FH6 and Navigator Bridge for FH6
+
+Since v0.4.63, Livery Viewer for FH6 and Navigator Bridge for FH6 are also available in Japanese and English. The three tools share the language and theme (Follow system / Light / Dark) through `ui.language` and `ui.theme` in `%APPDATA%\Livery-Organizer-for-FH6\desktop-suite-settings.json`. A theme change takes effect immediately in every tool.
+
+| Tool / window | Strings | How the language is chosen | When a language change takes effect |
+| --- | --- | --- | --- |
+| Navigator Bridge | The `BRIDGE_EN` table in `src/navigator_bridge/navigator-bridge-for-fh6.py` (keyed by the Japanese text; text missing from the table stays Japanese) | Shared settings | Next launch |
+| Viewer settings window | The `I18N` table in `src/viewer/viewer_gui.py` | Shared settings | Immediately (also saved to the shared settings) |
+| Viewer preview window (3D) | `src/viewer/tools/livery-inspector/locales/ja.js` / `en.js` (logic in `i18n.js` in the same folder) | The `lang` URL parameter, otherwise the WebView2 language (`navigator.language`; English unless it is Japanese) | Immediately, through the Language selector at the top of the window (not saved to the shared settings) |
+
+- Missing strings fall back to Japanese in Navigator Bridge and the Viewer settings window, and to English in the preview window.
+- The preview window uses a dark color scheme only; it has no theme setting.
+- The loading and error pages of the preview window (`src/viewer/organizer_preview_bridge.py`) are currently Japanese only.
 
 ## Paths and presentation
 
@@ -63,11 +82,11 @@ For these reasons, **reviewing and incorporating translation changes may take ti
 
 ## Data that must not be translated
 
-The localization layer translates Organizer-owned UI/system text, not user or game data. The following values remain verbatim:
+Each tool's localization layer translates the tool's own UI/system text, not user or game data. The following values remain verbatim:
 
 - livery title and description;
 - creator name;
-- vehicle/manufacturer/model data values and proper names;
+- vehicle/manufacturer/model data values, proper names, and internal names from FH6 assets;
 - Car ID, Livery ID, fingerprints, and other internal identifiers;
 - user-entered tags and notes;
 - technical diagnostic values such as paths, exception text, signatures, and raw identifiers when those values are being displayed as data.
@@ -115,6 +134,8 @@ src/organizer/locales/en.py
 
 For maintainability, translation dictionary entries in `locales/en.py` are kept as one physical source line per entry, including long strings. Display line breaks are represented with `\n` instead of splitting one dictionary entry across multiple implicit Python string literals.
 
+For the strings of Livery Viewer for FH6 and Navigator Bridge for FH6, see the table in [Livery Viewer for FH6 and Navigator Bridge for FH6](#livery-viewer-for-fh6-and-navigator-bridge-for-fh6).
+
 ## Testing
 
 `tests/test_i18n.py` covers, among other things:
@@ -141,3 +162,4 @@ If another UI language is added in the future:
 3. Check desktop GUI, generated HTML, Excel, CLI, and error/edge-case paths.
 4. Run long-text/layout validation comparable to the `qps` checks.
 5. Do not assume a complete documentation set will be created for the new language; use the English documentation as the common non-Japanese reference.
+6. To add it to Livery Viewer for FH6 and Navigator Bridge for FH6 as well, add the strings in the places listed in [Livery Viewer for FH6 and Navigator Bridge for FH6](#livery-viewer-for-fh6-and-navigator-bridge-for-fh6), and also update the language lists in code (`BRIDGE_LANGUAGES` in Bridge and the `ja` / `en` checks in the Viewer).

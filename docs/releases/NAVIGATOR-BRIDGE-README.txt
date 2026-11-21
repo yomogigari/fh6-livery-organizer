@@ -51,9 +51,11 @@ Organizerから #603 / #302U を指定した場合、Bridgeは #001U から #302
        ↓
   Bridgeが #001U からのカーソル移動回数を計算する
        ↓
-  FH6を前面化する
+  タイトルと所有プロセスが一致するFH6を1つだけ見つけて、前面化する
        ↓
-  左 / 右 / 下のカーソルキーを自動入力する
+  「FH6切替後」の待ち時間の後、前面のFH6のタイトルと所有プロセスを確かめる
+       ↓
+  左 / 右 / 下のカーソルキーを自動入力する（1回ごとに送信直前に再確認）
        ↓
   指定したペイント位置へカーソルを移動する
 
@@ -168,8 +170,9 @@ Bridgeは移動前に固定操作 ESC → RET を各1回送信し、マイデザ
 1. Navigator Bridgeを単独起動します。
 2. 「連携を登録」を一度実行します。
    「実行形式」と「連携登録先」がGUIに表示されるので、現在のBridgeが登録されていることを確認できます。
-   Bridgeを別フォルダへ移動・ファイル名変更した場合、またはEXE版/Python版を切り替えた場合は、
-   変更後のBridgeから「連携を登録」を再実行してください。
+   Bridgeを別のフォルダーへ移動した場合、ファイル名を変更した場合、EXEとソースからの実行（Python）を
+   切り替えた場合、新しい版の配布ZIPを別のフォルダーに展開して使う場合は、変更後のBridgeから
+   「連携を登録」を再実行してください（「■ 保存場所を変更した場合の再登録」を参照）。
 3. Livery Organizerで生成したHTMLを開きます。
 4. カードや比較画面の #603 / #302U などの番号をクリックします。
 5. Fキー、または「FH6で選択デザインへ移動」を実行します。
@@ -232,12 +235,24 @@ GameSaveを書き換えません。
 navigatorbridgeforfh6:// のWindows登録にはBridge本体の絶対パスが保存されます。
 
 再登録が必要:
-- Navigator-Bridge-for-FH6.exe / Pythonソースを別フォルダへ移動した
+- Navigator-Bridge-for-FH6.exe（ソースから動かす場合は navigator-bridge-for-fh6.py）を別のフォルダーへ移動した
 - Bridge本体のファイル名を変更した
-- EXE版からPython版、またはPython版からEXE版へ切り替えた
+- EXEとソースからの実行（Python）を切り替えた
+- 新しい版の配布ZIPを、別のフォルダーに展開して使う
+- v0.4.62の配布ZIPの python\navigator-bridge-for-fh6-v028.py で登録していた
 
 通常は再登録不要:
-- 同じフォルダ・同じファイル名のEXEを新しい版で上書きした
+- 同じフォルダー・同じファイル名のEXEを新しい版で上書きした
+
+例: v0.4.63の配布ZIP（Livery-Organizer-for-FH6-v0.4.63-preview.zip）は、展開すると
+版の名前のフォルダー（Livery-Organizer-for-FH6-v0.4.63-preview\）ができ、その中にBridgeが入ります。
+v0.4.62の配布ZIPには、このフォルダーはありませんでした。そのため、前の版と同じ場所に展開しても、
+Bridgeの場所が変わります。新しいフォルダーのNavigator-Bridge-for-FH6.exeを単独起動し、
+「連携を登録」をやり直してください。
+
+v0.4.63の配布ZIPには、Python版（pythonフォルダー）は入っていません。v0.4.62の配布ZIPの
+python\navigator-bridge-for-fh6-v028.py で登録していた場合も、EXEのBridge（Navigator-Bridge-for-FH6.exe）を
+単独起動して「連携を登録」をやり直してください。
 
 移動前に「解除」する必要はありません。移動後のBridgeを単独起動して「連携を登録」を実行すると、
 現在のパスで登録が上書きされます。GUIの「連携登録先」が現在のBridgeと違う場合は
@@ -246,8 +261,8 @@ navigatorbridgeforfh6:// のWindows登録にはBridge本体の絶対パスが保
 
 ■ 連携解除 / 削除
 
-Navigator Bridgeを削除する場合は、先にBridgeを単独起動し、GUIの「連携を解除」で
-navigatorbridgeforfh6:// のWindows登録を解除してください。
+Navigator Bridgeを削除する場合は、先にBridgeを単独起動し、GUIの「Livery Organizer for FH6 連携」欄の
+「解除」で、navigatorbridgeforfh6:// のWindows登録を解除してください。
 
 BridgeのIPC / ログ:
 %LOCALAPPDATA%\Navigator-Bridge-for-FH6\
