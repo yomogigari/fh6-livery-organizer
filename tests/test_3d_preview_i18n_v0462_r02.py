@@ -12,7 +12,7 @@ import locales.en as en_locale  # noqa: E402
 
 SOURCE = ORGANIZER_DIR / "livery-organizer-for-fh6.py"
 
-HELP_HEADING = "3Dプレビュー（実験）"
+HELP_HEADING = "プレビュー"
 HELP_BODY = (
     "FH6本体パスを確認できたレポートでは、各カードからLivery Viewer for FH6でペイントを3D表示できます。"
     "この機能は実験的なもので、表示はゲーム内の見た目と完全には一致しません。"
@@ -26,7 +26,7 @@ class Experimental3DPreviewI18nR02Tests(unittest.TestCase):
         source = SOURCE.read_text(encoding="utf-8")
         self.assertIn(f'<b class="fh6-foot-label">{HELP_HEADING}</b>{HELP_BODY}', source)
         self.assertNotIn(
-            '{html.escape(report_text("3Dプレビュー（実験）", "3D Preview (Experimental)"))}',
+            '{html.escape(report_text("プレビュー", "Preview"))}',
             source,
         )
         self.assertNotIn(
@@ -35,7 +35,7 @@ class Experimental3DPreviewI18nR02Tests(unittest.TestCase):
         )
 
     def test_preview_help_has_english_report_text_entries(self):
-        self.assertEqual(en_locale.REPORT_TEXT.get(HELP_HEADING), "3D Preview (Experimental)")
+        self.assertEqual(en_locale.REPORT_TEXT.get(HELP_HEADING), "Preview")
         self.assertEqual(
             en_locale.REPORT_TEXT.get(HELP_BODY),
             "When the FH6 installation path is available, each card can show the paint in 3D with Livery Viewer for FH6. "

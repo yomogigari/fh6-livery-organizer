@@ -110,7 +110,7 @@ Livery Viewer for FH6 is an experimental tool that shows a report's livery in 3D
 on the FH6 car body. It reads the FH6 game assets and the GameSave livery
 (Livery_* folder) as read-only input and renders them on your PC (WebGL2).
 
-- Open a livery from the "3D Preview (Experimental)" link on each report card.
+- Open a livery from the "Preview" link on each report card.
 - You can also choose a Livery_* folder in the Viewer settings window.
 - The first time a car is shown, preparation takes about 10 seconds on the
   development PC. The very first time the Viewer opens on a PC, it takes about
@@ -147,12 +147,12 @@ or the FH6 installation.
    After registering, you can close the settings window. Opening a 3D preview
    starts the Viewer automatically.
 2. Generate a report in Organizer. Reports that could confirm the FH6
-   installation location show "3D Preview (Experimental)" on each card.
-3. Click "3D Preview (Experimental)". If the browser asks whether to open an
+   installation location show "Preview" on each card.
+3. Click "Preview". If the browser asks whether to open an
    external app, check the request and allow it. Organizer and the Viewer use
    liveryorganizerpreviewforfh6:// for local integration.
 4. The Viewer window shows the car with that livery. Clicking
-   "3D Preview (Experimental)" for another livery switches the view in the same
+   "Preview" for another livery switches the view in the same
    window.
 
 To open a livery from the settings window, check "FH6 folder", "Livery_* folder",
@@ -322,7 +322,7 @@ to find the design you want from the FH6 screen alone.
 5. The livery is applied to the car you are currently driving.
 
 To check how the livery looks on the car first, you can open
-"3D Preview (Experimental)" before moving. Navigator Bridge does not automate
+"Preview" before moving. Navigator Bridge does not automate
 loading, selection, or confirmation.
 
 
@@ -553,7 +553,7 @@ in the demo. The demo was generated with v0.4.62.
 
 ■ Troubleshooting (Livery Viewer for FH6)
 
-- Clicking "3D Preview (Experimental)" does nothing:
+- Clicking "Preview" does nothing:
   check that you ran "Register Organizer integration" in the Viewer settings
   window and that the browser is not waiting for permission to open an external
   app. If you moved the Viewer folder, register again.

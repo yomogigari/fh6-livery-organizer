@@ -23,7 +23,7 @@ This repository and the release package contain three tools:
 
 ### Livery Viewer for FH6 (3D preview, experimental) is bundled
 
-Each card in an Organizer report now has a "3D Preview (Experimental)" link. Clicking it shows the car with that livery in the Livery Viewer for FH6 window.
+Each card in an Organizer report now has a "Preview" link. Clicking it shows the car with that livery in the Livery Viewer for FH6 window.
 
 - The Viewer reads the FH6 game assets and the GameSave liveries as read-only input and renders them on your PC with WebGL2.
 - The next livery you open also uses the same window (switching to another livery of the same car takes about 1 second on the development PC).
@@ -81,8 +81,8 @@ The creation-method audit score checks five structural/statistical signals in sa
 **Livery Viewer for FH6** is an experimental tool that shows a report's livery in 3D on the FH6 car body. It reads the FH6 game assets and the GameSave livery (`Livery_*` folder) as read-only input and renders them on your PC (WebGL2).
 
 1. Put the release folder where you will keep it, then start `Livery-Viewer-for-FH6\Livery-Viewer-for-FH6.exe` and run **Register Organizer integration** once in the settings window (the registration stores the Viewer's location, so decide the location first). After registering, you can close the settings window. Opening a 3D preview starts the Viewer automatically.
-2. Generate a report in Organizer. Reports that could confirm the FH6 installation location show "3D Preview (Experimental)" on each card.
-3. Click "3D Preview (Experimental)". The Viewer window shows the car with that livery. If the browser asks whether to open an external application, allow it. Clicking another livery switches the view in the same window.
+2. Generate a report in Organizer. Reports that could confirm the FH6 installation location show "Preview" on each card.
+3. Click "Preview". The Viewer window shows the car with that livery. If the browser asks whether to open an external application, allow it. Clicking another livery switches the view in the same window.
 
 You can also choose a `Livery_*` folder in the Viewer settings window. From the preview screen, you can save the current view or a six-direction image as JPEG / PNG.
 

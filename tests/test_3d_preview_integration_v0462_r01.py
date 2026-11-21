@@ -95,7 +95,7 @@ class Experimental3DPreviewIntegrationR01Tests(unittest.TestCase):
             "experimental_3d_preview_error",
             "preview_launch_uris.get(record_key",
             "data-preview-uri=",
-            "3Dプレビュー（実験）",
+            'report_text("プレビュー", "Preview")',
             "preview3dLinkHtml",
             "REPORT_PREVIEW_3D_LABEL",
         ):
