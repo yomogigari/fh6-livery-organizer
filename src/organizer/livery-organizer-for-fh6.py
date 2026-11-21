@@ -1139,6 +1139,26 @@ def apply_child_window_theme(win) -> None:
         pass
 
 
+def show_main_window(root) -> None:
+    """組み立てて中身に合わせた主の窓を出します（2026-11-21）。
+
+    起動時に小さい窓が一瞬見えてから大きくなるのを防ぐため、主の窓は Tk() の直後から隠して組み立てます
+    （配色を当てるときの update_idletasks で、中身の無い既定の大きさの窓が出ていました）。透明にして出し、
+    タイトルバーの色を当ててから見えるようにします（白い枠が一瞬見えないように）。
+    """
+    try:
+        root.attributes("-alpha", 0.0)
+    except Exception:
+        pass
+    root.deiconify()
+    root.update_idletasks()
+    apply_child_window_theme(root)
+    try:
+        root.attributes("-alpha", 1.0)
+    except Exception:
+        pass
+
+
 def position_child_window(win, parent, width: int, height: int) -> None:
     """子ウィンドウを画面原点ではなく、親ウィンドウ中央付近へ配置します。"""
     apply_child_window_theme(win)
@@ -20606,8 +20626,10 @@ def main() -> int:
             print(tr("cli.gui_unavailable"), file=sys.stderr)
             return 2
         root = tk.Tk()
+        root.withdraw()  # 組み立てて大きさを合わせるまで隠す（2026-11-21。show_main_window で出す）
         apply_app_icon(root)
         App(root)
+        show_main_window(root)
         schedule_viewer_standby(root)
         root.mainloop()
         return 0

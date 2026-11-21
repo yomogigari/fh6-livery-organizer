@@ -371,6 +371,26 @@ def apply_child_window_theme(win) -> None:
         pass
 
 
+def show_main_window(root) -> None:
+    """組み立てて中身に合わせた主の窓を出す（2026-11-21）。
+
+    起動時に小さい窓が一瞬見えてから大きくなるのを防ぐため、主の窓は Tk() の直後から隠して組み立てる
+    （配色を当てるときの update_idletasks で、中身の無い既定の大きさの窓が出ていた）。透明にして出し、
+    タイトルバーの色を当ててから見えるようにする（白い枠が一瞬見えないように）。
+    """
+    try:
+        root.attributes("-alpha", 0.0)
+    except Exception:
+        pass
+    root.deiconify()
+    root.update_idletasks()
+    apply_child_window_theme(root)
+    try:
+        root.attributes("-alpha", 1.0)
+    except Exception:
+        pass
+
+
 def _preferred_tk_font_family(root: tk.Misc, candidates: tuple[str, ...], fallback: str) -> str:
     try:
         available = {str(name).casefold(): str(name) for name in tkfont.families(root)}
@@ -2670,9 +2690,11 @@ def main() -> None:
             return
 
         root = tk.Tk()
+        root.withdraw()  # 組み立てて大きさを合わせるまで隠す（2026-11-21。show_main_window で出す）
         configure_gui_fonts(root)
         set_app_icon(root)
         app = NavigatorApp(root, args)
+        show_main_window(root)
         app.target_entry.focus_set()
         root.mainloop()
     finally:

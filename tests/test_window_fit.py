@@ -165,5 +165,42 @@ class BridgeWrapLengthTests(unittest.TestCase):
                         center.index("fit_window_to_content(self.root)"))
 
 
+class FakeMainWindow:
+    def __init__(self, calls: list) -> None:
+        self.calls = calls
+
+    def attributes(self, name, value) -> None:
+        self.calls.append(("attributes", name, value))
+
+    def deiconify(self) -> None:
+        self.calls.append(("deiconify",))
+
+    def update_idletasks(self) -> None:
+        self.calls.append(("update_idletasks",))
+
+
+class ShowMainWindowTests(unittest.TestCase):
+    """起動時に小さい窓が一瞬見えないように、隠して組み立ててから出す（2026-11-21）。"""
+
+    def test_shows_transparent_then_applies_title_bar_then_opaque(self) -> None:
+        for module in (organizer, bridge):
+            with self.subTest(module=module.__name__):
+                calls: list = []
+                win = FakeMainWindow(calls)
+                with mock.patch.object(module, "apply_child_window_theme",
+                                       side_effect=lambda _win: calls.append(("title_bar",))):
+                    module.show_main_window(win)
+                self.assertEqual(calls, [("attributes", "-alpha", 0.0), ("deiconify",), ("update_idletasks",),
+                                         ("title_bar",), ("attributes", "-alpha", 1.0)])
+
+    def test_main_hides_the_window_until_it_is_built(self) -> None:
+        organizer_source = ORGANIZER_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("root = tk.Tk()\n        root.withdraw()", organizer_source)
+        self.assertIn("App(root)\n        show_main_window(root)", organizer_source)
+        bridge_source = BRIDGE_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("root = tk.Tk()\n        root.withdraw()", bridge_source)
+        self.assertIn("app = NavigatorApp(root, args)\n        show_main_window(root)", bridge_source)
+
+
 if __name__ == "__main__":
     unittest.main()
