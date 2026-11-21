@@ -19,13 +19,13 @@ GameDBを使うのは3Dプレビューだけです。Organizerの一覧化・検
 
 ## GameDBを置く場所
 
-用意したGameDBは、次の名前で、次の場所に置いてください。
+用意したGameDBは、次の名前で、次の場所に置くと、指定しなくても使います。
 
 ```text
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 ```
 
-- GameDBを登録・解除する画面はありません。Viewerの設定画面にも、OrganizerにもGameDBの欄はありません。
+- ほかの場所に置いたときは、Livery Viewer for FH6 の設定画面の「GameDB」の欄で指定します（下の「Viewerの設定画面で指定する」）。GameDBを指定する欄はViewerの設定画面だけにあります。Organizerには欄はありませんが、Viewerで指定したGameDBをOrganizerも使います。
 - 同じフォルダーに置いた `fh6-gamedb-*.sqlite` の形の名前のファイルも使います。`fh6-gamedb.sqlite` が無い（使えない）ときは、更新日時の新しい物から順に、使える物を使います。
 - GameDBは読み取り専用で開きます。書き換えません。
 - GameDBを後から置いた場合も、次に3Dプレビューを開くときから使います。
@@ -34,7 +34,7 @@ GameDBを使うのは3Dプレビューだけです。Organizerの一覧化・検
 
 Organizerは、レポートを作るときにGameDBを探し、見つけた場所をレポートに記録します。レポートから3Dプレビューを開くと、Viewerは記録された場所のGameDBを使います。
 
-そのため、レポートを作った後にGameDBを動かしたり消したりすると、そのレポートからは3Dプレビューを開けません（理由は `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-bridge.log` に記録されます）。GameDBを動かしたり消したりしたら、Organizerでレポートを作り直してください。
+そのため、レポートを作った後にGameDBを動かしたり消したりすると、そのレポートからは3Dプレビューを開けません（理由は `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-bridge.log` に記録されます）。GameDBを動かしたり消したりしたら、Organizerでレポートを作り直してください（Viewerの設定画面で指定していた場合は、その欄も指定し直してください）。
 
 ## GameDBを探す順
 

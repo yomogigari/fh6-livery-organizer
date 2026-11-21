@@ -117,6 +117,8 @@ GameDBは配布物にもリポジトリにも含めません。Organizer・Viewe
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 ```
 
+ほかの場所に置いたときは、Livery Viewer for FH6 の設定画面の **「GameDB」** の欄で指定します（使えるかを確かめてから登録します。Organizerも同じ設定を使います）。
+
 GameDBの用意の方法は案内していません。用意する場合は、利用者自身の責任で、ゲームの利用規約等を確認してください。
 
 詳しくは [docs/3D-PREVIEW-GAMEDB.md](docs/3D-PREVIEW-GAMEDB.md) を参照してください。

@@ -117,6 +117,8 @@ The GameDB is not included in the distribution or in this repository, and Organi
 %USERPROFILE%\Documents\Livery-Organizer-for-FH6\game-data\fh6-gamedb.sqlite
 ```
 
+If you keep it somewhere else, specify it in the **GameDB** field of the Livery Viewer for FH6 settings window (it is checked before it is registered, and Organizer uses the same setting).
+
 How to prepare the GameDB is not covered. If you prepare one, do so at your own responsibility and check the game's terms of use.
 
 See [docs/3D-PREVIEW-GAMEDB.md](docs/3D-PREVIEW-GAMEDB.md) (Japanese) for details.
