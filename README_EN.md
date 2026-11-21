@@ -84,7 +84,7 @@ The creation-method audit score checks five structural/statistical signals in sa
 2. Generate a report in Organizer. Reports that could confirm the FH6 installation location show "Preview" on each card.
 3. Click "Preview". The Viewer window shows the car with that livery. If the browser asks whether to open an external application, allow it. Clicking another livery switches the view in the same window.
 
-You can also choose a `Livery_*` folder in the Viewer settings window. From the preview screen, you can save the current view or a six-direction image as JPEG / PNG.
+You can also choose a `Livery_*` folder in the Viewer settings window. From the preview screen, you can save the current view or a six-direction image as JPEG / PNG (the title, creator, upload date, and capture time are added below the image).
 
 The Windows integration registration stores the Viewer's **absolute path**. If you move the Viewer folder, run "Register Organizer integration" again from the moved Viewer. Before removing the Viewer, run "Remove Organizer integration" in the settings window.
 
