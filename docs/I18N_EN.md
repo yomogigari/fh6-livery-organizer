@@ -67,7 +67,7 @@ Since v0.5.0, Livery Viewer for FH6 and Navigator Bridge for FH6 are also availa
 | --- | --- | --- | --- |
 | Navigator Bridge | The `BRIDGE_EN` table in `src/navigator_bridge/navigator-bridge-for-fh6.py` (keyed by the Japanese text; text missing from the table stays Japanese) | Shared settings | Next launch |
 | Viewer settings window | The `I18N` table in `src/viewer/viewer_gui.py` | Shared settings | Immediately (also saved to the shared settings) |
-| Viewer preview window (3D) | `src/viewer/tools/livery-inspector/locales/ja.js` / `en.js` (logic in `i18n.js` in the same folder) | The `lang` URL parameter, otherwise the WebView2 language (`navigator.language`; English unless it is Japanese) | Immediately, through the Language selector at the top of the window (not saved to the shared settings) |
+| Viewer preview window (3D) | `src/viewer/tools/livery-inspector/locales/ja.js` / `en.js` (logic in `i18n.js` in the same folder) | The `lang` URL parameter, otherwise the WebView2 language (`navigator.language`; English unless it is Japanese) | Immediately, through the Language selector in Display at the top right of the window (not saved to the shared settings) |
 
 - Missing strings fall back to Japanese in Navigator Bridge and the Viewer settings window, and to English in the preview window.
 - The preview window uses a dark color scheme only; it has no theme setting.

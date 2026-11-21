@@ -76,7 +76,8 @@ the three tools. A language change takes effect on the next launch in Organizer
 and Navigator Bridge, and immediately in the Viewer settings window.
 The 3D preview screen starts in the Windows display language rather than the
 shared language setting (English unless it is Japanese), and you can switch it
-with "Language" at the top of the screen. It uses dark colors only.
+with "Language" in "Display" at the top right of the screen. It uses dark
+colors only.
 
 Generated HTML and Excel reports use the Organizer language that is active when
 the report is generated.
@@ -147,6 +148,8 @@ or the FH6 installation.
    "Register Organizer integration" again from the moved Viewer.
    After registering, you can close the settings window. Opening a 3D preview
    starts the Viewer automatically.
+   Running "Register Both" in Organizer's "Integration..." window registers
+   the Viewer and Navigator Bridge together (the same as this step).
 2. Generate a report in Organizer. Reports that could confirm the FH6
    installation location show "Preview" on each card.
 3. Click "Preview". If the browser asks whether to open an

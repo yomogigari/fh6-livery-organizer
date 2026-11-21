@@ -254,7 +254,7 @@ Livery Viewer for FH6 と Navigator Bridge for FH6 は任意機能です。使�
 
 ## 言語・ドキュメント
 
-Organizer・Viewer・Navigator Bridgeの利用者向け表示は、現在 **日本語** と **英語** に対応しています。言語と表示テーマは3つのツールで共有します。言語の変更は、OrganizerとNavigator Bridgeでは次回起動時から、Viewerの設定画面では選んだときに反映されます。3Dプレビューの画面は、共有の言語の設定ではなく、Windowsの表示言語で始まり（日本語でなければ英語）、画面の上の「言語」で切り替えられます。3Dプレビューの画面の配色は、暗い色だけです。生成HTML / Excelは、レポートを生成した時点のOrganizer言語を使用します。Liveryタイトル、説明、作成者名、車名、タグ、メモなどの利用者データは翻訳しません。
+Organizer・Viewer・Navigator Bridgeの利用者向け表示は、現在 **日本語** と **英語** に対応しています。言語と表示テーマは3つのツールで共有します。言語の変更は、OrganizerとNavigator Bridgeでは次回起動時から、Viewerの設定画面では選んだときに反映されます。3Dプレビューの画面は、共有の言語の設定ではなく、Windowsの表示言語で始まり（日本語でなければ英語）、画面の右上の「表示の調整」の中の「言語」で切り替えられます。3Dプレビューの画面の配色は、暗い色だけです。生成HTML / Excelは、レポートを生成した時点のOrganizer言語を使用します。Liveryタイトル、説明、作成者名、車名、タグ、メモなどの利用者データは翻訳しません。
 
 このプロジェクトでは、**日本語を主要ドキュメントの正本、英語を共通の第二言語**として扱います。GitHubではこの `README.md` を日本語の基準文書とし、英語は [README_EN.md](README_EN.md) を参照してください。配布ZIPにも `README_EN.txt` と `NAVIGATOR-BRIDGE-README_EN.txt` を含めます。
 

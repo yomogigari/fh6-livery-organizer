@@ -241,7 +241,7 @@ The release ZIP does not include the source code or a Python version. The source
 
 ## Languages and documentation
 
-The user-facing UI of Organizer, Viewer, and Navigator Bridge currently supports **Japanese** and **English**. The language and theme are shared by the three tools. A language change takes effect on the next launch in Organizer and Navigator Bridge, and immediately in the Viewer settings window. The 3D preview screen starts in the Windows display language rather than the shared language setting (English unless it is Japanese), and you can switch it with "Language" at the top of the screen. The 3D preview screen uses dark colors only. Generated HTML and Excel output use the Organizer language that is active when the report is generated.
+The user-facing UI of Organizer, Viewer, and Navigator Bridge currently supports **Japanese** and **English**. The language and theme are shared by the three tools. A language change takes effect on the next launch in Organizer and Navigator Bridge, and immediately in the Viewer settings window. The 3D preview screen starts in the Windows display language rather than the shared language setting (English unless it is Japanese), and you can switch it with "Language" in "Display" at the top right of the screen. The 3D preview screen uses dark colors only. Generated HTML and Excel output use the Organizer language that is active when the report is generated.
 
 Livery titles, descriptions, creator names, vehicle/proper-name data, tags, notes, IDs, and similar user/game data are not translated.
 
