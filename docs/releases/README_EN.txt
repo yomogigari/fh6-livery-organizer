@@ -123,7 +123,8 @@ on the FH6 car body. It reads the FH6 game assets and the GameSave livery
   livery of the same car takes about 1 second on the development PC).
 - After you close the window, the Viewer waits hidden in the background for
   10 minutes so the next view opens faster, then exits. While it waits, it still
-  uses memory and remains visible in Task Manager.
+  uses memory and remains visible in Task Manager. To end it immediately, press
+  "Quit Viewer" at the top right of the preview window.
 - When Organizer starts, it starts the Viewer without a window and keeps it
   ready, so the first 3D preview opens a little faster (about 0.3 seconds on the
   development PC; on by default). The Viewer stays
@@ -512,7 +513,8 @@ To remove the Viewer, first start it and run "Remove Organizer integration" in
 the settings window to remove the liveryorganizerpreviewforfh6:// registration.
 Then, after the Viewer has ended (10 minutes after closing its window, and after
 closing Organizer if Organizer startup preparation is on; to end it immediately,
-you can end Livery-Viewer-for-FH6.exe in Task Manager), delete the
+press "Quit Viewer" in the preview window or end Livery-Viewer-for-FH6.exe in
+Task Manager), delete the
 Livery-Viewer-for-FH6 folder and, if no longer needed, the Viewer locations
 listed above. Files in use cannot be deleted.
 

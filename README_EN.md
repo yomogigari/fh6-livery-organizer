@@ -28,7 +28,7 @@ Each card in an Organizer report now has a "Preview" link. Clicking it shows the
 - The Viewer reads the FH6 game assets and the GameSave liveries as read-only input and renders them on your PC with WebGL2.
 - The next livery you open also uses the same window (switching to another livery of the same car takes about 1 second on the development PC).
 - The first time a car is shown, preparation takes about 10 seconds on the development PC. The very first time the Viewer opens on a PC, it takes about 15-28 seconds because the rendering components are built for the first time. The prepared data is kept in `preview-cache`, so later views of the same car are faster (see "Cache" below for its location, size, and how to delete it).
-- After you close the window, the Viewer waits hidden in the background for 10 minutes so the next view opens faster.
+- After you close the window, the Viewer waits hidden in the background for 10 minutes so the next view opens faster. To end it immediately, press **Quit Viewer** at the top right of the preview window.
 - When Organizer starts, it starts the Viewer in the background without showing a window, so the first 3D preview opens a little faster (about 0.3 seconds on the development PC; on by default; you can turn it off in the Viewer settings window).
 - With an FH6 GameDB that the user has prepared locally (not included in the distribution), liveries are shown more accurately. Without it, game logo stickers are omitted and wheels and tires are shown in a simplified form.
 
@@ -94,7 +94,7 @@ The first time you open a 3D preview, the Viewer downloads three.js (MIT License
 
 - After you close the window, the Viewer stays hidden for 10 minutes. A 3D preview opened during that time opens faster. While it waits, it still uses memory and remains visible in Task Manager.
 - When Organizer starts, it starts the Viewer without a window and keeps it waiting (on by default). The Viewer stays while Organizer is running, and ends 10 minutes after Organizer closes, as above. Turn this on or off with the **Prepare the 3D preview when Organizer starts** check box in the Viewer settings window. It does nothing when the Organizer integration is not registered.
-- The waiting time can be changed with `viewer_keep_alive_seconds` (seconds; `0` means no waiting) in `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json`. To end the Viewer immediately, you can end `Livery-Viewer-for-FH6.exe` in Task Manager.
+- The waiting time can be changed with `viewer_keep_alive_seconds` (seconds; `0` means no waiting) in `%LOCALAPPDATA%\Livery Organizer for FH6\PreviewBridge\preview-settings.json`. To end the Viewer immediately, press **Quit Viewer** at the top right of the preview window (you can also end `Livery-Viewer-for-FH6.exe` in Task Manager).
 
 ### Cache (preview-cache)
 
