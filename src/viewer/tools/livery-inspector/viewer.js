@@ -1065,7 +1065,8 @@ function applyGroundShadowCasterFlags(root) {
   root?.traverse(child => {
     if (!child.isMesh) return;
     const category = meshCategory(child);
-    child.castShadow = category !== 'glass' && category !== 'hidden';
+    child.castShadow = category !== 'glass' && category !== 'hidden'
+      && !child.userData?.lo4fh6_factory_livery_sticker_shown;
   });
 }
 
@@ -2415,14 +2416,50 @@ function isFactoryLiveryStickerMesh(mesh) {
   return /(^|_)livery_sticker(_\d+)?$/.test(meshMaterialNameLower(mesh).split('|')[0]);
 }
 
+// 原本の材質が純正のステッカー（livery_sticker.materialbin、シェーダー car_livery）の板の、部品の色の記録（模様の画像）。
+// 材質名が carPaint_livery 等で名前の判定に当たらない板も、原本の材質で見分ける（2026-11-22、Car 1477）。
+function factoryLiveryStickerRecord(mesh) {
+  const proof = renderContract?.body_trim_colors;
+  if (proof?.schema !== 'lo4fh6.body-trim-original-color.v1' || !proof.groups) return null;
+  const sha = String(mesh?.userData?.lo4fh6_original_material_sha256
+    || mesh?.geometry?.userData?.lo4fh6_original_material_sha256 || '').toLowerCase();
+  const record = /^[0-9a-f]{64}$/.test(sha) ? proof.groups[sha] : null;
+  return record?.surface === 'factory_livery' ? record : null;
+}
+
+// 純正の模様を見せるか：デザインに層が無く、板に結び付く記録がメーカー指定のとき（描画の契約 factory_livery_stickers）。
+// ゲームでは、層のあるデザインでは板の模様は見えない（Car 1477・4212 のサムネイル）。
+function factoryLiveryStickerShown(mesh) {
+  const proof = renderContract?.factory_livery_stickers;
+  if (proof?.schema !== 'lo4fh6.factory-livery-sticker.v1' || proof.visible !== true) return false;
+  if (!factoryLiveryStickerRecord(mesh)?.texture?.file) return false;
+  const binding = String(mesh?.userData?.lo4fh6_material_binding_hash || mesh?.userData?.lo4_material_binding_hash || '')
+    .toUpperCase();
+  return Array.isArray(proof.selected_bindings) && proof.selected_bindings.includes(binding);
+}
+
+// アンテナの部品（ファイルの中の部品の名前に antenna・aerial を含む）。車体の部品のファイルの中にあっても paint に上げない
+// （Car 1477 のアンテナ bodyAntenna_a_LODS0 は body_a の中の blkplastic_mgl で、緑に塗られていた。2026-11-22）。
+// ファイルの名前（bodyAntenna_a 等）では判定しない：多くの車で、同じファイルに給油口のふた等が入っている。
+function isAntennaSourceMesh(mesh) {
+  return /antenna|aerial/.test(String(mesh?.userData?.lo4fh6_source_mesh_name || mesh?.userData?.lo4_source_mesh_name || '')
+    .toLowerCase());
+}
+
 // ペイントを載せない材質（CarPaintNoLivery・CarbonFiber_Paint_noLivery 等）。
 function isNoLiveryMaterialMesh(mesh) {
   return meshMaterialNameLower(mesh).split('|')[0].includes('nolivery');
 }
 
 function meshCategory(mesh) {
-  // 利用者のペイントを描くときは、純正のステッカーの板は出さない（ゲームでは利用者のペイントに置き換わる）。
-  if (isFactoryLiveryStickerMesh(mesh)) {
+  // 純正のステッカーの板（材質名 livery_sticker、または原本の材質が livery_sticker の carPaint_livery 等）。
+  // デザインに層が無く、記録がメーカー指定なら、模様の画像で車体の上に重ねて描く（部品の扱い、2026-11-22）。
+  // それ以外は出さない（ゲームでは利用者のペイントに置き換わる）。
+  if (isFactoryLiveryStickerMesh(mesh) || factoryLiveryStickerRecord(mesh)) {
+    if (factoryLiveryStickerShown(mesh)) {
+      mesh.userData.lo4fh6_factory_livery_sticker_shown = true;
+      return 'trim';
+    }
     mesh.userData.lo4fh6_factory_livery_sticker_hidden = true;
     return 'hidden';
   }
@@ -2480,6 +2517,7 @@ function meshCategory(mesh) {
     && hasUv3
     && isBodyPanelIdentity(identity)
     && !isExplicitNonPaintIdentity(identity)
+    && !isAntennaSourceMesh(mesh)
   ) {
     mesh.userData.lo4_role_recovery = 'trim_uv3_body';
     return 'paint';
@@ -6257,6 +6295,36 @@ function buildVariantRoot(sourceModel, projectionBounds, paintTexture, masks, va
       glassCount += 1;
     } else if (category === 'hidden') {
       child.visible = false;
+    } else if (child.userData?.lo4fh6_factory_livery_sticker_shown) {
+      // 純正の模様の板：模様の画像（色と透明度）を車体の上に重ねる。板は車体とほぼ同じ面なので、手前へずらして描き、
+      // 影は落とさない。艶は塗装に合わせる（原本の材質は Roughness_Shift で艶を上げている）。
+      const record = factoryLiveryStickerRecord(child);
+      const texture = record?.texture?.file ? sourceBodyTrimTextures.get(record.texture.file) : null;
+      if (!texture) {
+        child.visible = false;
+        return;
+      }
+      const channel = Number(record.texture.uv_channel) === 1 ? 1 : 0;
+      const key = `factory-livery:${record.texture.file}:${channel}`;
+      if (!neutralMaterials.has(key)) {
+        neutralMaterials.set(key, trackMaterial(new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          map: sourceBodyTrimTextureView({hex: key, texture, channel, repeat: record.texture.repeat}),
+          transparent: true,
+          depthWrite: false,
+          alphaTest: 0.02,
+          roughness: 0.3,
+          metalness: 0.0,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.08,
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2,
+        })));
+      }
+      child.material = neutralMaterials.get(key);
+      child.renderOrder = 1;
+      child.castShadow = false;
     } else {
       // 実ゲームのCB4/CB11実値がないため、明示研究起動時の模擬値でのみ
       // FEOW原本PS/VSO文字式をsidewall4メッシュに適用。車体・原本Wheel20・Treadは不変。

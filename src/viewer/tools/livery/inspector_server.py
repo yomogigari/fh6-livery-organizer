@@ -658,6 +658,9 @@ class LiveryInspectorServer:
                 # ペイントの Mirror・Brakes の記録の色（ミラーのカバー・キャリパー）。HTTP側で欠落すると
                 # Viewerはメーカー指定色の0番のミラー・原本MatIの既定色のキャリパーのままになる。
                 "named_paint_groups",
+                # 純正の模様の板（原本の材質 livery_sticker）を見せるか（層の無いデザインで記録がメーカー指定のとき）。
+                # HTTP側で欠落すると、Viewerは今までどおり板を隠す（2026-11-22、Car 1477）。
+                "factory_livery_stickers",
                 # 原本Normalを生成した標準入口の期待値はViewerへ必ず転送する。
                 # HTTP側で欠落すると旧GLB全後退の検出が無効になってしまう。
                 "lo4fh6_source_tire_standard_required",

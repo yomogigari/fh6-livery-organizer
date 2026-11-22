@@ -522,6 +522,76 @@ def _export_texture_png(reader: _TextureReader, game_ref: str, output_dir: Path 
     return name
 
 
+# 純正の模様の板（工場のステッカー、原本の材質 livery_sticker.materialbin・シェーダー car_livery）の画像。
+# 色と透明度（BaseColorAlphaTexture）をそのまま貼るので、透明度つきの PNG（最大 2048px、sRGB のまま）で書き出す
+# （2026-11-22、Car 1477 の Ford のロゴ・文字。512px の BC7 では文字がつぶれる）。
+FACTORY_LIVERY_FAMILY = "car_livery"
+FACTORY_LIVERY_TEXTURE_PARAMETER = "BaseColorAlphaTexture_Texture"
+FACTORY_LIVERY_TEXTURE_MAX_SIZE = 2048
+
+
+def _export_factory_livery_png(reader: _TextureReader, game_ref: str, output_dir: Path | None) -> str | None:
+    """純正の模様の画像を透明度つきの PNG で書き出し、ファイル名を返す。
+
+    名前は、普通の部品の画像（透明度を捨てた PNG・BC7 のまま）と重ならないよう、印を足した SHA-256。
+    """
+    if output_dir is None:
+        return None
+    from .fh6_swatch import decode_swatch_image
+
+    data = reader.read(game_ref)
+    if data is None:
+        return None
+    name = hashlib.sha256(b"lo4fh6-factory-livery-rgba\0" + data).hexdigest() + ".png"
+    target = output_dir / name
+    if target.is_file():
+        return name
+    image, _meta = decode_swatch_image(data, mode="RGBA")
+    if image is None:
+        return None
+    if max(image.size) > FACTORY_LIVERY_TEXTURE_MAX_SIZE:
+        from PIL import Image
+        scale = FACTORY_LIVERY_TEXTURE_MAX_SIZE / max(image.size)
+        image = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+                             Image.LANCZOS)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(".png.tmp")
+    image.save(temporary, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
+    temporary.replace(target)
+    return name
+
+
+def _factory_livery_record(runtime: dict, reader: _TextureReader, entry: str, material_id: int, mati_sha: str,
+                           texture_output_dir: Path | None) -> tuple[dict | None, str]:
+    """純正の模様の板の記録：模様の画像（色と透明度）を、UV の CH1（GLB の TEXCOORD_0）でそのまま貼る。
+
+    見せるかどうかはペイントごとに決まる（描画の契約 factory_livery_stickers）。ここは車種ごとの画像の情報だけ。
+    """
+    textures = {row.get("parameter_name"): str(row.get("path"))
+                for row in runtime.get("material_texture_bindings") or [] if row.get("path")}
+    texture_ref = textures.get(FACTORY_LIVERY_TEXTURE_PARAMETER)
+    if not texture_ref:
+        return None, "factory-livery-texture-missing"
+    texture_file = _export_factory_livery_png(reader, texture_ref, texture_output_dir)
+    if not texture_file:
+        return None, "factory-livery-texture-unavailable"
+    return {
+        "color_origin": ORIGIN,
+        "surface": "factory_livery",
+        "emissive": False,
+        "shader_family": FACTORY_LIVERY_FAMILY,
+        "material_path": str(runtime.get("resolved_material_path") or ""),
+        "source_material_instance_sha256": mati_sha,
+        "source_modelbin": entry,
+        "source_material_id": material_id,
+        "rgba_hex": "#ffffffff",
+        "method": "factory-livery-sticker-texture",
+        "texture": {"file": texture_file, "uv_channel": 0, "repeat": [1.0, 1.0],
+                    "tint_rgba_hex": "#ffffffff", "alpha": True},
+        "base_color_texture": texture_ref,
+    }, ""
+
+
 LABEL_TEXTURE_MAX_SIZE = 1024
 # ラベルの記号は、PNG にせず、元の 2 枚（色の画像と透明度の画像）をゲームの形のまま Viewer へ渡し、Viewer の GPU で
 # 1 回だけ合わせる（2026-11-21、FH6 に近づける案 ① の続き。全ペイントの撮影で 2,584 枚・227 MB の PNG だった）。
@@ -704,6 +774,8 @@ def _resolve(archive: zipfile.ZipFile, index: dict[str, str], entry: str, materi
     if not runtime.get("available"):
         return None, "material-runtime-unavailable"
     family = str(runtime.get("shader_family") or "")
+    if family == FACTORY_LIVERY_FAMILY:
+        return _factory_livery_record(runtime, reader, entry, material_id, mati_sha, texture_output_dir)
     effective = dict(runtime.get("effective_focus") or {})
     try:
         names = _shader_parameter_names(content_root, family)
@@ -910,10 +982,18 @@ def build_body_trim_colors(mesh_path: Path | str, *, content_root: Path | str,
     mesh_path, content_root, vehicle_archive = Path(mesh_path), Path(content_root), Path(vehicle_archive)
     document = _glb_json(mesh_path)
     wanted: dict[str, tuple[str, int]] = {}
+    # 塗装の役割の部品は、純正の模様の板（材質名に livery・sticker を含む）だけを調べ、原本の材質が car_livery の
+    # 記録だけを残す（2026-11-22。Car 1477 の carPaint_livery）。ほかの塗装の部品の記録は作らない。
+    factory_only: set[str] = set()
     for node in document.get("nodes") or []:
         extras = node.get("extras") or {}
         if extras.get("lo4fh6_role") not in TRIM_ROLES:
-            continue
+            material_name = str(extras.get("lo4fh6_material_name") or "").lower()
+            if extras.get("lo4fh6_role") != "paint" or not ("livery" in material_name or "sticker" in material_name):
+                continue
+            sha = extras.get("lo4fh6_original_material_sha256")
+            if isinstance(sha, str) and len(sha) == 64 and sha.lower() not in wanted:
+                factory_only.add(sha.lower())
         entry = extras.get("lo4fh6_source_entry")
         material_id = extras.get("lo4fh6_original_matI_id")
         sha = extras.get("lo4fh6_original_material_sha256")
@@ -934,6 +1014,8 @@ def build_body_trim_colors(mesh_path: Path | str, *, content_root: Path | str,
                 record, reason = _resolve(archive, index, entry, material_id, sha, content_root,
                                           vehicle_archive, reader, shader_defaults,
                                           Path(texture_output_dir) if texture_output_dir else None)
+                if record is not None and sha in factory_only and record.get("surface") != "factory_livery":
+                    record, reason = None, "paint-role-not-factory-livery"
                 if record is None:
                     unresolved[reason] = unresolved.get(reason, 0) + 1
                     continue
@@ -951,7 +1033,7 @@ def build_body_trim_colors(mesh_path: Path | str, *, content_root: Path | str,
 
 
 # 車種ごとのキャッシュの版。結果の形や意味を変えたら上げる（ソースの変更はキーに自動で入る）。
-BODY_TRIM_CACHE_REVISION = "r1-20261117-per-vehicle"
+BODY_TRIM_CACHE_REVISION = "r2-20261122-factory-livery"
 BODY_TRIM_CACHE_KIND = "body-trim-colors"
 _TEXTURE_FILE = re.compile(r"[0-9a-f]{64}\.png")
 

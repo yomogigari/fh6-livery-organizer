@@ -38,7 +38,8 @@ RENDER_CONTRACT_FORMAT = "lo4fh6_section_render_contract_v3"
 # 46: 車体の地の色を Body の記録から、ミラー・キャリパーを Mirror・Brakes の記録から（named_paint_groups）。
 # 47: ホイールの記録で色が無効・仕上げだけの場合に、仕上げの材質の色（金・スチール等）を渡す。
 # 48: 車体の部品ごとの色にメーカー指定色の部品を含め、カーボン・色の無い仕上げの部品に描画用の色を付ける。
-RENDER_CONTRACT_REVISION = 48
+# 49: 純正の模様の板（原本の材質 livery_sticker）の画像（部品の色の記録）と、見せるか（factory_livery_stickers）を渡す。
+RENDER_CONTRACT_REVISION = 49
 MASK_PAGE_COUNT = 3
 MASK_CHANNELS = 4
 PROJECTION_MASK_CACHE_FORMAT = "lo4fh6_projection_mask_cache_v2"

@@ -710,6 +710,33 @@ def _source_paint_binding_display_color(
 NAMED_PAINT_GROUPS_FOR_RENDER = ("Mirror", "Brakes")
 
 
+def _factory_livery_sticker_contract(diagnostics: dict) -> dict:
+    """純正の模様の板（原本の材質 livery_sticker）を見せるかを、ペイントの記録から決める（2026-11-22）。
+
+    ゲームでは、デザインに層が無く（形の数 0）、板に結び付く記録がメーカー指定（selector≠0xFFFFFFFF）のとき、
+    板の模様（Car 1477 の Ford のロゴ・文字・市松模様）が見える。層のあるデザインでは見えない
+    （セーブデータの 1477 の 6 件・4212 の 7 件で、サムネイルと記録が一致）。見せる板の結び付きは、記録の識別子の
+    バイトを逆にした GLB の形（大文字）で渡す。
+    """
+    counts = diagnostics.get("section_count_yrvl") if isinstance(diagnostics, dict) else None
+    shape_count = counts.get("sum") if isinstance(counts, dict) else None
+    records = ((diagnostics.get("candidate_material_yrvl") or {}).get("records") or []
+               if isinstance(diagnostics, dict) else [])
+    selected = set()
+    for record in records:
+        selector = record.get("manufacturer_color_selector_raw")
+        identifier = str(record.get("material_identifier_hex") or "")
+        if type(selector) is int and selector != 0xFFFFFFFF and re.fullmatch(r"[0-9a-fA-F]{16}", identifier):
+            selected.add(bytes.fromhex(identifier)[::-1].hex().upper())
+    valid_count = type(shape_count) is int and shape_count >= 0
+    return {
+        "schema": "lo4fh6.factory-livery-sticker.v1",
+        "shape_count": shape_count if valid_count else None,
+        "visible": valid_count and shape_count == 0,
+        "selected_bindings": sorted(selected),
+    }
+
+
 def _named_paint_groups_contract(
     diagnostics: dict,
     *,
@@ -4729,6 +4756,8 @@ def _main() -> int:
         else None
     )
     contract["base_paint_material"] = base_paint_material
+    # 純正の模様の板を見せるか（層の無いデザインで、記録がメーカー指定のときだけ。2026-11-22）。
+    contract["factory_livery_stickers"] = _factory_livery_sticker_contract(yrvl_diagnostics)
     # ミラーのカバー・キャリパーは、ペイントの Mirror・Brakes の記録の色で描く（記録が無い車は従来どおり）。
     if asset is not None:
         contract["named_paint_groups"] = _named_paint_groups_contract(
