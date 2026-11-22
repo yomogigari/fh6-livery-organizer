@@ -297,7 +297,7 @@ def build_gpu_livery_production_runtime(
             if decals_zip_path is None:
                 raise RuntimeError("原本Raster Logoを通常描画するには署名確認可能なDecals.zipが必要です")
             # GameDB が無いときは、ゲームのロゴのステッカーを止めずに省く（build_gpu_raster_decal_pack、
-            # 理由 gamedb-unavailable。画面の注意の帯に出す。2026-11-21 利用者の決定）。
+            # 理由 gamedb-unavailable。画面の注意の帯に出す。2026-11-21）。
             from tools.livery.gpu_raster_decal_pack import build_gpu_raster_decal_pack
             raster_ids = {
                 int(shape.get("raster_id") or 0)
@@ -313,7 +313,7 @@ def build_gpu_livery_production_runtime(
                     original_decal_zip, "sha256"
                 ).hexdigest()
             # ゲームに無いステッカー（他のツールで取り込んだペイントなど）は、透明にして省き、目録に記録する
-            # （2026-11-18 利用者の決定。黙って省かず、画面と撮影の記録に出す）。
+            # （2026-11-18。黙って省かず、画面と撮影の記録に出す）。
             raster_decal_pack, raster_decal_summary = build_gpu_raster_decal_pack(
                 decals_archive, raster_ids, gamedb_path=gamedb_path, omit_missing=True
             )

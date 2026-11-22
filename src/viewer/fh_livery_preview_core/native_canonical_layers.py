@@ -214,7 +214,7 @@ def native_layers(payload: bytes, *, allow_source_verified_signed_y: bool = True
                     env.body, after, next_group
                 ) if achromatic and not group_mask_depth else False
                 # 記録の直後の 01（記録の状態）は、色を問わずマスクにする（2026-11-18）。
-                # 根拠：PC 版 FH6 の画面（利用者の撮影）。Car 3173・3434 の前の窓ガラス（最後のピンクの層が下地ごと消え、
+                # 根拠：PC 版 FH6 の実際の画面。Car 3173・3434 の前の窓ガラス（最後のピンクの層が下地ごと消え、
                 # 窓が透明）、Car 3414（黒い X が見え、赤いテープは見えない）、Car 302（輪と文字が青緑）が、
                 # 色付きの層もマスクにしたときだけ一致する。ゲームの見本の画像（bigThumb）との比較 48 件でも一致が増える。
                 # 参照製品は色付きの層の記録の状態をマスクにしないが、FH6 の画面と合わないので採らない。

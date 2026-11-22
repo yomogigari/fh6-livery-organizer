@@ -73,7 +73,7 @@ def _build_identity_label() -> str:
 
 
 def _window_title() -> str:
-    # 配布の EXE は名前だけにする（版は設定画面と 3D の画面の版の表示に出る。2026-11-18 利用者の決定）。
+    # 配布の EXE は名前だけにする（版は設定画面と 3D の画面の版の表示に出る。2026-11-18）。
     if is_packaged():
         return "Livery Viewer for FH6"
     revision = _build_source_revision()

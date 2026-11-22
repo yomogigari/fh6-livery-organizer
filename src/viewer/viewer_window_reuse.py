@@ -1,4 +1,4 @@
-"""Viewer の窓の使い回し（2026-11-19、利用者の承認「より高速化できる方で」）。
+"""Viewer の窓の使い回し（2026-11-19）。
 
 1 つの Viewer の窓を開いたままにし、次のペイントの起動は、その窓へ依頼を渡して終わる（窓は次のペイントに
 切り替わる。切り替えは organizer_preview_bridge.launch_standalone_preview）。2 枚目以降は、Python の起動
@@ -531,6 +531,16 @@ class KeepAlive:
                 self.hidden_since = now
                 return False
             return now - self.hidden_since >= self.seconds
+
+    def quit(self, window: Any) -> None:
+        """利用者がページの「Viewerを終了」を押した。隠して残さず、すぐ本当に閉じる（2026-11-22）。"""
+        with self._lock:
+            self.final = True
+            self.hidden_since = None
+            self.parent = None
+        self._log("viewer quit by the user; closing")
+        with contextlib.suppress(Exception):
+            window.destroy()
 
     def finish(self, window: Any) -> None:
         """隠して残す時間が過ぎたので、本当に閉じる。"""

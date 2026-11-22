@@ -170,7 +170,7 @@ def _signed_local_source(repo: Path, expected: dict[str, str]) -> dict[str, byte
 def _offline_hint() -> str:
     """取得できないときの開発用の案内（本人保全の署名済み ZIP の置き場）。配布の EXE では出さない。
 
-    配布の EXE の利用者は署名済み ZIP を持たないため、ネット接続の確認だけを案内する（2026-11-18 利用者の決定）。
+    配布の EXE の利用者は署名済み ZIP を持たないため、ネット接続の確認だけを案内する（2026-11-18）。
     """
     try:
         from lo4fh6_desktop_suite.runtime import is_packaged

@@ -400,7 +400,13 @@ button[aria-pressed="true"], button.active {
 .lo4fh6-research-fields .diagnostic-controls { display: flex; flex-basis: 100%; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; padding: 8px 0 0; border: 0; border-top: 1px solid var(--lo4-line); border-radius: 0; background: none; }
 .viewer-menu-heading { flex-basis: 100%; color: var(--lo4-text-muted); font-weight: 700; }
 .lo4fh6-status-panel .lo4fh6-status-actions { margin-top: 5px; }
+/* 「Viewerを終了」（2026-11-22）：画像の保存と間を空け、終える操作と分かる色にする。Python の口が無いときは隠す */
+.viewer-quit { margin-left: 8px; border-color: var(--lo4-danger); color: var(--lo4-danger-text); }
+.viewer-quit:hover, .viewer-quit:focus-visible { color: white; border-color: var(--lo4-danger); background: var(--lo4-danger); }
+.viewer-quit:disabled { opacity: .6; cursor: default; }
+.viewer-quit.hidden { display: none; }
 @media (max-width: 720px) {
+  .viewer-quit { margin-left: 0; }
   .viewer-menus { justify-content: flex-start; }
   .viewer-menu-body { left: 0; right: auto; }
   .viewer-tools { max-width: 100%; }

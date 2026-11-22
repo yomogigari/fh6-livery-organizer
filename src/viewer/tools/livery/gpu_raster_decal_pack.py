@@ -98,10 +98,10 @@ def build_gpu_raster_decal_pack(
     CPUは原本テクスチャのBC7復号だけ担当し、形状変換・積層・ペイントはGPU。
 
     omit_missing が真なら、ゲームに無いステッカー（GameDB に登録が無い・Decals.zip にファイルが無い）だけは
-    止めずに、完全に透明な 1x1 の画像を入れて記録する（summary の omitted。2026-11-18 利用者の決定。
+    止めずに、完全に透明な 1x1 の画像を入れて記録する（summary の omitted。2026-11-18。
     参照製品も無いステッカーの層を飛ばす）。ファイルがあるのに解読できないものは、今までどおり止める。
     omit_missing が真で GameDB が無いときは、Raster ID からステッカーの画像のファイルを引けないので、全部を
-    同じく透明にして省く（理由 gamedb-unavailable。2026-11-21 利用者の決定。GameDB を持たない利用者も
+    同じく透明にして省く（理由 gamedb-unavailable。2026-11-21。GameDB を持たない利用者も
     ペイントを見られるようにする）。
     """
     if any(type(value) is not int or not 0 < value <= 0x7FFF for value in raster_ids):

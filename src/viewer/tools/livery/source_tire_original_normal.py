@@ -865,7 +865,7 @@ def _original_tire_normal_signed_eligible_uncached(tire_zip: Path, game_cars_dir
 # 拒否して停止するのではなく、別の保存先へ作り直す。
 # 旧版のフォルダーは削除せず保全する（過去の撮影の証拠として残す）。
 # r2: source_signed_auto_compound=False を必須化（2026-11-17）。
-# r3: 利用者が Windows 実機で受け入れた原本 Extra/Blur 複合の標準統合を復元し、
+# r3: Windows 実機で確かめた原本 Extra/Blur 複合の標準統合を復元し、
 #     複合の有無をレポートとキャッシュ照合へ記録（2026-11-17）。
 # r4: 側面文字あり（TextSwitch=1、FEOW等）のTireでも、トレッドと刻印の2役割へ
 #     複合を適用（文字の側面MatIはNormalのみ）（2026-11-17）。
@@ -999,9 +999,9 @@ def cached_original_tire_normal_glb(source_glb: Path, tire_zip: Path,
     FEOWは呼出元で合成。Normalと原本Extra/Blurを適用できるかは
     ModelBin/MatI/ShaderBin/LOD0の出典で決める。旧研究GLBには後退しない。
 
-    原本Extra/Blurの複合は、2026-11-16 に利用者がWindows実機で
-    Vivio3960のタイヤを「仮物ではなくテクスチャもOK」と受け入れた表示
-    （HEAD 2bef683）の標準経路。AO/粗さへの割当がFH6 Shader全式と同値とは
+    原本Extra/Blurの複合は、2026-11-16 にWindows実機で
+    Vivio3960のタイヤのテクスチャまで確かめた表示の標準経路。
+    AO/粗さへの割当がFH6 Shader全式と同値とは
     主張しない（Xbox外観の承認は別判定）。
 
     キャッシュは版付きの保存先に置く。旧版のレポート形式で作られた

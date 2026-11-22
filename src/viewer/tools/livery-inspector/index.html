@@ -58,6 +58,8 @@
             <button id="rm-six-views-jpeg" type="button" title="完成車両を左・前・右・後・上・下の6方向からGPU描画し、1枚のJPEGに保存" data-i18n="toolbar.six_views_jpeg" data-i18n-title="toolbar.six_views_jpeg_title">6方向JPEG</button>
             <button id="rm-six-views-png" type="button" title="完成車両の6方向GPU画像を1枚の可逆PNGに保存" data-i18n="toolbar.six_views_png" data-i18n-title="toolbar.six_views_png_title">6方向PNG</button>
           </span>
+          <!-- Viewer のプロセスを終える（2026-11-22）。Python の口（quit_viewer）が届いたときだけ出す -->
+          <button id="quit-viewer" class="viewer-quit hidden" type="button" title="Viewer のプロセスを終えます" data-i18n="toolbar.quit_viewer" data-i18n-title="toolbar.quit_viewer_title">Viewerを終了</button>
         </div>
         <div class="viewer-menus">
           <details id="viewer-body-parts" class="viewer-menu">
@@ -102,6 +104,16 @@
                   <option value="standard" data-i18n="aa_mode.standard">標準</option>
                   <option value="strong" data-i18n="aa_mode.strong">強め</option>
                   <option value="very_strong" data-i18n="aa_mode.very_strong">かなり強め</option>
+                </select>
+              </label>
+              <label class="setting-control" title="Auto-rotate speed">
+                <span data-i18n="toolbar.rotate_speed">自動回転の速さ</span>
+                <select id="rotate-speed" aria-label="Auto-rotate speed">
+                  <option value="1" data-i18n="rotate_speed.x1">遅い</option>
+                  <option value="1.5" data-i18n="rotate_speed.x1_5">やや遅い</option>
+                  <option value="2" data-i18n="rotate_speed.x2">標準</option>
+                  <option value="2.5" data-i18n="rotate_speed.x2_5">やや速い</option>
+                  <option value="3" data-i18n="rotate_speed.x3">速い</option>
                 </select>
               </label>
               <label class="setting-control" title="Viewer language">

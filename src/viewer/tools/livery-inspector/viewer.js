@@ -97,6 +97,7 @@ const reflectionStrengthInput = document.querySelector('#reflection-strength');
 const reflectionStrengthOutput = document.querySelector('#reflection-strength-output');
 const renderQualitySelect = document.querySelector('#render-quality');
 const aaModeSelect = document.querySelector('#aa-mode');
+const rotateSpeedSelect = document.querySelector('#rotate-speed');
 const languageSelect = document.querySelector('#language');
 const bodyKitControl = document.querySelector('#body-kit-control');
 const bodyKitSelect = document.querySelector('#body-kit');
@@ -568,7 +569,18 @@ const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 1000);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.075;
-controls.autoRotateSpeed = 0.65;
+// 自動回転の速さ：もとの速さ 0.65 に倍率を掛ける。標準は 2 倍、選べるのは 1〜3 倍（2026-11-22）。
+// 選んだ倍率は Viewer の設定に保存し、次に開いたときは /api/manifest の viewer_preferences で受け取る。
+const AUTO_ROTATE_BASE_SPEED = 0.65;
+const AUTO_ROTATE_SPEED_CHOICES = [1, 1.5, 2, 2.5, 3];
+const AUTO_ROTATE_SPEED_DEFAULT = 2;
+function applyAutoRotateSpeed(multiplier) {
+  const value = AUTO_ROTATE_SPEED_CHOICES.includes(Number(multiplier)) ? Number(multiplier) : AUTO_ROTATE_SPEED_DEFAULT;
+  controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED * value;
+  if (rotateSpeedSelect) rotateSpeedSelect.value = String(value);
+  return value;
+}
+applyAutoRotateSpeed(AUTO_ROTATE_SPEED_DEFAULT);
 
 // 追跡している形・画像の出し入れを数える（資源の大きさの数え直しを、変わったときだけにするため。2026-11-21）
 let trackedResourceVersion = 0;
@@ -642,6 +654,39 @@ function reportViewerStage(stage, detail = '') {
 }
 window.addEventListener('pywebviewready', () => reportViewerStage(latestViewerStage));
 document.addEventListener('pywebviewready', () => reportViewerStage(latestViewerStage));
+
+// 「Viewerを終了」（2026-11-22）：窓を閉じたときのように隠して残さず、Viewer のプロセスを終える。
+// Python の口（quit_viewer）が届いたときだけ出す（ブラウザーで開いたときは出さない）。口の注入は非同期なので、
+// 準備完了の知らせと、回数を決めた見直しの両方で確かめる。
+const quitViewerButton = document.querySelector('#quit-viewer');
+function updateQuitViewerButton() {
+  let available = false;
+  try {
+    available = typeof window.pywebview?.api?.quit_viewer === 'function';
+  } catch (_error) {
+    available = false;
+  }
+  quitViewerButton?.classList.toggle('hidden', !available);
+  return available;
+}
+async function quitViewer() {
+  const api = window.pywebview?.api;
+  if (!quitViewerButton || typeof api?.quit_viewer !== 'function') return;
+  quitViewerButton.disabled = true;
+  setStatus(t('status.quitting_viewer'));
+  viewerEvent('quit-viewer');
+  try {
+    const result = await api.quit_viewer();
+    if (!result?.ok) throw new Error(result?.reason || 'unavailable');
+  } catch (error) {
+    quitViewerButton.disabled = false;
+    setStatus(t('error.quit_viewer', {message: error?.message || String(error)}), true);
+  }
+}
+quitViewerButton?.addEventListener('click', () => { void quitViewer(); });
+window.addEventListener('pywebviewready', updateQuitViewerButton);
+document.addEventListener('pywebviewready', updateQuitViewerButton);
+for (const delayMs of [0, 250, 1000, 3000, 8000]) window.setTimeout(updateQuitViewerButton, delayMs);
 
 function phase(name, message) {
   timings[name] = Math.round(performance.now() - startedAt);
@@ -6896,7 +6941,7 @@ async function loadVerifiedStockBody(runtime) {
   requestRender();
 }
 
-// ---- 同じ車の次のペイントへの差し替え（ページを読み直さない。2026-11-19、利用者の承認「同じ車だけ差し替え」）----
+// ---- 同じ車の次のペイントへの差し替え（ページを読み直さない。2026-11-19）----
 // Python（窓の使い回し）が、同じ車体の GLB（同じファイル）の次のペイントの出力を同じサーバーに読み込んでから呼ぶ。
 // 場面・材質・ペイントは、読み直したときと同じ loadPackage の手順で、新しい目録と同じ車体の GLB のデータから作り直す。
 // 使い回すのは車体の GLB のデータ（転送を省く）と、Three.js のシェーダー（前の材質を新しい場面の最初の 1 枚の後に
@@ -6954,8 +6999,9 @@ let lastMeshBuffer = null;
 let paintSwapTimer = 0;
 // GPU で作ったペイントの画像のキャンバス（差し替えで前のペイントのものを捨てるとき、その WebGL を手放す）。
 const gpuAtlasCanvases = new WeakSet();
-// 差し替えで値が変わってよい URL の設定（ペイントごとの部品の選択）。ほかの設定が違えば読み直す。
-const PAINT_SWAP_VARIABLE_PARAMS = new Set(['part-selection']);
+// 差し替えで値が変わってよい URL の設定（ペイントごとの部品の選択と、窓を読み直すときに Python が付ける毎回違う印
+// lo4fh6-load）。ほかの設定が違えば読み直す。
+const PAINT_SWAP_VARIABLE_PARAMS = new Set(['part-selection', 'lo4fh6-load']);
 
 // 表示の設定（URL から決まる値と、操作で変わる値）。最初の読み込みの直前から変わっていれば、読み直したときと
 // 同じにならないので差し替えない（操作による変更の多くは URL にも書かれ、URL の比較でも分かる）。
@@ -7322,6 +7368,7 @@ async function loadPackage() {
     }
     reportViewerStage('manifest_parsed');
     currentManifest = manifest;
+    applyAutoRotateSpeed(manifest?.viewer_preferences?.auto_rotate_speed);
     updateDemoTitle();
     updateVehicleInfo();
     const runtime = manifest.inspection_runtime || {};
@@ -7938,6 +7985,19 @@ async function changeRenderQuality() {
   }
 }
 
+function changeRotateSpeed() {
+  const value = applyAutoRotateSpeed(rotateSpeedSelect.value);
+  // 次に開いたときも同じ速さで回すよう、Viewer の設定に保存する（ブラウザーで開いたときは保存しない）
+  try {
+    const api = window.pywebview?.api;
+    if (api?.save_auto_rotate_speed) void Promise.resolve(api.save_auto_rotate_speed(value)).catch(() => false);
+  } catch (_error) {
+    // 保存できなくても、この窓の速さは変わる
+  }
+  requestRender();
+  viewerEvent('rotate-speed', '', {multiplier: value, speed: controls.autoRotateSpeed});
+}
+
 function changeAAMode() {
   markDisplayPresetCustom();
   aaMode = aaModeSelect.value;
@@ -8125,6 +8185,7 @@ reflectionStrengthInput.addEventListener('input', previewReflectionStrength);
 reflectionStrengthInput.addEventListener('change', changeReflectionStrength);
 renderQualitySelect.addEventListener('change', changeRenderQuality);
 aaModeSelect.addEventListener('change', changeAAMode);
+rotateSpeedSelect?.addEventListener('change', changeRotateSpeed);
 languageSelect.addEventListener('change', changeLanguage);
 bodyKitSelect.addEventListener('change', changeBodyKit);
 sectionFilterSelect?.addEventListener('change', changeSectionFilter);

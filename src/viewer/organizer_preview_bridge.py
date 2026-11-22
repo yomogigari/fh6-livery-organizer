@@ -8,6 +8,7 @@ import argparse
 import contextlib
 from collections import OrderedDict
 import html
+import itertools
 import json
 import math
 import os
@@ -373,7 +374,7 @@ def _local_appdata_root() -> Path:
 
 # Viewer の窓（WebView2）の保存先。以前は開くたびに新しい保存先（private_mode）で、シェーダーと JavaScript の
 # 作成済みの結果が残らず、窓を開いてから最初の 1 枚まで毎回 14〜16 秒かかっていた（2026-11-19 の計測）。
-# Viewer 専用の保存先を使い回して作成済みの結果を残す（利用者の承認 2026-11-19）。
+# Viewer 専用の保存先を使い回して作成済みの結果を残す（2026-11-19）。
 # ペイントの中身はローカルのサーバーが Cache-Control: no-store で返すので残らない。Cookie も使っていない。
 # 閲覧の履歴（Viewer の URL）は起動のたびに消す（別の Viewer が使用中で消せないときはそのまま）。
 WEBVIEW_PROFILE_DIR = "webview-profile"
@@ -418,6 +419,25 @@ def _bridge_log_path() -> Path:
 
 def _settings_path() -> Path:
     return _local_appdata_root() / "preview-settings.json"
+
+
+# 自動回転の速さ（もとの速さ 0.65 に対する倍率）。標準は 2 倍、選べるのは 1〜3 倍（2026-11-22）。
+AUTO_ROTATE_SPEED_KEY = "viewer_auto_rotate_speed"
+AUTO_ROTATE_SPEED_DEFAULT = 2.0
+AUTO_ROTATE_SPEED_CHOICES = (1.0, 1.5, 2.0, 2.5, 3.0)
+
+
+def _auto_rotate_speed(settings: dict[str, Any] | None) -> float:
+    """Viewer の設定に保存した自動回転の速さの倍率。無い・選べない値なら標準（2 倍）。"""
+    value = (settings or {}).get(AUTO_ROTATE_SPEED_KEY)
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and float(value) in AUTO_ROTATE_SPEED_CHOICES:
+        return float(value)
+    return AUTO_ROTATE_SPEED_DEFAULT
+
+
+def _viewer_preferences() -> dict[str, Any]:
+    """ページへ渡す画面の好み（/api/manifest の viewer_preferences）。"""
+    return {"auto_rotate_speed": _auto_rotate_speed(load_shared_settings(_settings_path()))}
 
 
 def _uri_runtime_root() -> Path:
@@ -852,7 +872,7 @@ def request_from_args(args: argparse.Namespace) -> dict[str, Any]:
     gamedb_missing = database is None
     if gamedb_missing and wheel_source.casefold() == "source-verified":
         # 原本 4 輪＋タイヤは、車輪の位置・寸法とタイヤを GameDB から求めるので、GameDB が無いと作れない。
-        # 止めずに簡易の車輪で表示し、画面にその旨を出す（2026-11-21 利用者の決定。GameDB を持たない利用者も
+        # 止めずに簡易の車輪で表示し、画面にその旨を出す（2026-11-21。GameDB を持たない利用者も
         # ペイントを見られるようにする）。
         wheel_source = "proxy"
     normalized = {
@@ -2489,6 +2509,7 @@ def _load_output_into_server(server: LiveryInspectorServer, output_dir: Path, re
     validate_livery_inspection_artifact(package_path)
     server.set_package(package_path)
     server.set_capture_caption(_capture_caption(request))
+    server.set_viewer_preferences(_viewer_preferences())
     server.set_local_mesh(mesh_path)
     overlay_plan = summary.get("body_kit_overlay_plan") if isinstance(summary.get("body_kit_overlay_plan"), dict) else {}
     overlay_value = _string(summary.get("body_kit_overlay_mesh"))
@@ -3561,6 +3582,8 @@ class PreviewJsApi:
         self.state = state
         self._lock = threading.Lock()
         self._viewer_last_stage = ""
+        # ページの「Viewerを終了」で呼ぶ処理（窓を作った後に、窓を閉じる側が入れる。2026-11-22）
+        self._quit_handler: Callable[[], None] | None = None
         # 保存ダイアログは利用者操作から開始し、保存完了を実バイトで照合する。
         from tools.livery.native_image_export import NativeImageExport
         self._image_exports = NativeImageExport()
@@ -3568,12 +3591,40 @@ class PreviewJsApi:
         self._paint_swap_event = threading.Event()
         self._paint_swap_result: dict[str, Any] | None = None
 
+    def save_auto_rotate_speed(self, value: Any) -> dict[str, Any]:
+        """ページの「自動回転の速さ」で選んだ倍率を、Viewer の設定に保存する（次に開いたときも使う）。"""
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or float(value) not in AUTO_ROTATE_SPEED_CHOICES:
+            return {"saved": False, "reason": "invalid-speed"}
+        try:
+            update_shared_settings({AUTO_ROTATE_SPEED_KEY: float(value)}, _settings_path())
+        except OSError as exc:
+            _append_bridge_log(f"auto-rotate speed: save failed: {type(exc).__name__}")
+            return {"saved": False, "reason": "write-failed"}
+        return {"saved": True, "auto_rotate_speed": float(value)}
+
     def report_paint_swap(self, payload: dict[str, Any]) -> dict[str, Any]:
         """ページが同じ車の次のペイントへの差し替えを受け付けたか（受け付けなければ Python がページを読み直す）。"""
         payload = payload if isinstance(payload, dict) else {}
         self._paint_swap_result = {"accepted": payload.get("accepted") is True,
                                    "reason": str(payload.get("reason") or "")[:120]}
         self._paint_swap_event.set()
+        return {"ok": True}
+
+    def quit_viewer(self) -> dict[str, Any]:
+        """ページの「Viewerを終了」。窓を閉じたときのように隠して残さず、Viewer のプロセスを終える（2026-11-22）。
+
+        ページへの返事を先に返してから閉じる（閉じるのは別の糸で少し待ってから）。
+        """
+        handler = self._quit_handler
+        if handler is None:
+            return {"ok": False, "reason": "unavailable"}
+        _append_bridge_log("viewer quit requested from the page")
+
+        def run() -> None:
+            time.sleep(0.2)
+            handler()
+
+        threading.Thread(target=run, name="lo4fh6-viewer-quit", daemon=True).start()
         return {"ok": True}
 
     def _expect_paint_swap(self) -> None:
@@ -3798,7 +3849,7 @@ class PreviewJsApi:
                 return {"ok": False, "error": str(exc), "preset": preset}
 
 
-# ---- Viewer の窓の使い回し（2026-11-19、利用者の承認「より高速化できる方で」）----
+# ---- Viewer の窓の使い回し（2026-11-19）----
 # 受付と依頼の受け渡しは viewer_window_reuse（重い部品を読み込む前にも使えるよう標準の部品だけで書いた）。
 # ここでは、引数を読んだ後の受け渡しと、受け取った依頼を窓で開く 1 件にする処理を持つ。
 import viewer_window_reuse as _window_reuse
@@ -3984,6 +4035,25 @@ def _show_paint_swap_status(window: Any, message: str) -> None:
         window.evaluate_js(f"window.lo4fh6ShowPaintSwapStatus && window.lo4fh6ShowPaintSwapStatus({payload});")
 
 
+# 窓の読み直しの URL に付ける、毎回違う印の名前と番号（2026-11-22）。
+VIEWER_RELOAD_PARAM = "lo4fh6-load"
+_viewer_reload_counter = itertools.count(1)
+
+
+def _viewer_reload_url(url: str) -> str:
+    """窓を読み直す URL に、毎回違う印（lo4fh6-load=番号）を付ける（前の印は外す）。
+
+    同じ車の次のペイントはサーバーを使い回すので、URL が今のページと同じになる。WebView2 は同じ URL では読み直さず、
+    pywebview の load_url が下ろした「読み込み済み」の印も戻らない。その後のページへの命令は 1 回 20 秒待たされて失敗し、
+    「Viewerを起動しています...」のまま止まった（2026-11-22、自動回転中に次のペイントを開いて差し替えが断られたとき）。
+    ページは、この印を差し替えで違ってよい項目として扱う（viewer.js の PAINT_SWAP_VARIABLE_PARAMS）。
+    """
+    parts = urlsplit(str(url))
+    kept = [item for item in parts.query.split("&") if item and not item.startswith(VIEWER_RELOAD_PARAM + "=")]
+    kept.append(f"{VIEWER_RELOAD_PARAM}={next(_viewer_reload_counter)}")
+    return urlunsplit(parts._replace(query="&".join(kept)))
+
+
 def _try_paint_swap(window: Any, api: "PreviewJsApi", url: str, timeout: float = 10.0) -> bool:
     """ページに同じ車の次のペイントへの差し替えを頼む。受け付けられれば True（受け付けなければ呼び出し側が読み直す）。"""
     api._expect_paint_swap()
@@ -4095,6 +4165,8 @@ def launch_standalone_preview(
         window.events.closing += lambda: keep_alive.on_closing(window)
     except Exception:
         pass
+    # ページの「Viewerを終了」：隠して残さず、すぐ終える（2026-11-22）
+    api._quit_handler = lambda: keep_alive.quit(window)
 
     def worker() -> None:
         while not closed.is_set():
@@ -4292,7 +4364,8 @@ def _open_standalone_job(window: Any, api: "PreviewJsApi", state: dict[str, Any]
                     and mesh_identity == previous_session.get("mesh_identity")):
                 swapped = _try_paint_swap(window, api, url)
             if not swapped:
-                window.load_url(url)
+                # 同じ URL でも必ず読み直すよう、毎回違う印を付ける（差し替えが断られたとき、URL が今のページと同じになる）
+                window.load_url(_viewer_reload_url(url))
             _retain_recent_paint_folders_later(output_dir.parent, output_dir)
     except Exception as exc:
         state["error"] = exc

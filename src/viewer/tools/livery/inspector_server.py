@@ -74,6 +74,7 @@ class LiveryInspectorServer:
         self._manifest: dict = {}
         # 保存する画像（現在視点・6方向）の下の帯に書く、ペイントの情報（Organizer から届いた物。2026-11-21）
         self._capture_caption: dict = {}
+        self._viewer_preferences: dict = {}
         self._gpu_livery_runtime: dict = {}
         self._stock_body_only: dict = {}
         self._private_wheel_research: dict = {}
@@ -115,6 +116,16 @@ class LiveryInspectorServer:
             key: source[key].strip()[:200] if isinstance(source.get(key), str) else ""
             for key in ("title", "creator_name", "upload_date", "vehicle_name")
         }
+
+    def set_viewer_preferences(self, preferences: dict | None) -> None:
+        """Viewer の画面の好み（自動回転の速さの倍率）を受け取る（2026-11-22）。
+
+        ページは /api/manifest の viewer_preferences で受け取る。倍率は 1〜3 の数だけを渡し、ほかは渡さない。
+        """
+        source = preferences if isinstance(preferences, dict) else {}
+        speed = source.get("auto_rotate_speed")
+        valid = isinstance(speed, (int, float)) and not isinstance(speed, bool) and 1.0 <= float(speed) <= 3.0
+        self._viewer_preferences = {"auto_rotate_speed": float(speed)} if valid else {}
 
     def set_package(self, package: Path | str) -> dict:
         path = Path(package).resolve()
@@ -803,6 +814,7 @@ class LiveryInspectorServer:
                 self.request_diagnostic("manifest_request_received")
             runtime_manifest = dict(self._manifest)
             runtime_manifest["capture_caption"] = dict(self._capture_caption)
+            runtime_manifest["viewer_preferences"] = dict(self._viewer_preferences)
             runtime_manifest["inspection_runtime"] = {
                 "local_mesh": self._local_mesh is not None,
                 "stock_body_only": dict(self._stock_body_only),

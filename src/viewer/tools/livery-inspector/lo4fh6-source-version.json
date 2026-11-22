@@ -1,6 +1,6 @@
 {
   "schema": "lo4fh6.viewer.source-version-stamp.v1",
-  "commit": "aaec449cebf208d711f255f57875f2e0570fd92c",
-  "committed": "2026-11-22T14:02:23+09:00",
+  "commit": "01649c8c39f41a950a4d060287fab7ea658ba4ff",
+  "committed": "2026-11-22T15:00:34+09:00",
   "note": "git archive が取り出すときに $Format の所をコミットの番号と日付に置き換える（.gitattributes の export-subst）。作業ツリーでは置き換わらない。"
 }
